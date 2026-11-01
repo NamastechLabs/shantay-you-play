@@ -1,0 +1,14 @@
+<template>
+  <NuxtPage />
+</template>
+
+<style>
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+  margin: 0;
+}
+</style>
