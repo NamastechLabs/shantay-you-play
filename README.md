@@ -70,6 +70,7 @@ All schema changes live in [`supabase/migrations/`](supabase/migrations) and are
 | `20261101000100_storage_runway_looks.sql` | Public `runway-looks` storage bucket + judge-only upload policies |
 | `20261101000200_grant_table_privileges.sql` | Explicit table `GRANT`s for the `authenticated` role |
 | `20261101000300_add_participants_drag_name.sql` | `participants.drag_name` (unique, case-insensitive) |
+| `20261102000000_participants_preregistration.sql` | `participants.user_id`: judges pre-register people by email and the first Google sign-in links to them; ownership rules now go through `current_participant_id()` |
 
 ### Apply them with the Supabase CLI (recommended)
 
@@ -141,7 +142,9 @@ Now `http://localhost:3000/login` → **Entrar con Google** should land you on o
 
 ## Roles
 
-Every new user is created as `concursante` the first time they sign in (trigger `handle_new_user`). Judges can't be self-assigned from the app; promote them in the **SQL Editor**:
+Judges register participants (name + Google email, optional drag name) in **/admin/participants** before they ever sign in. The first Google sign-in with that email links the login to the registered record (trigger `handle_new_user`); judges can upload their looks in the meantime. Anyone who signs in with an unregistered email is created as `concursante`.
+
+Judges can't be self-assigned from the app, and a person's role can't be changed after registering them (only at registration time). To promote someone later, use the **SQL Editor**:
 
 ```sql
 update public.participants set role = 'jurado' where email = 'someone@gmail.com';

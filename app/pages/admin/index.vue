@@ -68,9 +68,14 @@ async function createCategory(): Promise<void> {
   <main class="admin">
     <header>
       <h1>Panel del jurado</h1>
-      <NuxtLink to="/">
-        ← Inicio
-      </NuxtLink>
+      <nav class="links">
+        <NuxtLink to="/admin/participants">
+          Participantes
+        </NuxtLink>
+        <NuxtLink to="/">
+          ← Inicio
+        </NuxtLink>
+      </nav>
     </header>
 
     <section>
@@ -131,6 +136,11 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.links {
+  display: flex;
+  gap: 1rem;
 }
 
 form {

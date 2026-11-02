@@ -184,7 +184,7 @@ async function changeStatus(status: CategoryStatus): Promise<void> {
         />
       </ul>
       <p v-else>
-        Aún no hay concursantes. Aparecerán cuando inicien sesión y tengan el rol <code>concursante</code>.
+        Aún no hay concursantes. Regístralos en <NuxtLink to="/admin/participants">Participantes</NuxtLink>.
       </p>
     </section>
   </main>

@@ -50,7 +50,9 @@ async function signOut(): Promise<void> {
 
     <ul v-else-if="categories?.length" class="categories">
       <li v-for="category in categories" :key="category.id">
-        <span>Semana {{ category.week_number }} · {{ category.title }}</span>
+        <NuxtLink :to="`/categories/${category.id}`">
+          Semana {{ category.week_number }} · {{ category.title }}
+        </NuxtLink>
         <span class="status">{{ CATEGORY_STATUS_LABELS[category.status] }}</span>
       </li>
     </ul>

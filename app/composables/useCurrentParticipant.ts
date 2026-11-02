@@ -1,8 +1,8 @@
 import type { Tables } from '~/types/database.types'
 
-export type CurrentParticipant = Pick<Tables<'participants'>, 'id' | 'name' | 'drag_name' | 'email' | 'role'>
+export type CurrentParticipant = Pick<Tables<'participants'>, 'id' | 'user_id' | 'name' | 'drag_name' | 'email' | 'role'>
 
-const PARTICIPANT_COLUMNS = 'id, name, drag_name, email, role'
+const PARTICIPANT_COLUMNS = 'id, user_id, name, drag_name, email, role'
 
 /** Postgres unique_violation, raised by participants_drag_name_key */
 const UNIQUE_VIOLATION = '23505'
@@ -26,14 +26,14 @@ export function useCurrentParticipant() {
       participant.value = null
       return null
     }
-    if (!options.force && participant.value?.id === userId) {
+    if (!options.force && participant.value?.user_id === userId) {
       return participant.value
     }
 
     const { data, error } = await supabase
       .from('participants')
       .select(PARTICIPANT_COLUMNS)
-      .eq('id', userId)
+      .eq('user_id', userId)
       .single()
 
     if (error) throw error
@@ -49,7 +49,7 @@ export function useCurrentParticipant() {
     const { data, error } = await supabase
       .from('participants')
       .update({ drag_name: dragName.trim() })
-      .eq('id', userId)
+      .eq('user_id', userId)
       .select(PARTICIPANT_COLUMNS)
       .single()
 
