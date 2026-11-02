@@ -44,6 +44,13 @@
     gap: var(--space-2);
     align-items: center;
   }
+
+  // Phones: the theme picker lives inside the user menu when there is one
+  &__theme--desktop {
+    @media (max-width: 39.99rem) {
+      display: none;
+    }
+  }
 }
 
 .user-menu {
@@ -112,6 +119,20 @@
 
     &:hover {
       background-color: var(--color-surface-raised);
+    }
+  }
+
+  // Only shown on phones; larger screens keep the picker in the top bar
+  &__theme {
+    padding: var(--space-2) var(--space-3);
+
+    @media (min-width: 40rem) {
+      display: none;
+    }
+
+    .theme-switcher,
+    select {
+      width: 100%;
     }
   }
 }

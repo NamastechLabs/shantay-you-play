@@ -46,7 +46,7 @@ async function signOut(): Promise<void> {
     </NuxtLink>
 
     <div class="app-nav__actions">
-      <ThemeSwitcher />
+      <ThemeSwitcher :class="{ 'app-nav__theme--desktop': participant }" />
 
       <div v-if="participant" ref="menuRoot" class="user-menu">
         <button
@@ -82,6 +82,9 @@ async function signOut(): Promise<void> {
             <NuxtLink to="/admin/participants" class="user-menu__item" @click="closeMenu()">
               Participantes
             </NuxtLink>
+          </li>
+          <li class="user-menu__theme">
+            <ThemeSwitcher />
           </li>
           <li>
             <button type="button" class="user-menu__item" @click="signOut">
