@@ -34,9 +34,14 @@ async function signOut(): Promise<void> {
           <span class="role">{{ isJurado ? 'Jurado' : 'Concursante' }}</span>
         </p>
       </div>
-      <button type="button" @click="signOut">
-        Salir
-      </button>
+      <div class="actions">
+        <NuxtLink v-if="isJurado" to="/admin">
+          Panel del jurado
+        </NuxtLink>
+        <button type="button" @click="signOut">
+          Salir
+        </button>
+      </div>
     </header>
 
     <p v-if="error" class="error" role="alert">
@@ -46,7 +51,7 @@ async function signOut(): Promise<void> {
     <ul v-else-if="categories?.length" class="categories">
       <li v-for="category in categories" :key="category.id">
         <span>Semana {{ category.week_number }} · {{ category.title }}</span>
-        <span class="status">{{ category.status }}</span>
+        <span class="status">{{ CATEGORY_STATUS_LABELS[category.status] }}</span>
       </li>
     </ul>
 
@@ -66,6 +71,12 @@ async function signOut(): Promise<void> {
 header {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.actions {
+  display: flex;
   align-items: center;
   gap: 1rem;
 }
