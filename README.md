@@ -142,7 +142,13 @@ Now `http://localhost:3000/login` → **Entrar con Google** should land you on o
 
 ## Roles
 
-Judges register participants (name + Google email, optional drag name) in **/admin/participants** before they ever sign in. The first Google sign-in with that email links the login to the registered record (trigger `handle_new_user`); judges can upload their looks in the meantime. Anyone who signs in with an unregistered email is created as `concursante`.
+Judges register participants (name + Google email, optional drag name) in **/admin/participants** before they ever sign in. The first Google sign-in with that email links the login to the registered record (trigger `handle_new_user`); judges can upload their looks in the meantime. Sign-up is restricted: a first sign-in with an email that isn't registered (or isn't verified by the provider) is rejected by `handle_new_user` and no login is created.
+
+**Bootstrapping the first judge:** since nobody can sign up unregistered, insert the first judge in the **SQL Editor** before they sign in:
+
+```sql
+insert into public.participants (name, email, role) values ('Name', 'judge@example.com', 'jurado');
+```
 
 Judges can't be self-assigned from the app, and a person's role can't be changed after registering them (only at registration time). To promote someone later, use the **SQL Editor**:
 
