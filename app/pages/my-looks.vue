@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import type { Tables } from '~/types/database.types'
-import type { CategoryStatus } from '~/utils/categoryStatus'
+import type { RunwayStatus } from '~/utils/runwayStatus'
 
 interface MyLook {
   id: string
   image_url: string
   intro: string | null
-  category: Pick<Tables<'categories'>, 'id' | 'week_number' | 'title' | 'status'>
-  /** Final place in the category; null while it is not public or the look got no votes */
+  category: Pick<Tables<'categories'>, 'id' | 'title'> & {
+    runway: Pick<Tables<'runways'>, 'id' | 'week_number' | 'status'>
+  }
+  /** Final place of the queen in the runway; null while it is not public or she got no votes */
   place: number | null
   totalPoints: number | null
 }
@@ -15,54 +17,54 @@ interface MyLook {
 const supabase = useSupabaseClient()
 const { participant } = useCurrentParticipant()
 
-// Only the signed-in participant's own looks; draft categories stay hidden by RLS
+// Only the signed-in participant's own looks; draft runways stay hidden by RLS
 const { data, error } = await useAsyncData('my-looks', async (): Promise<MyLook[]> => {
   const participantId = participant.value?.id
   if (!participantId) return []
 
   const { data: rows, error: looksError } = await supabase
     .from('looks')
-    .select('id, image_url, intro, category:categories!looks_category_id_fkey(id, week_number, title, status)')
+    .select('id, image_url, intro, category:categories!looks_category_id_fkey(id, title, runway:runways!categories_runway_id_fkey(id, week_number, status))')
     .eq('participant_id', participantId)
 
   if (looksError) throw looksError
 
   // The ranking is public from 'reveal' (Top 3 only) and complete once 'closed'
-  const rankedCategories = [...new Map(
+  const rankedRunways = [...new Map(
     rows
-      .filter(row => row.category.status === 'reveal' || row.category.status === 'closed')
-      .map(row => [row.category.id, row.category.status]),
+      .filter(row => row.category.runway.status === 'reveal' || row.category.runway.status === 'closed')
+      .map(row => [row.category.runway.id, row.category.runway.status]),
   )]
 
-  const rankings = await Promise.all(rankedCategories.map(async ([categoryId, status]) => {
+  const rankings = await Promise.all(rankedRunways.map(async ([runwayId, status]) => {
     const { data: ranking, error: rankingError } = status === 'closed'
-      ? await supabase.rpc('category_ranking', { p_category_id: categoryId })
-      : await supabase.rpc('category_top_three', { p_category_id: categoryId })
+      ? await supabase.rpc('runway_ranking', { p_runway_id: runwayId })
+      : await supabase.rpc('runway_top_three', { p_runway_id: runwayId })
     if (rankingError) throw rankingError
-    return ranking
+    return [runwayId, ranking.find(row => row.participant_id === participantId)] as const
   }))
-  const resultByLook = new Map(rankings.flat().map(row => [row.look_id, row]))
+  const resultByRunway = new Map(rankings)
 
   return rows
     .map(row => ({
       ...row,
-      place: resultByLook.get(row.id)?.place ?? null,
-      totalPoints: resultByLook.get(row.id)?.total_points ?? null,
+      place: resultByRunway.get(row.category.runway.id)?.place ?? null,
+      totalPoints: resultByRunway.get(row.category.runway.id)?.total_points ?? null,
     }))
-    .sort((a, b) => b.category.week_number - a.category.week_number)
+    .sort((a, b) => b.category.runway.week_number - a.category.runway.week_number)
 })
 
 const looks = computed(() => data.value ?? [])
 
-/** What to show instead of a place when the look has none */
+/** What to show instead of a place when the queen has none */
 function pendingLabel(look: MyLook): string {
-  const labels: Partial<Record<CategoryStatus, string>> = {
+  const labels: Partial<Record<RunwayStatus, string>> = {
     runway: 'En pasarela',
     voting: 'Votación en curso',
     reveal: 'Fuera del Top 3',
     closed: 'Sin votos',
   }
-  return labels[look.category.status] ?? ''
+  return labels[look.category.runway.status] ?? ''
 }
 </script>
 
@@ -86,19 +88,19 @@ function pendingLabel(look: MyLook): string {
 
     <ul v-else-if="looks.length" class="gallery">
       <li v-for="look in looks" :key="look.id">
-        <NuxtLink :to="`/categories/${look.category.id}`" class="look-card">
+        <NuxtLink :to="`/runways/${look.category.runway.id}`" class="look-card">
           <span v-if="look.place" class="look-card__rank">{{ look.place }}</span>
           <span v-if="look.place === 1" class="look-card__crown" role="img" aria-label="Ganadora">♛</span>
           <img
             class="look-card__photo"
             :src="look.image_url"
-            :alt="`Mi look de la semana ${look.category.week_number}`"
+            :alt="`Mi look de la semana ${look.category.runway.week_number}`"
             loading="lazy"
           >
           <span class="look-card__body">
             <span class="look-card__name">{{ look.category.title }}</span>
             <span class="look-card__intro">
-              Semana {{ look.category.week_number }} ·
+              Semana {{ look.category.runway.week_number }} ·
               <template v-if="look.place">
                 Puesto {{ look.place }}<template v-if="look.totalPoints !== null"> · {{ look.totalPoints }} pts</template>
               </template>
@@ -110,7 +112,7 @@ function pendingLabel(look: MyLook): string {
     </ul>
 
     <p v-else class="empty">
-      Todavía no has desfilado en ninguna categoría.
+      Todavía no has desfilado en ninguna pasarela.
     </p>
   </main>
 </template>

@@ -71,6 +71,8 @@ All schema changes live in [`supabase/migrations/`](supabase/migrations) and are
 | `20261101000200_grant_table_privileges.sql` | Explicit table `GRANT`s for the `authenticated` role |
 | `20261101000300_add_participants_drag_name.sql` | `participants.drag_name` (unique, case-insensitive) |
 | `20261102000000_participants_preregistration.sql` | `participants.user_id`: judges pre-register people by email and the first Google sign-in links to them; ownership rules now go through `current_participant_id()` |
+| `20261102001400_runways.sql` | `runways` (week, date, status) group 1..N categories; status and week move off `categories`; ballots become a Top 3 of **queens** per runway (existing ballots are converted); `runway_top_three` / `runway_ranking` |
+| `20261102001500_runway_datetime.sql` | `runways.runway_date` becomes `timestamptz` (date and time of the runway) |
 
 ### Apply them with the Supabase CLI (recommended)
 
@@ -158,10 +160,10 @@ update public.participants set role = 'jurado' where email = 'someone@gmail.com'
 
 | Role | Can do |
 |---|---|
-| `jurado` | Everything a contestant can, plus create/edit categories, change their status, upload looks |
-| `concursante` | See non-draft categories and looks, vote Top 3 during `voting` (never for their own look) |
+| `jurado` | Everything a contestant can, plus create/edit runways and their categories, change the runway status, upload looks |
+| `concursante` | See non-draft runways, categories and looks, vote a Top 3 of queens per runway during `voting` (never for themself) |
 
-Category lifecycle: `draft` → `runway` → `voting` → `reveal` → `closed`. During `reveal` the homepage animates the Top 3 (via the `category_top_three` function); individual votes are visible to everyone once a category is `closed`.
+A **runway** is one week (date and time + status) with one or more **categories**; each queen uploads one look per category and voters rank a Top 3 of queens for the whole runway. Runway lifecycle: `draft` → `werk_room` → `runway` → `voting` → `reveal` → `closed`. During `reveal` the homepage animates the Top 3 (via the `runway_top_three` function); individual votes are visible to everyone once a runway is `closed`.
 
 ---
 

@@ -1,27 +1,27 @@
 <script setup lang="ts">
-import type { CategoryWinner } from '~/composables/useCategoryWinners'
+import type { RunwayQueen } from '~/composables/useRunwayResults'
 
 defineProps<{
-  category: { id: string, week_number: number, title: string }
-  winner?: CategoryWinner | null
+  runway: { id: string, week_number: number, runway_date: string, categories: { id: string, title: string }[] }
+  winner?: RunwayQueen | null
 }>()
 </script>
 
 <template>
-  <NuxtLink :to="`/categories/${category.id}`" class="past-card" :class="{ 'past-card--no-photo': !winner }">
+  <NuxtLink :to="`/runways/${runway.id}`" class="past-card" :class="{ 'past-card--no-photo': !winner }">
     <img
       v-if="winner"
       class="past-card__photo"
       :src="winner.image_url"
-      :alt="`Look de ${winner.name}, ganadora de la semana ${category.week_number}`"
+      :alt="`Look de ${winner.name}, ganadora de la semana ${runway.week_number}`"
       loading="lazy"
     >
     <div class="past-card__body">
       <p class="kicker">
-        Semana {{ category.week_number }}
+        Semana {{ runway.week_number }} · {{ formatRunwayDate(runway.runway_date) }}
       </p>
       <h3 class="past-card__title">
-        {{ category.title }}
+        {{ runwayTitle(runway.categories) }}
       </h3>
       <p v-if="winner" class="past-card__winner">
         <span class="past-card__crown" aria-hidden="true">♛</span>

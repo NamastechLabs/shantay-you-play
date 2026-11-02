@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { CategoryStatus } from '~/utils/categoryStatus'
+import type { RunwayStatus } from '~/utils/runwayStatus'
 
-defineProps<{ status: CategoryStatus }>()
+defineProps<{ status: RunwayStatus }>()
 </script>
 
 <template>
   <span class="badge" :class="`badge--${status}`">
-    {{ CATEGORY_STATUS_LABELS[status] }}
+    {{ RUNWAY_STATUS_LABELS[status] }}
   </span>
 </template>

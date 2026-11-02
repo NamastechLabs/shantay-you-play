@@ -1,11 +1,11 @@
 /**
- * Calls `onChange` whenever a category row changes (status, title, ...).
+ * Calls `onChange` whenever a runway row changes (status, date, ...).
  * Realtime respects RLS, so contestants never hear about drafts. The event is
  * only a signal: callers refetch their own data. Client-side only.
  *
- * @param categoryId limit the subscription to a single category
+ * @param runwayId limit the subscription to a single runway
  */
-export function useCategoriesRealtime(onChange: () => void, categoryId?: string): void {
+export function useRunwaysRealtime(onChange: () => void, runwayId?: string): void {
   const supabase = useSupabaseClient()
 
   // Bursts of events (several admin edits at once) collapse into one refetch
@@ -17,16 +17,16 @@ export function useCategoriesRealtime(onChange: () => void, categoryId?: string)
 
   onMounted(() => {
     const channel = supabase
-      .channel(`categories-${categoryId ?? 'all'}`)
+      .channel(`runways-${runwayId ?? 'all'}`)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'categories', ...(categoryId && { filter: `id=eq.${categoryId}` }) },
+        { event: '*', schema: 'public', table: 'runways', ...(runwayId && { filter: `id=eq.${runwayId}` }) },
         notify,
       )
       // Anything may have changed while the socket was down (or the tab was asleep)
       .subscribe((status, error) => {
         if (status === 'SUBSCRIBED') notify()
-        else if (error) console.warn('Realtime de categorías:', error.message)
+        else if (error) console.warn('Realtime de pasarelas:', error.message)
       })
 
     onBeforeUnmount(() => {

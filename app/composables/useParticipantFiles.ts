@@ -1,6 +1,6 @@
 /**
  * Storage cleanup for rows removed through cascading foreign keys. Deleting a
- * participant cascades to their looks, but the files in Storage are not touched by
+ * participant (or a category) cascades to their looks, but the files in Storage are not touched by
  * Postgres, so the app lists the paths first and removes them after the delete.
  * (Deleting storage.objects rows from SQL would leave the underlying files behind.)
  */
@@ -37,6 +37,21 @@ export function useParticipantFiles() {
     }
   }
 
+  /** Lists every look file of a category. Call it BEFORE deleting the category row. */
+  async function listCategoryFiles(categoryId: string) {
+    const [looks, juryLooks] = await Promise.all([
+      supabase.from('looks').select('image_url').eq('category_id', categoryId),
+      supabase.from('jury_looks').select('image_url').eq('category_id', categoryId),
+    ])
+    if (looks.error) throw looks.error
+    if (juryLooks.error) throw juryLooks.error
+
+    return {
+      looks: toPaths(config.runwayLooksBucket, [...looks.data, ...juryLooks.data].map((row) => row.image_url)),
+      avatars: [],
+    }
+  }
+
   /** Best effort: leftover files are harmless, so failures are ignored. */
   async function removeFiles(files: { looks: string[], avatars: string[] }): Promise<void> {
     const jobs = [
@@ -48,5 +63,5 @@ export function useParticipantFiles() {
     )
   }
 
-  return { listParticipantFiles, removeFiles }
+  return { listParticipantFiles, listCategoryFiles, removeFiles }
 }

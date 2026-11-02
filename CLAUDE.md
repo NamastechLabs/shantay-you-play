@@ -23,7 +23,7 @@
   - **Retro glam** (`retro-glam`): light and dusty: blush pink, sage mint, rose and champagne (inspired by the Natasha Denona Retro Glam palette); Playfair Display + DM Sans.
   - **Neon nightclub** (`neon-nightclub`): black background with neon magenta, orange, yellow, blue and purple (from a neon eyeshadow palette); Bungee + Inter.
 - **Code layout:** theme values live in `app/assets/scss/tokens/_themes.scss` (one Sass map per theme, emitted as CSS custom properties). Shared classes (`.btn`, `.badge`, `.field`, `.card`, `.row`, `.modal`, `.stepper`) are in `app/assets/scss/components/`. Theme state lives in `app/utils/themes.ts` and `app/composables/useTheme.ts`. To add a theme: add a map, a `[data-theme]` block, and an entry in `THEMES` / `THEME_LABELS`.
-- **UI pattern:** list screens keep their list and add a primary button that opens `<AppModal>` for create/edit; editing a category is its own screen (`/admin/categories/[id]`). Modals are bottom sheets on phones.
+- **UI pattern:** list screens keep their list and add a primary button that opens `<AppModal>` for create/edit; editing a runway (week) and its categories is its own screen (`/admin/runways/[id]`). Modals are bottom sheets on phones.
 - **Brand heading and eyebrow colors** are separate tokens (`--color-title`, `--color-kicker`) because `--color-highlight`/`--color-accent` are not readable as text on every theme (e.g. yellow on the light Y2K page).
 - **Theming architecture:**
   - Never hardcode colors, fonts, radii, shadows or spacing in components. Use semantic CSS custom properties (e.g. `--color-surface`, `--color-primary`, `--color-accent`, `--color-highlight`, `--font-display`, `--font-body`, `--radius-md`, `--shadow-card`, `--glow-primary`).

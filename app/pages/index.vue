@@ -1,13 +1,8 @@
 <script setup lang="ts">
 import type { Tables } from '~/types/database.types'
 
-type OpenCategory = Pick<Tables<'categories'>, 'id' | 'week_number' | 'title' | 'intro_text' | 'status'>
-
-interface TopLook {
-  id: string
-  place: number
-  image_url: string
-  name: string
+interface OpenRunway extends Pick<Tables<'runways'>, 'id' | 'week_number' | 'runway_date' | 'status'> {
+  categories: Pick<Tables<'categories'>, 'id' | 'title' | 'intro_text'>[]
 }
 
 interface JuryMember {
@@ -15,133 +10,124 @@ interface JuryMember {
   image_url: string
   intro: string
   name: string
+  /** Only set when the runway has several categories */
+  categoryTitle: string | null
 }
 
 interface HomeData {
-  categories: OpenCategory[]
-  /** Voting categories where the current participant already cast a ballot */
-  votedCategoryIds: string[]
-  /** Top 3 of the category being revealed (empty when there is none) */
-  topThree: TopLook[]
-  /** Judges' looks of the week's category while it is on the runway (empty otherwise) */
+  runways: OpenRunway[]
+  /** Voting runways where the current participant already cast a ballot */
+  votedRunwayIds: string[]
+  /** Top 3 queens of the runway being revealed (empty when there is none) */
+  topThree: RunwayQueen[]
+  /** Judges' looks of the week's runway while it is on the runway (empty otherwise) */
   jury: JuryMember[]
-  /** Most recent closed category with its winner (null when none has closed yet) */
-  previousWeek: { category: Pick<Tables<'categories'>, 'id' | 'week_number' | 'title'>, winner: CategoryWinner | null } | null
+  /** Most recent closed runway with its winner (null when none has closed yet) */
+  previousWeek: { runway: OpenRunway, winner: RunwayQueen | null } | null
 }
 
-interface CategoryAction {
+interface RunwayAction {
   to: string
   label: string
 }
 
+const RUNWAY_COLUMNS = 'id, week_number, runway_date, status, categories(id, title, intro_text)'
+
 const supabase = useSupabaseClient()
-const { loadWinners } = useCategoryWinners()
+const { loadTopThree, loadWinners } = useRunwayResults()
 const { participant } = useCurrentParticipant()
 
 // RLS already hides drafts from contestants
 const { data, error, refresh } = await useAsyncData('home', async (): Promise<HomeData> => {
-  const { data: categories, error } = await supabase
-    .from('categories')
-    .select('id, week_number, title, intro_text, status')
+  const { data: runways, error } = await supabase
+    .from('runways')
+    .select(RUNWAY_COLUMNS)
     .in('status', ['werk_room', 'runway', 'voting', 'reveal'])
     .order('week_number', { ascending: false })
+    .order('created_at', { referencedTable: 'categories', ascending: true })
 
   if (error) throw error
 
-  const revealCategory = categories.find(category => category.status === 'reveal')
-  const featured = pickWeekCategory(categories)
-  const [topThree, votedCategoryIds, jury, previousWeek] = await Promise.all([
-    revealCategory ? loadTopThree(revealCategory.id) : [],
-    loadVotedCategoryIds(categories),
-    featured?.status === 'runway' ? loadJury(featured.id) : [],
+  const revealRunway = runways.find(runway => runway.status === 'reveal')
+  const featured = pickWeekRunway(runways)
+  const [topThree, votedRunwayIds, jury, previousWeek] = await Promise.all([
+    revealRunway ? loadTopThree(revealRunway.id) : [],
+    loadVotedRunwayIds(runways),
+    featured?.status === 'runway' ? loadJury(featured) : [],
     loadPreviousWeek(),
   ])
 
-  return { categories, votedCategoryIds, topThree, jury, previousWeek }
+  return { runways, votedRunwayIds, topThree, jury, previousWeek }
 })
 
 async function loadPreviousWeek(): Promise<HomeData['previousWeek']> {
   const { data: closed, error: closedError } = await supabase
-    .from('categories')
-    .select('id, week_number, title')
+    .from('runways')
+    .select(RUNWAY_COLUMNS)
     .eq('status', 'closed')
     .order('week_number', { ascending: false })
+    .order('created_at', { referencedTable: 'categories', ascending: true })
     .limit(1)
   if (closedError) throw closedError
 
-  const category = closed[0]
-  if (!category) return null
-  const winners = await loadWinners([category.id])
-  return { category, winner: winners[category.id] ?? null }
+  const runway = closed[0]
+  if (!runway) return null
+  const winners = await loadWinners([runway.id])
+  return { runway, winner: winners[runway.id] ?? null }
 }
 
 // Status changes (voting -> reveal -> closed) reach everyone without a page refresh
-useCategoriesRealtime(refresh)
+useRunwaysRealtime(refresh)
 
-async function loadTopThree(categoryId: string): Promise<TopLook[]> {
-  const { data: ranking, error: rankingError } = await supabase.rpc('category_top_three', { p_category_id: categoryId })
-  if (rankingError) throw rankingError
-  if (!ranking.length) return []
+async function loadJury(runway: OpenRunway): Promise<JuryMember[]> {
+  const categoryIds = runway.categories.map(category => category.id)
+  if (!categoryIds.length) return []
 
-  const { data: looks, error: looksError } = await supabase
-    .from('looks')
-    .select('id, image_url, participant:participants!looks_participant_id_fkey(name, drag_name)')
-    .in('id', ranking.map(row => row.look_id))
-  if (looksError) throw looksError
-
-  const placeByLook = new Map(ranking.map(row => [row.look_id, row.place]))
-  return looks.map(look => ({
-    id: look.id,
-    place: placeByLook.get(look.id) ?? 0,
-    image_url: look.image_url,
-    name: look.participant.drag_name ?? look.participant.name,
-  }))
-}
-
-async function loadJury(categoryId: string): Promise<JuryMember[]> {
   const { data: rows, error: juryError } = await supabase
     .from('jury_looks')
-    .select('id, image_url, intro, participant:participants!jury_looks_participant_id_fkey(name, drag_name)')
-    .eq('category_id', categoryId)
+    .select('id, category_id, image_url, intro, participant:participants!jury_looks_participant_id_fkey(name, drag_name)')
+    .in('category_id', categoryIds)
     .order('created_at', { ascending: true })
   if (juryError) throw juryError
 
+  const titleByCategory = new Map(runway.categories.map(category => [category.id, category.title]))
   return rows.map(row => ({
     id: row.id,
     image_url: row.image_url,
     intro: row.intro,
     name: row.participant.drag_name ?? row.participant.name,
+    categoryTitle: runway.categories.length > 1 ? titleByCategory.get(row.category_id) ?? null : null,
   }))
 }
 
-async function loadVotedCategoryIds(categories: OpenCategory[]): Promise<string[]> {
-  const votingIds = categories.filter(category => category.status === 'voting').map(category => category.id)
+async function loadVotedRunwayIds(runways: OpenRunway[]): Promise<string[]> {
+  const votingIds = runways.filter(runway => runway.status === 'voting').map(runway => runway.id)
   if (!votingIds.length || !participant.value) return []
 
   const { data: ballots, error: ballotsError } = await supabase
     .from('votes')
-    .select('category_id')
+    .select('runway_id')
     .eq('voter_id', participant.value.id)
-    .in('category_id', votingIds)
+    .in('runway_id', votingIds)
 
   if (ballotsError) throw ballotsError
-  return ballots.map(ballot => ballot.category_id)
+  return ballots.map(ballot => ballot.runway_id)
 }
 
-// Several categories can be open at once (last week still voting while the new runway opens):
-// a category being revealed takes the stage, otherwise the newest one is the week's category.
+// Several runways can be open at once (last week still voting while the new one opens):
+// a runway being revealed takes the stage, otherwise the newest one is the week's runway.
 // The rest stay reachable below it.
-function pickWeekCategory(categories: OpenCategory[]): OpenCategory | null {
-  return categories.find(category => category.status === 'reveal') ?? categories[0] ?? null
+function pickWeekRunway(runways: OpenRunway[]): OpenRunway | null {
+  return runways.find(runway => runway.status === 'reveal') ?? runways[0] ?? null
 }
-const weekCategory = computed(() => pickWeekCategory(data.value?.categories ?? []))
-const otherOpenCategories = computed(() =>
-  data.value?.categories.filter(category => category.id !== weekCategory.value?.id) ?? [],
+const weekRunway = computed(() => pickWeekRunway(data.value?.runways ?? []))
+const otherOpenRunways = computed(() =>
+  data.value?.runways.filter(runway => runway.id !== weekRunway.value?.id) ?? [],
 )
-const revealedTopThree = computed(() => (weekCategory.value?.status === 'reveal' ? data.value?.topThree ?? [] : []))
-const runwayJury = computed(() => (weekCategory.value?.status === 'runway' ? data.value?.jury ?? [] : []))
+const revealedTopThree = computed(() => (weekRunway.value?.status === 'reveal' ? data.value?.topThree ?? [] : []))
+const runwayJury = computed(() => (weekRunway.value?.status === 'runway' ? data.value?.jury ?? [] : []))
 
-const STATUS_HINTS: Record<OpenCategory['status'], string> = {
+const STATUS_HINTS: Record<OpenRunway['status'], string> = {
   draft: '',
   werk_room: 'Las reinas se preparan en el Werk Room.',
   runway: 'La votación abrirá pronto.',
@@ -150,11 +136,11 @@ const STATUS_HINTS: Record<OpenCategory['status'], string> = {
   closed: '',
 }
 
-// The runway stays hidden until voting opens, so only voting categories have an action
-function primaryAction(category: OpenCategory): CategoryAction | null {
-  if (category.status !== 'voting') return null
-  const hasVoted = data.value?.votedCategoryIds.includes(category.id) ?? false
-  return { to: `/categories/${category.id}/vote`, label: hasVoted ? 'Cambiar mi Top 3' : 'Votar los mejores looks' }
+// The runway stays hidden until voting opens, so only voting runways have an action
+function primaryAction(runway: OpenRunway): RunwayAction | null {
+  if (runway.status !== 'voting') return null
+  const hasVoted = data.value?.votedRunwayIds.includes(runway.id) ?? false
+  return { to: `/runways/${runway.id}/vote`, label: hasVoted ? 'Cambiar mi Top 3' : 'Votar a las mejores reinas' }
 }
 </script>
 
@@ -166,27 +152,25 @@ function primaryAction(category: OpenCategory): CategoryAction | null {
       {{ toErrorMessage(error) }}
     </p>
 
-    <section v-else-if="weekCategory" class="week-hero" aria-labelledby="week-title">
+    <section v-else-if="weekRunway" class="week-hero" aria-labelledby="week-title">
       <p class="kicker week-hero__kicker">
-        Categoría de la semana · Semana {{ weekCategory.week_number }}
-        <StatusBadge :status="weekCategory.status" />
+        {{ weekRunway.categories.length > 1 ? 'Categorías de la semana' : 'Categoría de la semana' }} · Semana {{ weekRunway.week_number }} · {{ formatRunwayDate(weekRunway.runway_date) }}
+        <StatusBadge :status="weekRunway.status" />
       </p>
 
       <h1 id="week-title" class="display week-hero__title">
-        {{ weekCategory.title }}
+        {{ runwayTitle(weekRunway.categories) }}
       </h1>
       <span class="rule" aria-hidden="true" />
 
-      <p v-if="weekCategory.intro_text" class="lead week-hero__intro">
-        {{ weekCategory.intro_text }}
-      </p>
+      <RunwayCategories :categories="weekRunway.categories" />
 
       <p class="week-hero__status">
-        {{ weekCategory.status === 'voting'
-          ? '¡La votación está abierta! Elige tu Top 3 de la semana.'
-          : weekCategory.status === 'reveal'
+        {{ weekRunway.status === 'voting'
+          ? '¡La votación está abierta! Elige tu Top 3 de reinas de la semana.'
+          : weekRunway.status === 'reveal'
             ? '¡La votación terminó! Estas son las tres mejores reinas de la semana.'
-            : weekCategory.status === 'werk_room'
+            : weekRunway.status === 'werk_room'
               ? 'Las reinas se están preparando en el Werk Room. ¡La pasarela abrirá pronto!'
               : 'Las reinas ya están en la pasarela. La votación abrirá pronto.' }}
       </p>
@@ -200,6 +184,7 @@ function primaryAction(category: OpenCategory): CategoryAction | null {
             <img class="jury__photo" :src="member.image_url" :alt="`Look de ${member.name}`" loading="lazy">
             <div class="jury__body">
               <strong class="jury__name">{{ member.name }}</strong>
+              <span v-if="member.categoryTitle" class="muted">{{ member.categoryTitle }}</span>
               <p class="jury__intro">
                 {{ member.intro }}
               </p>
@@ -210,16 +195,16 @@ function primaryAction(category: OpenCategory): CategoryAction | null {
 
       <TopThreeReveal
         v-if="revealedTopThree.length"
-        :key="weekCategory.id"
+        :key="weekRunway.id"
         class="week-hero__reveal"
-        :looks="revealedTopThree"
+        :queens="revealedTopThree"
       />
 
-      <div v-if="primaryAction(weekCategory)" class="actions">
-        <NuxtLink :to="primaryAction(weekCategory)!.to" class="btn btn--primary">
-          {{ primaryAction(weekCategory)!.label }}
+      <div v-if="primaryAction(weekRunway)" class="actions">
+        <NuxtLink :to="primaryAction(weekRunway)!.to" class="btn btn--primary">
+          {{ primaryAction(weekRunway)!.label }}
         </NuxtLink>
-        <NuxtLink :to="`/categories/${weekCategory.id}`" class="btn btn--secondary">
+        <NuxtLink :to="`/runways/${weekRunway.id}`" class="btn btn--secondary">
           Ver la pasarela
         </NuxtLink>
       </div>
@@ -235,25 +220,25 @@ function primaryAction(category: OpenCategory): CategoryAction | null {
       </p>
     </section>
 
-    <section v-if="otherOpenCategories.length" class="section" aria-labelledby="open-title">
+    <section v-if="otherOpenRunways.length" class="section" aria-labelledby="open-title">
       <h2 id="open-title">
         Siguen abiertas
       </h2>
       <ul class="row-list">
-        <li v-for="category in otherOpenCategories" :key="category.id">
-          <NuxtLink v-if="primaryAction(category)" :to="primaryAction(category)!.to" class="row row--link">
+        <li v-for="runway in otherOpenRunways" :key="runway.id">
+          <NuxtLink v-if="primaryAction(runway)" :to="primaryAction(runway)!.to" class="row row--link">
             <span class="row__main">
-              <span class="row__title">Semana {{ category.week_number }} · {{ category.title }}</span>
-              <span class="muted">{{ primaryAction(category)!.label }}</span>
+              <span class="row__title">Semana {{ runway.week_number }} · {{ runwayTitle(runway.categories) }}</span>
+              <span class="muted">{{ primaryAction(runway)!.label }}</span>
             </span>
-            <StatusBadge :status="category.status" />
+            <StatusBadge :status="runway.status" />
           </NuxtLink>
           <div v-else class="row">
             <span class="row__main">
-              <span class="row__title">Semana {{ category.week_number }} · {{ category.title }}</span>
-              <span class="muted">{{ STATUS_HINTS[category.status] }}</span>
+              <span class="row__title">Semana {{ runway.week_number }} · {{ runwayTitle(runway.categories) }}</span>
+              <span class="muted">{{ STATUS_HINTS[runway.status] }}</span>
             </span>
-            <StatusBadge :status="category.status" />
+            <StatusBadge :status="runway.status" />
           </div>
         </li>
       </ul>
@@ -263,12 +248,12 @@ function primaryAction(category: OpenCategory): CategoryAction | null {
       <h2 id="previous-title">
         La semana pasada
       </h2>
-      <PastCategoryCard :category="data.previousWeek.category" :winner="data.previousWeek.winner" />
+      <PastRunwayCard :runway="data.previousWeek.runway" :winner="data.previousWeek.winner" />
     </section>
 
-    <NuxtLink to="/categories/past" class="row row--link past-link">
+    <NuxtLink to="/runways/past" class="row row--link past-link">
       <span class="row__main">
-        <span class="row__title">Categorías pasadas</span>
+        <span class="row__title">Semanas pasadas</span>
         <span class="muted">Revive cada pasarela de la temporada.</span>
       </span>
       <span aria-hidden="true">→</span>
@@ -309,11 +294,6 @@ function primaryAction(category: OpenCategory): CategoryAction | null {
 .week-hero__title {
   font-size: clamp(2rem, 1.5rem + 2.5vw, 3rem);
   overflow-wrap: anywhere;
-}
-
-.week-hero__intro {
-  max-width: 40rem;
-  white-space: pre-line;
 }
 
 .week-hero__status {

@@ -1,19 +1,11 @@
 <script setup lang="ts">
-interface RevealLook {
-  id: string
-  /** 1 = winner */
-  place: number
-  image_url: string
-  name: string
-}
-
 const props = withDefaults(defineProps<{
-  looks: RevealLook[]
+  queens: RunwayQueen[]
   /** How long the three queens are shown together before the winner is crowned */
   delayMs?: number
 }>(), { delayMs: 5000 })
 
-const lineup = ref<RevealLook[]>([])
+const lineup = ref<RunwayQueen[]>([])
 const crowned = ref(false)
 let timer: ReturnType<typeof setTimeout> | undefined
 
@@ -28,7 +20,7 @@ function shuffle<T>(items: readonly T[]): T[] {
 
 // The random order is client-only so server and client markup match (no hydration mismatch)
 onMounted(() => {
-  lineup.value = shuffle(props.looks)
+  lineup.value = shuffle(props.queens)
   timer = setTimeout(() => {
     crowned.value = true
   }, props.delayMs)
@@ -38,7 +30,7 @@ onBeforeUnmount(() => clearTimeout(timer))
 
 // Animating the track sizes makes the winner grow to the centre while the others collapse
 const columns = computed(() =>
-  lineup.value.map(look => (crowned.value && look.place !== 1 ? '0fr' : '1fr')).join(' '),
+  lineup.value.map(queen => (crowned.value && queen.place !== 1 ? '0fr' : '1fr')).join(' '),
 )
 </script>
 
@@ -51,17 +43,17 @@ const columns = computed(() =>
     aria-label="Top 3 de la semana"
   >
     <figure
-      v-for="look in lineup"
-      :key="look.id"
+      v-for="queen in lineup"
+      :key="queen.id"
       class="reveal__card"
-      :class="{ 'reveal__card--winner': crowned && look.place === 1, 'reveal__card--out': crowned && look.place !== 1 }"
-      :aria-hidden="crowned && look.place !== 1 ? 'true' : undefined"
+      :class="{ 'reveal__card--winner': crowned && queen.place === 1, 'reveal__card--out': crowned && queen.place !== 1 }"
+      :aria-hidden="crowned && queen.place !== 1 ? 'true' : undefined"
     >
-      <img class="reveal__photo" :src="look.image_url" :alt="`Look de ${look.name}`">
-      <span v-if="look.place === 1" class="reveal__crown" aria-hidden="true">♛</span>
+      <img class="reveal__photo" :src="queen.image_url" :alt="`Look de ${queen.name}`">
+      <span v-if="queen.place === 1" class="reveal__crown" aria-hidden="true">♛</span>
       <figcaption class="reveal__caption">
-        <span class="reveal__name">{{ look.name }}</span>
-        <span v-if="crowned && look.place === 1" class="reveal__label" role="status">¡Ganadora de la semana!</span>
+        <span class="reveal__name">{{ queen.name }}</span>
+        <span v-if="crowned && queen.place === 1" class="reveal__label" role="status">¡Ganadora de la semana!</span>
       </figcaption>
     </figure>
   </div>
