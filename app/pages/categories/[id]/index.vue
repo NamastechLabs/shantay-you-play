@@ -13,6 +13,8 @@ interface RunwayLook {
 interface RunwayData {
   category: Category
   looks: RunwayLook[]
+  /** Final place per look id; only filled once the category is closed */
+  placeByLook: Record<string, number>
 }
 
 const route = useRoute()
@@ -40,7 +42,14 @@ const { data, error: loadError } = await useAsyncData(
     if (looks.error) throw looks.error
     if (!category.data) return null
 
-    return { category: category.data, looks: looks.data }
+    let placeByLook: Record<string, number> = {}
+    if (category.data.status === 'closed') {
+      const ranking = await supabase.rpc('category_ranking', { p_category_id: categoryId })
+      if (ranking.error) throw ranking.error
+      placeByLook = Object.fromEntries(ranking.data.map(row => [row.look_id, row.place]))
+    }
+
+    return { category: category.data, looks: looks.data, placeByLook }
   },
 )
 
@@ -49,7 +58,15 @@ if (!loadError.value && !data.value) {
 }
 
 const category = computed(() => data.value?.category ?? null)
-const looks = computed(() => data.value?.looks ?? [])
+const placeByLook = computed(() => data.value?.placeByLook ?? {})
+
+// Closed categories list the final ranking first; looks nobody voted for keep their runway order
+const looks = computed(() => {
+  const all = data.value?.looks ?? []
+  if (category.value?.status !== 'closed') return all
+  const place = (look: RunwayLook): number => placeByLook.value[look.id] ?? Infinity
+  return [...all].sort((a, b) => place(a) - place(b))
+})
 
 const displayName = (look: RunwayLook): string => look.participant.drag_name ?? look.participant.name
 
@@ -84,6 +101,8 @@ const selectedLook = ref<RunwayLook | null>(null)
     <ul v-if="looks.length" class="gallery">
       <li v-for="look in looks" :key="look.id">
         <button type="button" class="look-card" @click="selectedLook = look">
+          <span v-if="placeByLook[look.id]" class="look-card__rank">{{ placeByLook[look.id] }}</span>
+          <span v-if="placeByLook[look.id] === 1" class="look-card__crown" role="img" aria-label="Ganadora">♛</span>
           <img
             class="look-card__photo"
             :src="look.image_url"

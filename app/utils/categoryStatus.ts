@@ -3,12 +3,13 @@ import type { Enums } from '~/types/database.types'
 export type CategoryStatus = Enums<'category_status'>
 
 /** Lifecycle order of a weekly category */
-export const CATEGORY_STATUSES: readonly CategoryStatus[] = ['draft', 'runway', 'voting', 'closed']
+export const CATEGORY_STATUSES: readonly CategoryStatus[] = ['draft', 'runway', 'voting', 'reveal', 'closed']
 
 export const CATEGORY_STATUS_LABELS: Record<CategoryStatus, string> = {
   draft: 'Borrador',
   runway: 'Pasarela',
   voting: 'Votación',
+  reveal: 'Revelación',
   closed: 'Cerrada',
 }
 

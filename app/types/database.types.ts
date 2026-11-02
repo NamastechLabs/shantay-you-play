@@ -212,13 +212,29 @@ export type Database = {
         }
         Returns: boolean
       }
+      category_ranking: {
+        Args: { p_category_id: string }
+        Returns: {
+          look_id: string
+          place: number
+          total_points: number
+        }[]
+      }
+      category_top_three: {
+        Args: { p_category_id: string }
+        Returns: {
+          look_id: string
+          place: number
+          total_points: number
+        }[]
+      }
       is_jurado: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
     }
     Enums: {
-      category_status: 'draft' | 'runway' | 'voting' | 'closed'
+      category_status: 'draft' | 'runway' | 'voting' | 'reveal' | 'closed'
       participant_role: 'jurado' | 'concursante'
     }
     CompositeTypes: {

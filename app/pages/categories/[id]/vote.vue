@@ -235,7 +235,7 @@ async function saveBallot(): Promise<void> {
     </template>
 
     <p v-else class="empty">
-      {{ category.status === 'closed'
+      {{ category.status === 'closed' || category.status === 'reveal'
         ? 'La votación de esta categoría ya cerró.'
         : 'La votación aún no ha abierto. ¡Mientras tanto, disfruta de la pasarela!' }}
     </p>

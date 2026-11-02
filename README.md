@@ -155,7 +155,7 @@ update public.participants set role = 'jurado' where email = 'someone@gmail.com'
 | `jurado` | Everything a contestant can, plus create/edit categories, change their status, upload looks |
 | `concursante` | See non-draft categories and looks, vote Top 3 during `voting` (never for their own look) |
 
-Category lifecycle: `draft` → `runway` → `voting` → `closed`. Votes are visible to everyone once a category is `closed`.
+Category lifecycle: `draft` → `runway` → `voting` → `reveal` → `closed`. During `reveal` the homepage animates the Top 3 (via the `category_top_three` function); individual votes are visible to everyone once a category is `closed`.
 
 ---
 

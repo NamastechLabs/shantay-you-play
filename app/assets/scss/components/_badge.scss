@@ -45,6 +45,10 @@
     background-color: var(--color-primary);
   }
 
+  &--reveal {
+    background-color: var(--color-highlight);
+  }
+
   &--closed {
     color: var(--color-page);
     background-color: var(--color-text-muted);

@@ -96,8 +96,12 @@ const statusError = ref<string | null>(null)
 async function changeStatus(status: CategoryStatus): Promise<void> {
   if (statusSaving.value) return
 
-  const closing = status === 'closed'
-  if (closing && !window.confirm('Al cerrar la categoría se revelan todos los votos. ¿Continuar?')) return
+  const confirmation = status === 'reveal'
+    ? 'Al pasar a Revelación, la votación se cierra y la portada muestra el Top 3. ¿Continuar?'
+    : status === 'closed'
+      ? 'Al cerrar la categoría se revelan todos los votos. ¿Continuar?'
+      : null
+  if (confirmation && !window.confirm(confirmation)) return
 
   statusSaving.value = true
   statusError.value = null

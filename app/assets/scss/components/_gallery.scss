@@ -53,6 +53,23 @@
     box-shadow: var(--shadow-card);
   }
 
+  // Winner of a closed category
+  &__crown {
+    position: absolute;
+    top: var(--space-3);
+    right: var(--space-3);
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    font-size: 1.625rem;
+    line-height: 1;
+    color: var(--color-on-accent);
+    background-color: var(--color-highlight);
+    border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-card);
+  }
+
   &__photo {
     width: 100%;
     aspect-ratio: 3 / 4;
