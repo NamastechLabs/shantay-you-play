@@ -1,0 +1,137 @@
+// Theme tokens. Every name matches a Figma `Theme` variable (color/primary -> --color-primary).
+// Components only ever read these custom properties, so a theme is just a different set of values.
+// Switch themes with <html data-theme="...">; y2k-camp is the default.
+
+@mixin theme-vars($vars) {
+  @each $name, $value in $vars {
+    --#{$name}: #{$value};
+  }
+}
+
+$y2k-camp: (
+  'color-page': #eaf4ff,
+  'color-surface': #fff,
+  'color-surface-raised': #f6e9ff,
+  'color-text': #1b1340,
+  'color-text-muted': #5c5688,
+  'color-on-primary': #1b1340,
+  'color-on-accent': #1b1340,
+  'color-primary': #ff5fc8,
+  'color-primary-hover': #ff85d5,
+  'color-accent': #6de3ff,
+  'color-highlight': #ffe45e,
+  'color-border': #b9b4e6,
+  'color-focus': #6a4cff,
+  'color-success': #2db67c,
+  'color-warning': #ffb020,
+  'color-danger': #e5484d,
+  // Brand heading and eyebrow colors (readable on the light Y2K page)
+  'color-title': #6a4cff,
+  'color-kicker': #b8168c,
+  'radius-sm': 12px,
+  'radius-md': 20px,
+  'radius-lg': 32px,
+  'radius-pill': 999px,
+  'font-display': unquote("'Poppins', system-ui, sans-serif"),
+  'font-body': unquote("'Poppins', system-ui, sans-serif"),
+  'font-display-weight': 800,
+  'font-display-style': normal,
+  'font-heading-weight': 700,
+  'shadow-card': 0 8px 24px rgb(106 76 255 / 18%),
+  'shadow-raised': 0 16px 40px rgb(27 19 64 / 28%),
+  'glow-primary': 0 0 24px rgb(255 95 200 / 55%),
+  'glow-accent': 0 0 20px rgb(109 227 255 / 70%),
+  'page-backdrop': unquote('radial-gradient(60rem 40rem at 90% -10%, rgb(255 95 200 / 22%), transparent 60%), radial-gradient(50rem 36rem at -10% 20%, rgb(109 227 255 / 35%), transparent 60%)'),
+  'scrim': rgb(27 19 64 / 70%),
+);
+
+$retro-glam: (
+  'color-page': #2a0a1f,
+  'color-surface': #3d0f2e,
+  'color-surface-raised': #4f1639,
+  'color-text': #fff8ea,
+  'color-text-muted': #e3cfb0,
+  'color-on-primary': #fff8ea,
+  'color-on-accent': #2a0a1f,
+  'color-primary': #b0246f,
+  'color-primary-hover': #c9317f,
+  'color-accent': #d4a63a,
+  'color-highlight': #ebcb78,
+  'color-border': #6b2a4f,
+  'color-focus': #ebcb78,
+  'color-success': #5fbf8f,
+  'color-warning': #d4a63a,
+  'color-danger': #ff6b6b,
+  'color-title': #ebcb78,
+  'color-kicker': #d4a63a,
+  'radius-sm': 4px,
+  'radius-md': 8px,
+  'radius-lg': 16px,
+  'radius-pill': 999px,
+  'font-display': unquote("'Playfair Display', Georgia, serif"),
+  'font-body': unquote("'DM Sans', system-ui, sans-serif"),
+  'font-display-weight': 900,
+  'font-display-style': italic,
+  'font-heading-weight': 700,
+  'shadow-card': 0 8px 24px rgb(0 0 0 / 35%),
+  'shadow-raised': 0 16px 40px rgb(0 0 0 / 50%),
+  'glow-primary': 0 0 24px rgb(201 49 127 / 55%),
+  'glow-accent': 0 0 20px rgb(212 166 58 / 60%),
+  'page-backdrop': none,
+  'scrim': rgb(13 3 10 / 72%),
+);
+
+$neon-nightclub: (
+  'color-page': #0b0714,
+  'color-surface': #150e26,
+  'color-surface-raised': #1e1535,
+  'color-text': #f5eeff,
+  'color-text-muted': #a99bc8,
+  'color-on-primary': #12051c,
+  'color-on-accent': #f5eeff,
+  'color-primary': #ff2e93,
+  'color-primary-hover': #ff5caa,
+  'color-accent': #6d3bff,
+  'color-highlight': #00e5ff,
+  'color-border': #3a2a66,
+  'color-focus': #00e5ff,
+  'color-success': #2ef2a0,
+  'color-warning': #ffc857,
+  'color-danger': #ff4d6d,
+  'color-title': #ff5caa,
+  'color-kicker': #00e5ff,
+  'radius-sm': 2px,
+  'radius-md': 6px,
+  'radius-lg': 12px,
+  'radius-pill': 999px,
+  'font-display': unquote("'Bungee', Impact, sans-serif"),
+  'font-body': unquote("'Inter', system-ui, sans-serif"),
+  'font-display-weight': 400,
+  'font-display-style': normal,
+  'font-heading-weight': 400,
+  'shadow-card': 0 8px 24px rgb(0 0 0 / 50%),
+  'shadow-raised': 0 16px 40px rgb(0 0 0 / 65%),
+  'glow-primary': 0 0 28px rgb(255 46 147 / 65%),
+  'glow-accent': 0 0 24px rgb(0 229 255 / 55%),
+  'page-backdrop': unquote('radial-gradient(50rem 30rem at 85% -10%, rgb(109 59 255 / 30%), transparent 60%)'),
+  'scrim': rgb(4 1 10 / 78%),
+);
+
+:root,
+[data-theme='y2k-camp'] {
+  @include theme-vars($y2k-camp);
+
+  color-scheme: light;
+}
+
+[data-theme='retro-glam'] {
+  @include theme-vars($retro-glam);
+
+  color-scheme: dark;
+}
+
+[data-theme='neon-nightclub'] {
+  @include theme-vars($neon-nightclub);
+
+  color-scheme: dark;
+}

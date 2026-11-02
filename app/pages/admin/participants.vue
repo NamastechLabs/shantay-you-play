@@ -26,7 +26,11 @@ const { data: participants, error: loadError, refresh } = await useAsyncData(
   },
 )
 
-// --- Register -------------------------------------------------------------
+// --- Register / edit modal --------------------------------------------------
+const modalOpen = ref(false)
+/** The participant being edited; null while registering a new one */
+const editing = ref<ParticipantRow | null>(null)
+
 const name = ref('')
 const email = ref('')
 const dragName = ref('')
@@ -34,33 +38,60 @@ const role = ref<Role>('concursante')
 const saving = ref(false)
 const errorMessage = ref<string | null>(null)
 
-const canCreate = computed(() => name.value.trim().length > 0 && email.value.includes('@'))
+const modalTitle = computed(() => (editing.value ? 'Editar participante' : 'Registrar participante'))
+const canSubmit = computed(() => name.value.trim().length > 0 && (editing.value !== null || email.value.includes('@')))
 
-async function createParticipant(): Promise<void> {
-  if (!canCreate.value || saving.value) return
+function openCreate(): void {
+  editing.value = null
+  name.value = ''
+  email.value = ''
+  dragName.value = ''
+  role.value = 'concursante'
+  errorMessage.value = null
+  modalOpen.value = true
+}
+
+function openEdit(participant: ParticipantRow): void {
+  editing.value = participant
+  name.value = participant.name
+  email.value = participant.email
+  dragName.value = participant.drag_name ?? ''
+  role.value = participant.role
+  errorMessage.value = null
+  modalOpen.value = true
+}
+
+function uniqueViolationMessage(message: string): string {
+  return message.includes('drag_name') ? 'Ese nombre drag ya está en uso' : 'Ya hay alguien registrado con ese correo'
+}
+
+async function submit(): Promise<void> {
+  if (!canSubmit.value || saving.value) return
 
   saving.value = true
   errorMessage.value = null
   try {
-    const { error } = await supabase.from('participants').insert({
-      name: name.value.trim(),
-      // The database stores emails lowercase so first-login matching is exact
-      email: email.value.trim().toLowerCase(),
-      drag_name: dragName.value.trim() || null,
-      role: role.value,
-    })
+    const current = editing.value
+    const { error } = current
+      // Judges can only change name and drag name (column grants); email and role are fixed once registered
+      ? await supabase
+        .from('participants')
+        .update({ name: name.value.trim(), drag_name: dragName.value.trim() || null })
+        .eq('id', current.id)
+      : await supabase.from('participants').insert({
+        name: name.value.trim(),
+        // The database stores emails lowercase so first-login matching is exact
+        email: email.value.trim().toLowerCase(),
+        drag_name: dragName.value.trim() || null,
+        role: role.value,
+      })
 
     if (error) {
-      if (error.code === UNIQUE_VIOLATION) {
-        throw new Error(error.message.includes('drag_name') ? 'Ese nombre drag ya está en uso' : 'Ya hay alguien registrado con ese correo')
-      }
+      if (error.code === UNIQUE_VIOLATION) throw new Error(uniqueViolationMessage(error.message))
       throw error
     }
 
-    name.value = ''
-    email.value = ''
-    dragName.value = ''
-    role.value = 'concursante'
+    modalOpen.value = false
     await refresh()
   }
   catch (error) {
@@ -90,6 +121,7 @@ async function removeParticipant(participant: ParticipantRow): Promise<void> {
 
     if (error) throw error
     if (!data.length) throw new Error('No se pudo eliminar: esa persona ya inició sesión')
+    modalOpen.value = false
     await refresh()
   }
   catch (error) {
@@ -99,175 +131,144 @@ async function removeParticipant(participant: ParticipantRow): Promise<void> {
 </script>
 
 <template>
-  <main class="participants">
-    <header>
-      <h1>Participantes</h1>
-      <NuxtLink to="/admin">
-        ← Panel
-      </NuxtLink>
+  <main class="page">
+    <header class="page-header">
+      <div class="page-header__titles">
+        <p class="kicker">
+          Drag Race Game
+        </p>
+        <h1>Participantes</h1>
+      </div>
+      <nav class="page-header__actions">
+        <NuxtLink to="/admin" class="btn btn--ghost">
+          ← Panel
+        </NuxtLink>
+      </nav>
     </header>
 
-    <section>
-      <h2>Registrar participante</h2>
-      <p class="hint">
-        Cuando esta persona inicie sesión con Google usando este correo, quedará vinculada automáticamente.
-      </p>
-      <form @submit.prevent="createParticipant">
-        <label>
-          Nombre
-          <input v-model="name" type="text" maxlength="100" required placeholder="Nombre real">
-        </label>
-        <label>
-          Correo (el de su cuenta de Google)
-          <input v-model="email" type="email" required autocomplete="off" placeholder="persona@gmail.com">
-        </label>
-        <label>
-          Nombre drag (opcional)
-          <input v-model="dragName" type="text" minlength="2" maxlength="50" placeholder="Si lo dejas vacío, se lo pediremos al entrar">
-        </label>
-        <label>
-          Rol
-          <select v-model="role">
-            <option v-for="(label, value) in ROLE_LABELS" :key="value" :value="value">
-              {{ label }}
-            </option>
-          </select>
-        </label>
-        <button type="submit" :disabled="!canCreate || saving">
-          {{ saving ? 'Registrando…' : 'Registrar' }}
+    <section class="section" aria-labelledby="participants-title">
+      <div class="section-header">
+        <h2 id="participants-title">
+          Registrados ({{ participants?.length ?? 0 }})
+        </h2>
+        <button type="button" class="btn btn--primary" @click="openCreate">
+          + Registrar
         </button>
-        <p v-if="errorMessage" class="error" role="alert">
-          {{ errorMessage }}
-        </p>
-      </form>
-    </section>
+      </div>
 
-    <section>
-      <h2>Registrados ({{ participants?.length ?? 0 }})</h2>
-      <p v-if="loadError" class="error" role="alert">
+      <p v-if="loadError" class="form-error" role="alert">
         {{ toErrorMessage(loadError) }}
       </p>
-      <p v-if="removeError" class="error" role="alert">
+      <p v-if="removeError" class="form-error" role="alert">
         {{ removeError }}
       </p>
-      <ul v-if="participants?.length" class="list">
-        <li v-for="participant in participants" :key="participant.id">
-          <div>
-            <strong>{{ participant.drag_name ?? participant.name }}</strong>
-            <span v-if="participant.drag_name" class="real-name">{{ participant.name }}</span>
-            <small>{{ participant.email }}</small>
+
+      <ul v-if="participants?.length" class="row-list">
+        <li v-for="participant in participants" :key="participant.id" class="row">
+          <div class="row__main">
+            <strong class="row__title">{{ participant.drag_name ?? participant.name }}</strong>
+            <span v-if="participant.drag_name" class="hint">{{ participant.name }}</span>
+            <span class="hint">{{ participant.email }}</span>
           </div>
-          <div class="badges">
-            <span class="badge">{{ ROLE_LABELS[participant.role] }}</span>
-            <span class="badge" :class="{ pending: !participant.user_id }">
+          <div class="row__aside">
+            <span class="badge badge--draft">{{ ROLE_LABELS[participant.role] }}</span>
+            <span class="badge" :class="participant.user_id ? 'badge--approved' : 'badge--pending'">
               {{ participant.user_id ? 'Ya inició sesión' : 'Pendiente' }}
             </span>
-            <button v-if="!participant.user_id" type="button" @click="removeParticipant(participant)">
-              Eliminar
+            <button type="button" class="btn btn--ghost" @click="openEdit(participant)">
+              Editar
             </button>
           </div>
         </li>
       </ul>
-      <p v-else-if="!loadError">
+      <p v-else-if="!loadError" class="empty">
         Aún no hay participantes.
       </p>
     </section>
+
+    <AppModal :open="modalOpen" :title="modalTitle" @close="modalOpen = false">
+      <p v-if="!editing" class="hint">
+        Cuando esta persona inicie sesión con Google usando este correo, quedará vinculada automáticamente.
+      </p>
+      <p v-else-if="editing.user_id" class="hint">
+        Solo se puede eliminar a quien aún no ha iniciado sesión. El correo y el rol no se pueden cambiar.
+      </p>
+      <p v-else class="hint">
+        El correo y el rol no se pueden cambiar. Si te equivocaste, elimina el registro y vuelve a crearlo.
+      </p>
+
+      <form class="form" @submit.prevent="submit">
+        <div class="field">
+          <label for="participant-name" class="field__label">Nombre</label>
+          <input
+            id="participant-name"
+            v-model="name"
+            class="field__input"
+            type="text"
+            maxlength="100"
+            required
+            placeholder="Nombre real"
+          >
+        </div>
+        <div class="field">
+          <label for="participant-email" class="field__label">Correo (el de su cuenta de Google)</label>
+          <input
+            id="participant-email"
+            v-model="email"
+            class="field__input"
+            type="email"
+            required
+            autocomplete="off"
+            :disabled="editing !== null"
+            placeholder="persona@gmail.com"
+          >
+        </div>
+        <div class="field">
+          <label for="participant-drag-name" class="field__label">Nombre drag (opcional)</label>
+          <input
+            id="participant-drag-name"
+            v-model="dragName"
+            class="field__input"
+            type="text"
+            minlength="2"
+            maxlength="50"
+            placeholder="Si lo dejas vacío, se lo pediremos al entrar"
+          >
+        </div>
+        <div class="field">
+          <label for="participant-role" class="field__label">Rol</label>
+          <select id="participant-role" v-model="role" class="field__input" :disabled="editing !== null">
+            <option v-for="(label, value) in ROLE_LABELS" :key="value" :value="value">
+              {{ label }}
+            </option>
+          </select>
+        </div>
+
+        <p v-if="errorMessage" class="form-error" role="alert">
+          {{ errorMessage }}
+        </p>
+        <div class="form-actions">
+          <button
+            v-if="editing && !editing.user_id"
+            type="button"
+            class="btn btn--danger form-actions__spacer"
+            @click="removeParticipant(editing)"
+          >
+            Eliminar
+          </button>
+          <button type="button" class="btn btn--ghost" @click="modalOpen = false">
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn--primary" :disabled="!canSubmit || saving">
+            <template v-if="saving">
+              {{ editing ? 'Guardando…' : 'Registrando…' }}
+            </template>
+            <template v-else>
+              {{ editing ? 'Guardar cambios' : 'Registrar' }}
+            </template>
+          </button>
+        </div>
+      </form>
+    </AppModal>
   </main>
 </template>
-
-<style scoped>
-.participants {
-  max-width: 40rem;
-  margin: 0 auto;
-  padding: 1rem;
-}
-
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-form {
-  display: grid;
-  gap: 0.75rem;
-}
-
-label {
-  display: grid;
-  gap: 0.25rem;
-}
-
-input,
-select {
-  padding: 0.5rem;
-  font: inherit;
-  border-radius: 0.5rem;
-  border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
-}
-
-button {
-  justify-self: start;
-  padding: 0.4rem 1rem;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.hint {
-  opacity: 0.7;
-}
-
-.list {
-  display: grid;
-  gap: 0.5rem;
-  padding: 0;
-  list-style: none;
-}
-
-.list li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
-  border-radius: 0.5rem;
-}
-
-.list li > div:first-child {
-  display: grid;
-}
-
-.real-name,
-small {
-  opacity: 0.7;
-}
-
-.badges {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.badge {
-  padding: 0.1rem 0.5rem;
-  font-size: 0.8rem;
-  border: 1px solid currentColor;
-  border-radius: 999px;
-}
-
-.badge.pending {
-  border-style: dashed;
-  opacity: 0.7;
-}
-
-.error {
-  color: #d33;
-}
-</style>

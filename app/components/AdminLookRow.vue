@@ -74,80 +74,43 @@ async function save(): Promise<void> {
 </script>
 
 <template>
-  <li class="look-row">
-    <div class="photo">
-      <img v-if="look" :src="look.image_url" :alt="`Look de ${displayName}`" loading="lazy">
-      <span v-else class="placeholder">Sin look</span>
+  <li class="look-slot">
+    <div>
+      <img v-if="look" class="look-slot__photo" :src="look.image_url" :alt="`Look de ${displayName}`" loading="lazy">
+      <span v-else class="look-slot__placeholder">Sin look</span>
     </div>
 
-    <form @submit.prevent="save">
-      <strong>{{ displayName }}</strong>
+    <form class="look-slot__form" @submit.prevent="save">
+      <strong class="look-slot__name">{{ displayName }}</strong>
 
       <template v-if="editable">
-        <input :key="inputKey" type="file" accept="image/*" @change="onFileChange">
-        <textarea v-model="intro" rows="2" maxlength="500" placeholder="Intro del look (opcional)" />
-        <button type="submit" :disabled="!canSave || saving">
+        <input
+          :key="inputKey"
+          class="field__input field__input--file"
+          type="file"
+          accept="image/*"
+          :aria-label="`Foto del look de ${displayName}`"
+          @change="onFileChange"
+        >
+        <textarea
+          v-model="intro"
+          class="field__input"
+          rows="2"
+          maxlength="500"
+          :aria-label="`Intro del look de ${displayName}`"
+          placeholder="Intro del look (opcional)"
+        />
+        <button type="submit" class="btn btn--secondary" :disabled="!canSave || saving">
           {{ saving ? 'Guardando…' : look ? 'Guardar cambios' : 'Subir look' }}
         </button>
       </template>
-      <p v-else-if="look?.intro">
+      <p v-else-if="look?.intro" class="muted">
         {{ look.intro }}
       </p>
 
-      <p v-if="errorMessage" class="error" role="alert">
+      <p v-if="errorMessage" class="form-error" role="alert">
         {{ errorMessage }}
       </p>
     </form>
   </li>
 </template>
-
-<style scoped>
-.look-row {
-  display: grid;
-  grid-template-columns: 8rem 1fr;
-  gap: 1rem;
-  padding: 0.75rem;
-  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
-  border-radius: 0.5rem;
-  list-style: none;
-}
-
-.photo img,
-.placeholder {
-  width: 100%;
-  aspect-ratio: 3 / 4;
-  border-radius: 0.5rem;
-  object-fit: cover;
-}
-
-.placeholder {
-  display: grid;
-  place-items: center;
-  font-size: 0.8rem;
-  opacity: 0.6;
-  border: 1px dashed currentColor;
-}
-
-form {
-  display: grid;
-  align-content: start;
-  gap: 0.5rem;
-}
-
-button {
-  justify-self: start;
-  padding: 0.5rem 1.25rem;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.error {
-  margin: 0;
-  color: #d33;
-}
-</style>

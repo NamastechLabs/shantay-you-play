@@ -31,44 +31,31 @@ async function signInWithGoogle(): Promise<void> {
 </script>
 
 <template>
-  <main class="login">
-    <h1>Drag Race</h1>
-    <p>Inicia sesión para entrar a la competencia.</p>
+  <main class="auth-split">
+    <div class="auth-split__media">
+      <!-- Placeholder photo: replace with your own artwork -->
+      <img src="/images/login-hero.jpg" alt="" width="1030" height="1544">
+    </div>
 
-    <button type="button" :disabled="loading" @click="signInWithGoogle">
-      {{ loading ? 'Redirigiendo…' : 'Entrar con Google' }}
-    </button>
+    <div class="auth-split__panel">
+      <p class="kicker">
+        Bienvenida a la competencia
+      </p>
+      <h1 class="display">
+        Drag Race Game
+      </h1>
+      <span class="rule" />
+      <p class="lead">
+        Inicia sesión para entrar a la competencia.
+      </p>
 
-    <p v-if="errorMessage" class="error" role="alert">
-      {{ errorMessage }}
-    </p>
+      <button type="button" class="btn btn--primary" :disabled="loading" @click="signInWithGoogle">
+        {{ loading ? 'Redirigiendo…' : 'Entrar con Google' }}
+      </button>
+
+      <p v-if="errorMessage" class="form-error" role="alert">
+        {{ errorMessage }}
+      </p>
+    </div>
   </main>
 </template>
-
-<style scoped>
-.login {
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 1rem;
-  min-height: 100dvh;
-  padding: 0 1rem;
-  text-align: center;
-}
-
-button {
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-button:disabled {
-  cursor: progress;
-  opacity: 0.6;
-}
-
-.error {
-  color: #d33;
-}
-</style>

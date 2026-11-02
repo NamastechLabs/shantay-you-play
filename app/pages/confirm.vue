@@ -17,15 +17,9 @@ watch(
 </script>
 
 <template>
-  <main class="confirm">
-    <p>Confirmando sesión…</p>
+  <main class="auth-center">
+    <p class="lead" role="status">
+      Confirmando sesión…
+    </p>
   </main>
 </template>
-
-<style scoped>
-.confirm {
-  display: grid;
-  place-items: center;
-  min-height: 100dvh;
-}
-</style>

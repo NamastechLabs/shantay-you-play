@@ -54,43 +54,43 @@ const looks = computed(() => data.value?.looks ?? [])
 const displayName = (look: RunwayLook): string => look.participant.drag_name ?? look.participant.name
 
 // --- Enlarged view --------------------------------------------------------
-const dialog = ref<HTMLDialogElement | null>(null)
 const selectedLook = ref<RunwayLook | null>(null)
-
-function openLook(look: RunwayLook): void {
-  selectedLook.value = look
-  dialog.value?.showModal()
-}
-
-function closeLook(): void {
-  dialog.value?.close()
-}
 </script>
 
 <template>
-  <main v-if="category" class="runway">
-    <header>
-      <div>
-        <p class="week">
+  <main v-if="category" class="page page--wide">
+    <header class="page-header">
+      <div class="page-header__titles">
+        <p class="kicker">
           Semana {{ category.week_number }}
-          <span class="status">{{ CATEGORY_STATUS_LABELS[category.status] }}</span>
+          <StatusBadge :status="category.status" />
         </p>
         <h1>{{ category.title }}</h1>
       </div>
-      <NuxtLink to="/">
-        ← Inicio
-      </NuxtLink>
+      <nav class="page-header__actions">
+        <NuxtLink to="/" class="btn btn--ghost">
+          ← Inicio
+        </NuxtLink>
+      </nav>
     </header>
 
-    <p v-if="category.intro_text" class="intro">
+    <p v-if="category.intro_text" class="lead intro">
       {{ category.intro_text }}
     </p>
 
     <ul v-if="looks.length" class="gallery">
       <li v-for="look in looks" :key="look.id">
-        <button type="button" class="card" @click="openLook(look)">
-          <img :src="look.image_url" :alt="`Look de ${displayName(look)}`" loading="lazy">
-          <span class="name">{{ displayName(look) }}</span>
+        <button type="button" class="look-card" @click="selectedLook = look">
+          <img
+            class="look-card__photo"
+            :src="look.image_url"
+            :alt="`Look de ${displayName(look)}`"
+            loading="lazy"
+          >
+          <span class="look-card__body">
+            <span class="look-card__name">{{ displayName(look) }}</span>
+            <span v-if="look.intro" class="look-card__intro">{{ look.intro }}</span>
+          </span>
         </button>
       </li>
     </ul>
@@ -98,133 +98,26 @@ function closeLook(): void {
       Todavía no hay looks en la pasarela.
     </p>
 
-    <dialog ref="dialog" @click.self="closeLook" @close="selectedLook = null">
-      <figure v-if="selectedLook">
+    <AppModal :open="selectedLook !== null" :title="selectedLook ? displayName(selectedLook) : ''" @close="selectedLook = null">
+      <figure v-if="selectedLook" class="look-full">
         <img :src="selectedLook.image_url" :alt="`Look de ${displayName(selectedLook)}`">
-        <figcaption>
-          <strong>{{ displayName(selectedLook) }}</strong>
-          <p v-if="selectedLook.intro">
-            {{ selectedLook.intro }}
-          </p>
+        <figcaption v-if="selectedLook.intro" class="look-full__intro">
+          {{ selectedLook.intro }}
         </figcaption>
       </figure>
-      <button type="button" class="close" aria-label="Cerrar" @click="closeLook">
-        ✕
-      </button>
-    </dialog>
+    </AppModal>
   </main>
 
-  <main v-else class="runway">
-    <p class="error" role="alert">
+  <main v-else class="page">
+    <p class="form-error" role="alert">
       {{ toErrorMessage(loadError) }}
     </p>
   </main>
 </template>
 
 <style scoped>
-.runway {
-  max-width: 60rem;
-  margin: 0 auto;
-  padding: 1rem;
-}
-
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.week {
-  margin: 0;
-  opacity: 0.8;
-}
-
-h1 {
-  margin: 0.25rem 0 0;
-}
-
-.status {
-  margin-left: 0.5rem;
-  padding: 0.1rem 0.5rem;
-  font-size: 0.8rem;
-  border: 1px solid currentColor;
-  border-radius: 999px;
-}
-
 .intro {
+  max-width: 44rem;
   white-space: pre-line;
-}
-
-.gallery {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
-  gap: 1rem;
-  padding: 0;
-  list-style: none;
-}
-
-.card {
-  display: grid;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0;
-  font: inherit;
-  color: inherit;
-  text-align: left;
-  background: none;
-  border: 0;
-  cursor: pointer;
-}
-
-.card img {
-  width: 100%;
-  aspect-ratio: 3 / 4;
-  border-radius: 0.5rem;
-  object-fit: cover;
-}
-
-.name {
-  font-weight: 600;
-}
-
-dialog {
-  max-width: min(90vw, 40rem);
-  max-height: 90dvh;
-  padding: 1rem;
-  border: 0;
-  border-radius: 0.75rem;
-}
-
-dialog::backdrop {
-  background: rgb(0 0 0 / 0.7);
-}
-
-dialog img {
-  max-width: 100%;
-  max-height: 70dvh;
-  border-radius: 0.5rem;
-}
-
-figure {
-  display: grid;
-  justify-items: center;
-  gap: 0.5rem;
-  margin: 0;
-}
-
-.close {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  cursor: pointer;
-}
-
-.empty {
-  opacity: 0.7;
-}
-
-.error {
-  color: #d33;
 }
 </style>

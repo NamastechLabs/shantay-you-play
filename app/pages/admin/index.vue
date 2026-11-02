@@ -30,8 +30,17 @@ const title = ref('')
 const introText = ref('')
 const saving = ref(false)
 const errorMessage = ref<string | null>(null)
+const modalOpen = ref(false)
 
 const canCreate = computed(() => title.value.trim().length > 0 && weekNumber.value > 0)
+
+function openModal(): void {
+  weekNumber.value = nextWeek.value
+  title.value = ''
+  introText.value = ''
+  errorMessage.value = null
+  modalOpen.value = true
+}
 
 async function createCategory(): Promise<void> {
   if (!canCreate.value || saving.value) return
@@ -65,137 +74,93 @@ async function createCategory(): Promise<void> {
 </script>
 
 <template>
-  <main class="admin">
-    <header>
-      <h1>Panel del jurado</h1>
-      <nav class="links">
-        <NuxtLink to="/admin/participants">
+  <main class="page">
+    <header class="page-header">
+      <div class="page-header__titles">
+        <p class="kicker">
+          Drag Race Game
+        </p>
+        <h1>Panel del jurado</h1>
+      </div>
+      <nav class="page-header__actions">
+        <NuxtLink to="/admin/participants" class="btn btn--secondary">
           Participantes
         </NuxtLink>
-        <NuxtLink to="/">
+        <NuxtLink to="/" class="btn btn--ghost">
           ← Inicio
         </NuxtLink>
       </nav>
     </header>
 
-    <section>
-      <h2>Nueva categoría</h2>
-      <form @submit.prevent="createCategory">
-        <label>
-          Semana
-          <input v-model.number="weekNumber" type="number" min="1" required>
-        </label>
-        <label>
-          Título
-          <input v-model="title" type="text" maxlength="100" required placeholder="Ej. Alta costura espacial">
-        </label>
-        <label>
-          Introducción
-          <textarea v-model="introText" rows="3" placeholder="Describe el tema de la semana (opcional)" />
-        </label>
-        <button type="submit" :disabled="!canCreate || saving">
-          {{ saving ? 'Creando…' : 'Crear categoría' }}
+    <section class="section" aria-labelledby="categories-title">
+      <div class="section-header">
+        <h2 id="categories-title">
+          Categorías
+        </h2>
+        <button type="button" class="btn btn--primary" @click="openModal">
+          + Nueva categoría
         </button>
-        <p v-if="errorMessage" class="error" role="alert">
-          {{ errorMessage }}
-        </p>
-      </form>
-    </section>
+      </div>
 
-    <section>
-      <h2>Categorías</h2>
-      <p v-if="loadError" class="error" role="alert">
+      <p v-if="loadError" class="form-error" role="alert">
         {{ toErrorMessage(loadError) }}
-        <button type="button" @click="refresh()">
+        <button type="button" class="btn btn--ghost" @click="refresh()">
           Reintentar
         </button>
       </p>
-      <ul v-else-if="categories?.length" class="categories">
+      <ul v-else-if="categories?.length" class="row-list">
         <li v-for="category in categories" :key="category.id">
-          <NuxtLink :to="`/admin/categories/${category.id}`">
-            Semana {{ category.week_number }} · {{ category.title }}
+          <NuxtLink :to="`/admin/categories/${category.id}`" class="row row--link">
+            <span>Semana {{ category.week_number }} · {{ category.title }}</span>
+            <StatusBadge :status="category.status" />
           </NuxtLink>
-          <span class="status">{{ CATEGORY_STATUS_LABELS[category.status] }}</span>
         </li>
       </ul>
-      <p v-else>
+      <p v-else class="empty">
         Aún no hay categorías.
       </p>
     </section>
+
+    <AppModal :open="modalOpen" title="Nueva categoría" @close="modalOpen = false">
+      <form class="form" @submit.prevent="createCategory">
+        <div class="field">
+          <label for="category-week" class="field__label">Semana</label>
+          <input id="category-week" v-model.number="weekNumber" class="field__input" type="number" min="1" required>
+        </div>
+        <div class="field">
+          <label for="category-title" class="field__label">Título</label>
+          <input
+            id="category-title"
+            v-model="title"
+            class="field__input"
+            type="text"
+            maxlength="100"
+            required
+            placeholder="Ej. Alta costura espacial"
+          >
+        </div>
+        <div class="field">
+          <label for="category-intro" class="field__label">Introducción</label>
+          <textarea
+            id="category-intro"
+            v-model="introText"
+            class="field__input"
+            rows="3"
+            placeholder="Describe el tema de la semana (opcional)"
+          />
+        </div>
+        <p v-if="errorMessage" class="form-error" role="alert">
+          {{ errorMessage }}
+        </p>
+        <div class="form-actions">
+          <button type="button" class="btn btn--ghost" @click="modalOpen = false">
+            Cancelar
+          </button>
+          <button type="submit" class="btn btn--primary" :disabled="!canCreate || saving">
+            {{ saving ? 'Creando…' : 'Crear categoría' }}
+          </button>
+        </div>
+      </form>
+    </AppModal>
   </main>
 </template>
-
-<style scoped>
-.admin {
-  max-width: 40rem;
-  margin: 0 auto;
-  padding: 1rem;
-}
-
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.links {
-  display: flex;
-  gap: 1rem;
-}
-
-form {
-  display: grid;
-  gap: 0.75rem;
-}
-
-label {
-  display: grid;
-  gap: 0.25rem;
-}
-
-input,
-textarea {
-  padding: 0.5rem;
-  font: inherit;
-  border-radius: 0.5rem;
-  border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
-}
-
-button {
-  justify-self: start;
-  padding: 0.5rem 1.25rem;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.categories {
-  display: grid;
-  gap: 0.5rem;
-  padding: 0;
-  list-style: none;
-}
-
-.categories li {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
-  border-radius: 0.5rem;
-}
-
-.status {
-  padding: 0.1rem 0.5rem;
-  font-size: 0.8rem;
-  border: 1px solid currentColor;
-  border-radius: 999px;
-}
-
-.error {
-  color: #d33;
-}
-</style>

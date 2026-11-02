@@ -33,81 +33,47 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <main class="onboarding">
-    <h1>¡Bienvenida a la competencia!</h1>
-    <p>
-      <template v-if="participant">
-        {{ participant.name }}, antes
-      </template>
-      <template v-else>
-        Antes
-      </template>
-      de pisar la pasarela necesitamos tu nombre drag.
-    </p>
+  <main class="auth-center">
+    <div class="auth-center__card">
+      <p class="auth-center__brand">
+        Drag Race Game
+      </p>
+      <h1>¡Bienvenida a la competencia!</h1>
+      <span class="rule" />
+      <p class="lead">
+        <template v-if="participant">
+          {{ participant.name }}, antes
+        </template>
+        <template v-else>
+          Antes
+        </template>
+        de pisar la pasarela necesitamos tu nombre drag.
+      </p>
 
-    <form @submit.prevent="submit">
-      <label for="drag-name">Nombre drag</label>
-      <input
-        id="drag-name"
-        v-model="dragName"
-        type="text"
-        autocomplete="nickname"
-        minlength="2"
-        maxlength="50"
-        required
-        autofocus
-        placeholder="Ej. Miss Fierce"
-      >
-      <button type="submit" :disabled="!isValid || saving">
-        {{ saving ? 'Guardando…' : 'Guardar' }}
-      </button>
-    </form>
+      <form class="form" @submit.prevent="submit">
+        <div class="field">
+          <label for="drag-name" class="field__label">Nombre drag</label>
+          <input
+            id="drag-name"
+            v-model="dragName"
+            class="field__input"
+            type="text"
+            autocomplete="nickname"
+            minlength="2"
+            maxlength="50"
+            required
+            autofocus
+            placeholder="Ej. Miss Fierce"
+          >
+        </div>
+        <button type="submit" class="btn btn--primary btn--block" :disabled="!isValid || saving">
+          {{ saving ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </form>
 
-    <p v-if="errorMessage" class="error" role="alert">
-      {{ errorMessage }}
-    </p>
+      <p v-if="errorMessage" class="form-error" role="alert">
+        {{ errorMessage }}
+      </p>
+    </div>
   </main>
 </template>
-
-<style scoped>
-.onboarding {
-  display: grid;
-  align-content: center;
-  gap: 1rem;
-  max-width: 24rem;
-  min-height: 100dvh;
-  margin: 0 auto;
-  padding: 0 1rem;
-  text-align: center;
-}
-
-form {
-  display: grid;
-  gap: 0.5rem;
-  text-align: left;
-}
-
-input {
-  padding: 0.75rem;
-  font-size: 1rem;
-  border-radius: 0.5rem;
-  border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
-}
-
-button {
-  margin-top: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.error {
-  color: #d33;
-}
-</style>

@@ -1,0 +1,52 @@
+.badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--color-on-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+
+  // Participant statuses
+  &--pending {
+    background-color: var(--color-warning);
+  }
+
+  &--approved {
+    background-color: var(--color-success);
+  }
+
+  &--rejected {
+    background-color: var(--color-danger);
+  }
+
+  &--winner {
+    background-color: var(--color-highlight);
+  }
+
+  // Outline: neutral labels such as roles and draft categories
+  &--draft {
+    color: var(--color-text-muted);
+    background-color: var(--color-surface-raised);
+    border-color: var(--color-border);
+  }
+
+  // Category lifecycle
+  &--runway {
+    background-color: var(--color-accent);
+  }
+
+  &--voting {
+    color: var(--color-on-primary);
+    background-color: var(--color-primary);
+  }
+
+  &--closed {
+    color: var(--color-page);
+    background-color: var(--color-text-muted);
+  }
+}

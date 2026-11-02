@@ -115,64 +115,81 @@ async function changeStatus(status: CategoryStatus): Promise<void> {
 </script>
 
 <template>
-  <main v-if="category" class="category">
-    <header>
-      <h1>Semana {{ category.week_number }}</h1>
-      <NuxtLink to="/admin">
-        ← Panel
-      </NuxtLink>
+  <main v-if="category" class="page">
+    <header class="page-header">
+      <div class="page-header__titles">
+        <p class="kicker">
+          Drag Race Game
+        </p>
+        <h1>Semana {{ category.week_number }}</h1>
+      </div>
+      <nav class="page-header__actions">
+        <NuxtLink to="/admin" class="btn btn--ghost">
+          ← Panel
+        </NuxtLink>
+      </nav>
     </header>
 
-    <section>
-      <h2>Estado: {{ CATEGORY_STATUS_LABELS[category.status] }}</h2>
-      <ol class="steps">
+    <section class="section" aria-labelledby="status-title">
+      <h2 id="status-title">
+        Estado: {{ CATEGORY_STATUS_LABELS[category.status] }}
+      </h2>
+      <ol class="stepper">
         <li
           v-for="status in CATEGORY_STATUSES"
           :key="status"
-          :class="{ current: status === category.status }"
+          class="stepper__step"
+          :class="{ 'stepper__step--current': status === category.status }"
+          :aria-current="status === category.status ? 'step' : undefined"
         >
           {{ CATEGORY_STATUS_LABELS[status] }}
         </li>
       </ol>
       <div class="actions">
-        <button v-if="previousStatus" type="button" :disabled="statusSaving" @click="changeStatus(previousStatus)">
+        <button v-if="previousStatus" type="button" class="btn btn--secondary" :disabled="statusSaving" @click="changeStatus(previousStatus)">
           ← Volver a {{ CATEGORY_STATUS_LABELS[previousStatus] }}
         </button>
-        <button v-if="nextStatus" type="button" :disabled="statusSaving" @click="changeStatus(nextStatus)">
+        <button v-if="nextStatus" type="button" class="btn btn--primary" :disabled="statusSaving" @click="changeStatus(nextStatus)">
           Pasar a {{ CATEGORY_STATUS_LABELS[nextStatus] }} →
         </button>
       </div>
-      <p v-if="statusError" class="error" role="alert">
+      <p v-if="statusError" class="form-error" role="alert">
         {{ statusError }}
       </p>
     </section>
 
-    <section>
-      <h2>Detalles</h2>
-      <form @submit.prevent="saveDetails">
-        <label>
-          Título
-          <input v-model="title" type="text" maxlength="100" required>
-        </label>
-        <label>
-          Introducción
-          <textarea v-model="introText" rows="3" />
-        </label>
-        <button type="submit" :disabled="!detailsChanged || detailsSaving">
-          {{ detailsSaving ? 'Guardando…' : 'Guardar' }}
-        </button>
-        <p v-if="detailsError" class="error" role="alert">
+    <section class="section" aria-labelledby="details-title">
+      <h2 id="details-title">
+        Detalles
+      </h2>
+      <form class="card form" @submit.prevent="saveDetails">
+        <div class="field">
+          <label for="detail-title" class="field__label">Título</label>
+          <input id="detail-title" v-model="title" class="field__input" type="text" maxlength="100" required>
+        </div>
+        <div class="field">
+          <label for="detail-intro" class="field__label">Introducción</label>
+          <textarea id="detail-intro" v-model="introText" class="field__input" rows="3" />
+        </div>
+        <p v-if="detailsError" class="form-error" role="alert">
           {{ detailsError }}
         </p>
+        <div>
+          <button type="submit" class="btn btn--primary" :disabled="!detailsChanged || detailsSaving">
+            {{ detailsSaving ? 'Guardando…' : 'Guardar' }}
+          </button>
+        </div>
       </form>
     </section>
 
-    <section>
-      <h2>Looks ({{ data?.looks.length ?? 0 }} / {{ data?.contestants.length ?? 0 }})</h2>
+    <section class="section" aria-labelledby="looks-title">
+      <h2 id="looks-title">
+        Looks ({{ data?.looks.length ?? 0 }} / {{ data?.contestants.length ?? 0 }})
+      </h2>
       <p v-if="!canEditLooks(category.status)" class="hint">
         La votación ya abrió: los looks no se pueden modificar.
       </p>
-      <ul v-if="data?.contestants.length" class="looks">
+      <ul v-if="data?.contestants.length" class="row-list">
         <AdminLookRow
           v-for="contestant in data.contestants"
           :key="contestant.id"
@@ -183,100 +200,15 @@ async function changeStatus(status: CategoryStatus): Promise<void> {
           @changed="refresh()"
         />
       </ul>
-      <p v-else>
-        Aún no hay concursantes. Regístralos en <NuxtLink to="/admin/participants">Participantes</NuxtLink>.
+      <p v-else class="empty">
+        Aún no hay concursantes. Regístralos en <NuxtLink to="/admin/participants" class="link">Participantes</NuxtLink>.
       </p>
     </section>
   </main>
 
-  <main v-else class="category">
-    <p class="error" role="alert">
+  <main v-else class="page">
+    <p class="form-error" role="alert">
       {{ toErrorMessage(loadError) }}
     </p>
   </main>
 </template>
-
-<style scoped>
-.category {
-  max-width: 40rem;
-  margin: 0 auto;
-  padding: 1rem;
-}
-
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-form {
-  display: grid;
-  gap: 0.75rem;
-}
-
-label {
-  display: grid;
-  gap: 0.25rem;
-}
-
-input,
-textarea {
-  padding: 0.5rem;
-  font: inherit;
-  border-radius: 0.5rem;
-  border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
-}
-
-button {
-  justify-self: start;
-  padding: 0.5rem 1.25rem;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.steps {
-  display: flex;
-  gap: 0.5rem;
-  padding: 0;
-  list-style: none;
-}
-
-.steps li {
-  padding: 0.25rem 0.75rem;
-  font-size: 0.85rem;
-  border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
-  border-radius: 999px;
-  opacity: 0.6;
-}
-
-.steps li.current {
-  font-weight: 600;
-  border-color: currentColor;
-  opacity: 1;
-}
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.looks {
-  display: grid;
-  gap: 0.75rem;
-  padding: 0;
-}
-
-.hint {
-  opacity: 0.7;
-}
-
-.error {
-  color: #d33;
-}
-</style>

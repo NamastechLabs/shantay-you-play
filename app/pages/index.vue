@@ -25,89 +25,47 @@ async function signOut(): Promise<void> {
 </script>
 
 <template>
-  <main class="home">
-    <header>
-      <div>
-        <h1>Drag Race</h1>
-        <p v-if="participant">
-          Hola, {{ participant.drag_name ?? participant.name }}
-          <span class="role">{{ isJurado ? 'Jurado' : 'Concursante' }}</span>
+  <main class="page">
+    <header class="page-header">
+      <div class="page-header__titles">
+        <p class="kicker">
+          Drag Race Game
         </p>
+        <h1>{{ participant ? `Hola, ${participant.drag_name ?? participant.name}` : 'Inicio' }}</h1>
       </div>
-      <div class="actions">
-        <NuxtLink v-if="isJurado" to="/admin">
+      <div class="page-header__actions">
+        <ThemeSwitcher />
+        <span v-if="participant" class="badge badge--draft">{{ isJurado ? 'Jurado' : 'Concursante' }}</span>
+        <NuxtLink v-if="isJurado" to="/admin" class="btn btn--secondary">
           Panel del jurado
         </NuxtLink>
-        <button type="button" @click="signOut">
+        <button type="button" class="btn btn--ghost" @click="signOut">
           Salir
         </button>
       </div>
     </header>
 
-    <p v-if="error" class="error" role="alert">
-      {{ toErrorMessage(error) }}
-    </p>
+    <section class="section" aria-labelledby="categories-title">
+      <h2 id="categories-title">
+        Categorías semanales
+      </h2>
 
-    <ul v-else-if="categories?.length" class="categories">
-      <li v-for="category in categories" :key="category.id">
-        <NuxtLink :to="`/categories/${category.id}`">
-          Semana {{ category.week_number }} · {{ category.title }}
-        </NuxtLink>
-        <span class="status">{{ CATEGORY_STATUS_LABELS[category.status] }}</span>
-      </li>
-    </ul>
+      <p v-if="error" class="form-error" role="alert">
+        {{ toErrorMessage(error) }}
+      </p>
 
-    <p v-else>
-      Aún no hay categorías.
-    </p>
+      <ul v-else-if="categories?.length" class="row-list">
+        <li v-for="category in categories" :key="category.id">
+          <NuxtLink :to="`/categories/${category.id}`" class="row row--link">
+            <span>Semana {{ category.week_number }} · {{ category.title }}</span>
+            <StatusBadge :status="category.status" />
+          </NuxtLink>
+        </li>
+      </ul>
+
+      <p v-else class="empty">
+        Aún no hay categorías.
+      </p>
+    </section>
   </main>
 </template>
-
-<style scoped>
-.home {
-  max-width: 40rem;
-  margin: 0 auto;
-  padding: 1rem;
-}
-
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-}
-
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.role,
-.status {
-  margin-left: 0.5rem;
-  padding: 0.1rem 0.5rem;
-  font-size: 0.8rem;
-  border: 1px solid currentColor;
-  border-radius: 999px;
-}
-
-.categories {
-  display: grid;
-  gap: 0.5rem;
-  padding: 0;
-  list-style: none;
-}
-
-.categories li {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
-  border-radius: 0.5rem;
-}
-
-.error {
-  color: #d33;
-}
-</style>
