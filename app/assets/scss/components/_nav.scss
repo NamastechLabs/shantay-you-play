@@ -14,18 +14,9 @@
   }
 
   &__logo {
-    display: grid;
     flex: none;
-    place-items: center;
-    width: 2.25rem;
+    width: auto;
     height: 2.25rem;
-    font-family: var(--font-display);
-    font-size: 0.75rem;
-    font-weight: var(--font-heading-weight);
-    color: var(--color-on-primary);
-    background-color: var(--color-primary);
-    border-radius: var(--radius-pill);
-    box-shadow: var(--glow-primary);
   }
 
   &__name {

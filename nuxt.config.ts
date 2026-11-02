@@ -13,6 +13,8 @@ export default defineNuxtConfig({
       htmlAttrs: { lang: 'es' },
       meta: [{ name: 'description', content: 'Drag Race Game: la competencia semanal de looks, pasarela y votación.' }],
       link: [
+        { rel: 'icon', type: 'image/png', href: '/favicon.png' },
+        { rel: 'apple-touch-icon', href: '/icon-192.png' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         {
