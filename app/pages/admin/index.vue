@@ -75,19 +75,16 @@ async function createCategory(): Promise<void> {
 
 <template>
   <main class="page">
+    <AppNav />
+    <NuxtLink to="/" class="back-link">
+      ← Inicio
+    </NuxtLink>
+
     <header class="page-header">
-      <div class="page-header__titles">
-        <p class="kicker">
-          Drag Race Game
-        </p>
-        <h1>Panel del jurado</h1>
-      </div>
+      <h1>Panel del jurado</h1>
       <nav class="page-header__actions">
         <NuxtLink to="/admin/participants" class="btn btn--secondary">
           Participantes
-        </NuxtLink>
-        <NuxtLink to="/" class="btn btn--ghost">
-          ← Inicio
         </NuxtLink>
       </nav>
     </header>

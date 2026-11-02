@@ -71,6 +71,9 @@ const selectedLook = ref<RunwayLook | null>(null)
         <NuxtLink to="/" class="btn btn--ghost">
           ← Inicio
         </NuxtLink>
+        <NuxtLink v-if="category.status === 'voting'" :to="`/categories/${category.id}/vote`" class="btn btn--primary">
+          Votar los mejores looks
+        </NuxtLink>
       </nav>
     </header>
 

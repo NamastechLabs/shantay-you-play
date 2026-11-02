@@ -1,21 +1,106 @@
+// Category workflow: one line of steps joined by a connector. Only the steps
+// next to the current one are buttons; the rest are plain labels.
 .stepper {
-  display: flex;
-  flex-wrap: wrap;
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-2);
 
+  // Connector behind the steps, showing the regular order
+  &::before {
+    position: absolute;
+    top: 50%;
+    right: var(--space-5);
+    left: var(--space-5);
+    height: 2px;
+    content: '';
+    background-color: var(--color-border);
+  }
+
+  > li {
+    position: relative;
+    display: grid;
+  }
+
   &__step {
-    padding: var(--space-2) var(--space-4);
-    font-size: 1rem;
+    display: inline-flex;
+    gap: var(--space-2);
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+    padding: var(--space-2);
+    overflow: hidden;
+    font-size: 0.8125rem;
     font-weight: 600;
     letter-spacing: 0.02em;
     color: var(--color-text-muted);
-    border: 1px solid var(--color-border);
+    white-space: nowrap;
+    background-color: var(--color-surface);
+    // Dashed = not reachable from the current step
+    border: 1px dashed var(--color-border);
     border-radius: var(--radius-pill);
+
+    @media (min-width: 40rem) {
+      padding-inline: var(--space-4);
+      font-size: 1rem;
+    }
+
+    &--done {
+      border-style: solid;
+    }
 
     &--current {
       color: var(--color-on-primary);
       background-color: var(--color-primary);
+      border-style: solid;
       border-color: var(--color-primary);
+      box-shadow: var(--glow-primary);
+    }
+
+    // Clickable neighbours
+    &--previous,
+    &--next {
+      cursor: pointer;
+      border-style: solid;
+      border-width: 2px;
+      transition: box-shadow 0.15s, background-color 0.15s;
+
+      &:hover:not(:disabled) {
+        background-color: var(--color-surface-raised);
+        box-shadow: var(--glow-accent);
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.4;
+      }
+    }
+
+    &--previous {
+      color: var(--color-kicker);
+      border-color: var(--color-kicker);
+    }
+
+    // Primary is not readable as text on every theme, so it only colors the border
+    &--next {
+      color: var(--color-text);
+      border-color: var(--color-primary);
+    }
+  }
+
+  // Step number (✓ once passed); hidden on phones to keep the line short
+  &__index {
+    display: none;
+    flex: none;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    font-size: 0.75rem;
+    border: 1px solid currentcolor;
+    border-radius: var(--radius-pill);
+
+    @media (min-width: 40rem) {
+      display: inline-grid;
     }
   }
 }

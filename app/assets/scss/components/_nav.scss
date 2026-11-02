@@ -1,0 +1,126 @@
+// Top bar: brand on the left, theme + user menu on the right, always on one line
+.app-nav {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+
+  &__brand {
+    display: inline-flex;
+    gap: var(--space-2);
+    align-items: center;
+    min-width: 0;
+  }
+
+  &__logo {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: var(--font-heading-weight);
+    color: var(--color-on-primary);
+    background-color: var(--color-primary);
+    border-radius: var(--radius-pill);
+    box-shadow: var(--glow-primary);
+  }
+
+  &__name {
+    overflow: hidden;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: var(--font-heading-weight);
+    color: var(--color-title);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    // Phones: the logo alone carries the brand so the bar stays on one line
+    @media (max-width: 30rem) {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+    }
+  }
+
+  &__actions {
+    display: flex;
+    flex: none;
+    gap: var(--space-2);
+    align-items: center;
+  }
+}
+
+.user-menu {
+  position: relative;
+
+  &__trigger {
+    display: inline-flex;
+    gap: var(--space-1);
+    align-items: center;
+    min-height: 2rem;
+    padding: var(--space-1) var(--space-3);
+    font-size: 0.875rem;
+    font-weight: 600;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    transition: border-color 0.15s, box-shadow 0.15s;
+
+    &:hover,
+    &[aria-expanded='true'] {
+      border-color: var(--color-kicker);
+      box-shadow: var(--shadow-card);
+    }
+  }
+
+  &__crown {
+    color: var(--color-kicker);
+  }
+
+  &__name {
+    max-width: 8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__caret {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+  }
+
+  &__list {
+    position: absolute;
+    top: calc(100% + var(--space-2));
+    right: 0;
+    z-index: 10;
+    display: grid;
+    min-width: 12rem;
+    padding: var(--space-2);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-raised);
+  }
+
+  &__item {
+    display: block;
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-sm);
+
+    &:hover {
+      background-color: var(--color-surface-raised);
+    }
+  }
+}

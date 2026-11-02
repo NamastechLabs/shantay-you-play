@@ -55,6 +55,7 @@ const category = computed(() => data.value?.category ?? null)
 const looksByParticipant = computed(() => new Map(data.value?.looks.map(look => [look.participant_id, look])))
 const previousStatus = computed(() => (category.value ? adjacentStatus(category.value.status, -1) : null))
 const nextStatus = computed(() => (category.value ? adjacentStatus(category.value.status, 1) : null))
+const currentStatusIndex = computed(() => (category.value ? CATEGORY_STATUSES.indexOf(category.value.status) : -1))
 
 // --- Edit title / intro ---------------------------------------------------
 const title = ref(category.value?.title ?? '')
@@ -116,43 +117,46 @@ async function changeStatus(status: CategoryStatus): Promise<void> {
 
 <template>
   <main v-if="category" class="page">
+    <AppNav />
+    <NuxtLink to="/admin" class="back-link">
+      ← Panel
+    </NuxtLink>
+
     <header class="page-header">
-      <div class="page-header__titles">
-        <p class="kicker">
-          Drag Race Game
-        </p>
-        <h1>Semana {{ category.week_number }}</h1>
-      </div>
-      <nav class="page-header__actions">
-        <NuxtLink to="/admin" class="btn btn--ghost">
-          ← Panel
-        </NuxtLink>
-      </nav>
+      <h1>Semana {{ category.week_number }}</h1>
     </header>
 
     <section class="section" aria-labelledby="status-title">
-      <h2 id="status-title">
+      <h2 id="status-title" class="sr-only">
         Estado: {{ CATEGORY_STATUS_LABELS[category.status] }}
       </h2>
+      <!-- Only the steps next to the current one are clickable (mirrors the workflow) -->
       <ol class="stepper">
-        <li
-          v-for="status in CATEGORY_STATUSES"
-          :key="status"
-          class="stepper__step"
-          :class="{ 'stepper__step--current': status === category.status }"
-          :aria-current="status === category.status ? 'step' : undefined"
-        >
-          {{ CATEGORY_STATUS_LABELS[status] }}
+        <li v-for="(status, index) in CATEGORY_STATUSES" :key="status">
+          <button
+            v-if="status === previousStatus || status === nextStatus"
+            type="button"
+            class="stepper__step"
+            :class="status === nextStatus ? 'stepper__step--next' : 'stepper__step--previous'"
+            :disabled="statusSaving"
+            :title="status === nextStatus ? `Pasar a ${CATEGORY_STATUS_LABELS[status]}` : `Volver a ${CATEGORY_STATUS_LABELS[status]}`"
+            @click="changeStatus(status)"
+          >
+            <span class="stepper__index" aria-hidden="true">{{ index + 1 }}</span>
+            <span class="sr-only">{{ status === nextStatus ? 'Pasar a' : 'Volver a' }}</span>
+            {{ CATEGORY_STATUS_LABELS[status] }}
+          </button>
+          <span
+            v-else
+            class="stepper__step"
+            :class="status === category.status ? 'stepper__step--current' : index < currentStatusIndex ? 'stepper__step--done' : null"
+            :aria-current="status === category.status ? 'step' : undefined"
+          >
+            <span class="stepper__index" aria-hidden="true">{{ index < currentStatusIndex ? '✓' : index + 1 }}</span>
+            {{ CATEGORY_STATUS_LABELS[status] }}
+          </span>
         </li>
       </ol>
-      <div class="actions">
-        <button v-if="previousStatus" type="button" class="btn btn--secondary" :disabled="statusSaving" @click="changeStatus(previousStatus)">
-          ← Volver a {{ CATEGORY_STATUS_LABELS[previousStatus] }}
-        </button>
-        <button v-if="nextStatus" type="button" class="btn btn--primary" :disabled="statusSaving" @click="changeStatus(nextStatus)">
-          Pasar a {{ CATEGORY_STATUS_LABELS[nextStatus] }} →
-        </button>
-      </div>
       <p v-if="statusError" class="form-error" role="alert">
         {{ statusError }}
       </p>
@@ -207,6 +211,10 @@ async function changeStatus(status: CategoryStatus): Promise<void> {
   </main>
 
   <main v-else class="page">
+    <AppNav />
+    <NuxtLink to="/admin" class="back-link">
+      ← Panel
+    </NuxtLink>
     <p class="form-error" role="alert">
       {{ toErrorMessage(loadError) }}
     </p>

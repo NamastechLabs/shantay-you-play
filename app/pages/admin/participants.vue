@@ -132,18 +132,13 @@ async function removeParticipant(participant: ParticipantRow): Promise<void> {
 
 <template>
   <main class="page">
+    <AppNav />
+    <NuxtLink to="/admin" class="back-link">
+      ← Panel
+    </NuxtLink>
+
     <header class="page-header">
-      <div class="page-header__titles">
-        <p class="kicker">
-          Drag Race Game
-        </p>
-        <h1>Participantes</h1>
-      </div>
-      <nav class="page-header__actions">
-        <NuxtLink to="/admin" class="btn btn--ghost">
-          ← Panel
-        </NuxtLink>
-      </nav>
+      <h1>Participantes</h1>
     </header>
 
     <section class="section" aria-labelledby="participants-title">

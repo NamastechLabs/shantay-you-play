@@ -6,7 +6,7 @@ const selectId = useId()
 <template>
   <div class="theme-switcher">
     <label :for="selectId" class="sr-only">Tema</label>
-    <select :id="selectId" v-model="theme" class="field__input field__input--compact">
+    <select :id="selectId" v-model="theme" class="field__input field__input--small">
       <option v-for="name in THEMES" :key="name" :value="name">
         {{ THEME_LABELS[name] }}
       </option>
