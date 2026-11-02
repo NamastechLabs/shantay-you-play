@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Tables } from '~/types/database.types'
+import type { BreadcrumbItem } from '~/components/AppBreadcrumb.vue'
 
 type Category = Pick<Tables<'categories'>, 'id' | 'week_number' | 'title' | 'intro_text' | 'status'>
 
@@ -71,6 +72,14 @@ const looks = computed(() => {
   return [...all].sort((a, b) => place(a) - place(b))
 })
 
+// Closed categories are reached from "Categorías pasadas", so the trail goes back through it
+const breadcrumb = computed<BreadcrumbItem[]>(() => {
+  const current = { label: `Semana ${category.value?.week_number}` }
+  return category.value?.status === 'closed'
+    ? [{ label: 'Inicio', to: '/' }, { label: 'Categorías pasadas', to: '/categories/past' }, current]
+    : [{ label: 'Inicio', to: '/' }, current]
+})
+
 const displayName = (look: RunwayLook): string => look.participant.drag_name ?? look.participant.name
 
 // --- Enlarged view --------------------------------------------------------
@@ -79,6 +88,9 @@ const selectedLook = ref<RunwayLook | null>(null)
 
 <template>
   <main v-if="category" class="page page--wide">
+    <AppNav />
+    <AppBreadcrumb :items="breadcrumb" />
+
     <header class="page-header">
       <div class="page-header__titles">
         <p class="kicker">
@@ -88,9 +100,6 @@ const selectedLook = ref<RunwayLook | null>(null)
         <h1>{{ category.title }}</h1>
       </div>
       <nav class="page-header__actions">
-        <NuxtLink to="/" class="btn btn--ghost">
-          ← Inicio
-        </NuxtLink>
         <NuxtLink v-if="category.status === 'voting'" :to="`/categories/${category.id}/vote`" class="btn btn--primary">
           Votar los mejores looks
         </NuxtLink>
@@ -134,6 +143,8 @@ const selectedLook = ref<RunwayLook | null>(null)
   </main>
 
   <main v-else class="page">
+    <AppNav />
+    <AppBreadcrumb :items="[{ label: 'Inicio', to: '/' }]" />
     <p class="form-error" role="alert">
       {{ toErrorMessage(loadError) }}
     </p>

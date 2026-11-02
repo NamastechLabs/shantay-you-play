@@ -133,9 +133,9 @@ async function removeParticipant(participant: ParticipantRow): Promise<void> {
 <template>
   <main class="page">
     <AppNav />
-    <NuxtLink to="/admin" class="back-link">
-      ← Panel
-    </NuxtLink>
+    <AppBreadcrumb
+      :items="[{ label: 'Inicio', to: '/' }, { label: 'Panel del jurado', to: '/admin' }, { label: 'Participantes' }]"
+    />
 
     <header class="page-header">
       <h1>Participantes</h1>

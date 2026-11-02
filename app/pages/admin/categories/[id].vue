@@ -122,9 +122,13 @@ async function changeStatus(status: CategoryStatus): Promise<void> {
 <template>
   <main v-if="category" class="page">
     <AppNav />
-    <NuxtLink to="/admin" class="back-link">
-      ← Panel
-    </NuxtLink>
+    <AppBreadcrumb
+      :items="[
+        { label: 'Inicio', to: '/' },
+        { label: 'Panel del jurado', to: '/admin' },
+        { label: `Semana ${category.week_number}` },
+      ]"
+    />
 
     <header class="page-header">
       <h1>Semana {{ category.week_number }}</h1>
@@ -216,9 +220,7 @@ async function changeStatus(status: CategoryStatus): Promise<void> {
 
   <main v-else class="page">
     <AppNav />
-    <NuxtLink to="/admin" class="back-link">
-      ← Panel
-    </NuxtLink>
+    <AppBreadcrumb :items="[{ label: 'Inicio', to: '/' }, { label: 'Panel del jurado', to: '/admin' }]" />
     <p class="form-error" role="alert">
       {{ toErrorMessage(loadError) }}
     </p>

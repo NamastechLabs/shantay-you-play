@@ -149,6 +149,15 @@ async function saveBallot(): Promise<void> {
 
 <template>
   <main v-if="category" class="page page--wide vote-page">
+    <AppNav />
+    <AppBreadcrumb
+      :items="[
+        { label: 'Inicio', to: '/' },
+        { label: `Semana ${category.week_number}`, to: `/categories/${category.id}` },
+        { label: 'Tu Top 3' },
+      ]"
+    />
+
     <header class="page-header">
       <div class="page-header__titles">
         <p class="kicker">
@@ -158,9 +167,6 @@ async function saveBallot(): Promise<void> {
         <h1>Tu Top 3</h1>
       </div>
       <nav class="page-header__actions">
-        <NuxtLink to="/" class="btn btn--ghost">
-          ← Inicio
-        </NuxtLink>
         <NuxtLink :to="`/categories/${category.id}`" class="btn btn--secondary">
           Ver la pasarela
         </NuxtLink>
@@ -242,6 +248,8 @@ async function saveBallot(): Promise<void> {
   </main>
 
   <main v-else class="page">
+    <AppNav />
+    <AppBreadcrumb :items="[{ label: 'Inicio', to: '/' }]" />
     <p class="form-error" role="alert">
       {{ toErrorMessage(loadError) }}
     </p>

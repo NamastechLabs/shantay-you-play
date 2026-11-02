@@ -1,0 +1,38 @@
+// "Inicio / Categorías pasadas / Semana 3" under the nav bar
+.breadcrumb {
+  margin-block: calc(var(--space-3) * -1);
+  font-size: 0.875rem;
+  font-weight: 600;
+
+  &__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-2);
+    align-items: center;
+  }
+
+  &__item {
+    display: inline-flex;
+    gap: var(--space-2);
+    align-items: center;
+    min-width: 0;
+
+    & + &::before {
+      color: var(--color-text-muted);
+      content: '/';
+    }
+  }
+
+  &__link {
+    color: var(--color-text-muted);
+
+    &:hover {
+      color: var(--color-kicker);
+    }
+  }
+
+  &__current {
+    color: var(--color-title);
+    overflow-wrap: anywhere;
+  }
+}

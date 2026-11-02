@@ -76,9 +76,7 @@ async function createCategory(): Promise<void> {
 <template>
   <main class="page">
     <AppNav />
-    <NuxtLink to="/" class="back-link">
-      ← Inicio
-    </NuxtLink>
+    <AppBreadcrumb :items="[{ label: 'Inicio', to: '/' }, { label: 'Panel del jurado' }]" />
 
     <header class="page-header">
       <h1>Panel del jurado</h1>

@@ -1,0 +1,5 @@
+{
+  // The repo has no Prettier config; without this, a user-level "format on save" with Prettier
+  // rewrites files to Prettier defaults (double quotes, semicolons). Prettier now only runs if a config is added.
+  "prettier.requireConfig": true
+}

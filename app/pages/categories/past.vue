@@ -19,6 +19,9 @@ const { data: categories, error } = await useAsyncData('past-categories', async 
 
 <template>
   <main class="page">
+    <AppNav />
+    <AppBreadcrumb :items="[{ label: 'Inicio', to: '/' }, { label: 'Categorías pasadas' }]" />
+
     <header class="page-header">
       <div class="page-header__titles">
         <p class="kicker">
@@ -26,11 +29,6 @@ const { data: categories, error } = await useAsyncData('past-categories', async 
         </p>
         <h1>Categorías pasadas</h1>
       </div>
-      <nav class="page-header__actions">
-        <NuxtLink to="/" class="btn btn--ghost">
-          ← Inicio
-        </NuxtLink>
-      </nav>
     </header>
 
     <p v-if="error" class="form-error" role="alert">
