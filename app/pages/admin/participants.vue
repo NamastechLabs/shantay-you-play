@@ -39,7 +39,7 @@ const saving = ref(false)
 const errorMessage = ref<string | null>(null)
 
 const modalTitle = computed(() => (editing.value ? 'Editar participante' : 'Registrar participante'))
-const canSubmit = computed(() => name.value.trim().length > 0 && (editing.value !== null || email.value.includes('@')))
+const canSubmit = computed(() => name.value.trim().length > 0 && (editing.value?.user_id != null || email.value.includes('@')))
 
 function openCreate(): void {
   editing.value = null
@@ -73,10 +73,14 @@ async function submit(): Promise<void> {
   try {
     const current = editing.value
     const { error } = current
-      // Judges can only change name and drag name (column grants); email and role are fixed once registered
+      // Role is fixed once registered; the email can only change until the person signs in (enforced by a trigger)
       ? await supabase
         .from('participants')
-        .update({ name: name.value.trim(), drag_name: dragName.value.trim() || null })
+        .update({
+          name: name.value.trim(),
+          drag_name: dragName.value.trim() || null,
+          ...(current.user_id ? {} : { email: email.value.trim().toLowerCase() }),
+        })
         .eq('id', current.id)
       : await supabase.from('participants').insert({
         name: name.value.trim(),
@@ -183,13 +187,13 @@ async function removeParticipant(participant: ParticipantRow): Promise<void> {
 
     <AppModal :open="modalOpen" :title="modalTitle" @close="modalOpen = false">
       <p v-if="!editing" class="hint">
-        Cuando esta persona inicie sesión con Google usando este correo, quedará vinculada automáticamente.
+        Cuando esta persona inicie sesión con Google o Microsoft usando este correo, quedará vinculada automáticamente.
       </p>
       <p v-else-if="editing.user_id" class="hint">
-        Solo se puede eliminar a quien aún no ha iniciado sesión. El correo y el rol no se pueden cambiar.
+        Esta persona ya inició sesión: el correo y el rol no se pueden cambiar.
       </p>
       <p v-else class="hint">
-        El correo y el rol no se pueden cambiar. Si te equivocaste, elimina el registro y vuelve a crearlo.
+        Mientras no inicie sesión puedes corregir el correo. El rol no se puede cambiar.
       </p>
 
       <form class="form" @submit.prevent="submit">
@@ -206,7 +210,7 @@ async function removeParticipant(participant: ParticipantRow): Promise<void> {
           >
         </div>
         <div class="field">
-          <label for="participant-email" class="field__label">Correo (el de su cuenta de Google)</label>
+          <label for="participant-email" class="field__label">Correo (el de su cuenta de Google o Microsoft)</label>
           <input
             id="participant-email"
             v-model="email"
@@ -214,7 +218,7 @@ async function removeParticipant(participant: ParticipantRow): Promise<void> {
             type="email"
             required
             autocomplete="off"
-            :disabled="editing !== null"
+            :disabled="editing?.user_id != null"
             placeholder="persona@gmail.com"
           >
         </div>

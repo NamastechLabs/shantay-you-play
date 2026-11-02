@@ -80,11 +80,6 @@ async function createCategory(): Promise<void> {
 
     <header class="page-header">
       <h1>Panel del jurado</h1>
-      <nav class="page-header__actions">
-        <NuxtLink to="/admin/participants" class="btn btn--secondary">
-          Participantes
-        </NuxtLink>
-      </nav>
     </header>
 
     <section class="section" aria-labelledby="categories-title">

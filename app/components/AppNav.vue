@@ -75,6 +75,11 @@ async function signOut(): Promise<void> {
               Panel del jurado
             </NuxtLink>
           </li>
+          <li v-if="isJurado">
+            <NuxtLink to="/admin/participants" class="user-menu__item" @click="closeMenu()">
+              Participantes
+            </NuxtLink>
+          </li>
           <li>
             <button type="button" class="user-menu__item" @click="signOut">
               Salir
