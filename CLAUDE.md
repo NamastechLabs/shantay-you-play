@@ -18,7 +18,7 @@
   - Never hardcode colors, fonts, radii, shadows or spacing in components. Use semantic CSS custom properties (e.g. `--color-surface`, `--color-primary`, `--color-accent`, `--color-highlight`, `--font-display`, `--font-body`, `--radius-md`, `--shadow-glow`).
   - Each theme only redefines those variables, scoped by `[data-theme="retro-glam" | "neon-nightclub" | "y2k-camp"]` on `<html>`. Components must not know which theme is active.
   - Keep SCSS partials split: `tokens/` (per-theme variable sets), `base/`, `components/`.
-  - In Figma, mirror this with one variable collection and one mode per theme, using the same semantic variable names as the CSS.
+  - In Figma, the current plan allows only 1 mode per collection, so each theme is its own collection (`Theme`, `Theme: Neon Nightclub`, `Theme: Y2K Camp`) with identical semantic variable names matching the CSS (`color/primary` → `var(--color-primary)`). Raw palettes live in `Primitives`; spacing in `Spacing`. If the plan is upgraded, merge the themes into one `Theme` collection with one mode each.
   - Theme-specific decoration (sparkles, crowns, glow, chrome) should be driven by variables or a theme-scoped class, not by branching in component logic.
 - Persist the user's theme choice (e.g. cookie / profile) and apply it server-side to avoid a flash of the wrong theme.
 
