@@ -54,6 +54,9 @@ watchEffect(() => {
       <p v-if="displayedError" class="form-error" role="alert">
         {{ displayedError }}
       </p>
+      <p v-if="route.query.detail" class="form-error">
+        Detalle: {{ route.query.detail }}
+      </p>
     </div>
   </main>
 </template>

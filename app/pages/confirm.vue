@@ -11,7 +11,9 @@ const hashParams = import.meta.client ? new URLSearchParams(window.location.hash
 const hasAuthError = Boolean(route.query.error || route.query.error_code || hashParams?.get('error'))
 
 if (hasAuthError) {
-  await navigateTo({ path: '/login', query: { error: 'not_registered' } }, { replace: true })
+  // Keep Supabase's own description so the login page can show what really failed
+  const detail = String(route.query.error_description ?? hashParams?.get('error_description') ?? '')
+  await navigateTo({ path: '/login', query: { error: 'not_registered', detail } }, { replace: true })
 }
 
 let done = false
