@@ -118,7 +118,7 @@ async function save(): Promise<void> {
           v-model="intro"
           class="field__input"
           rows="2"
-          maxlength="500"
+          maxlength="1000"
           :required="introRequired"
           :aria-label="`Intro del look de ${displayName}`"
           :placeholder="introRequired ? 'Presentación del jurado (obligatoria)' : 'Intro del look (opcional)'"

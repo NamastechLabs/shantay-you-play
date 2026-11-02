@@ -73,6 +73,7 @@ All schema changes live in [`supabase/migrations/`](supabase/migrations) and are
 | `20261102000000_participants_preregistration.sql` | `participants.user_id`: judges pre-register people by email and the first Google sign-in links to them; ownership rules now go through `current_participant_id()` |
 | `20261102001400_runways.sql` | `runways` (week, date, status) group 1..N categories; status and week move off `categories`; ballots become a Top 3 of **queens** per runway (existing ballots are converted); `runway_top_three` / `runway_ranking` |
 | `20261102001500_runway_datetime.sql` | `runways.runway_date` becomes `timestamptz` (date and time of the runway) |
+| `20261102001600_look_intro_1000.sql` | Jury look intro limit raised from 500 to 1000 characters |
 
 ### Apply them with the Supabase CLI (recommended)
 
