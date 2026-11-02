@@ -1,6 +1,10 @@
 import type { Tables } from '~/types/database.types'
 
 export type Look = Tables<'looks'>
+export type JuryLook = Tables<'jury_looks'>
+
+/** Queens' looks are voted on; the jury's looks are only shown on the homepage. */
+export type LookKind = 'queen' | 'jury'
 
 export interface UploadLookInput {
   categoryId: string
@@ -13,10 +17,11 @@ const LOOK_COLUMNS = 'id, category_id, participant_id, image_url, intro, uploade
 
 /**
  * Judge-only: compresses a runway photo, stores it in the 'runway-looks' bucket
- * under {category_id}/{participant_id}/ and writes the matching `looks` row.
+ * under {category_id}/{participant_id}/ and writes the matching row: `looks` for
+ * queens, `jury_looks` for the jury.
  * RLS rejects the upload/insert for non-judges or closed categories.
  */
-export function useLookUpload() {
+export function useLookUpload(kind: LookKind = 'queen') {
   const supabase = useSupabaseClient()
   const bucketName = useRuntimeConfig().public.runwayLooksBucket
   const bucket = () => supabase.storage.from(bucketName)
@@ -65,21 +70,33 @@ export function useLookUpload() {
     }
   }
 
-  /** Creates a new look for a contestant in a category. */
+  // Both tables share the same columns; the jury's intro is just required
+  function insertRow(categoryId: string, participantId: string, imageUrl: string, intro: string | null) {
+    return kind === 'jury'
+      ? supabase
+          .from('jury_looks')
+          .insert({ category_id: categoryId, participant_id: participantId, image_url: imageUrl, intro: intro ?? '' })
+          .select(LOOK_COLUMNS)
+          .single()
+      : supabase
+          .from('looks')
+          .insert({ category_id: categoryId, participant_id: participantId, image_url: imageUrl, intro })
+          .select(LOOK_COLUMNS)
+          .single()
+  }
+
+  function updateImage(lookId: string, imageUrl: string) {
+    return kind === 'jury'
+      ? supabase.from('jury_looks').update({ image_url: imageUrl }).eq('id', lookId).select(LOOK_COLUMNS).single()
+      : supabase.from('looks').update({ image_url: imageUrl }).eq('id', lookId).select(LOOK_COLUMNS).single()
+  }
+
+  /** Creates a new look for a participant in a category. */
   function uploadLook({ categoryId, participantId, file, intro = null }: UploadLookInput): Promise<Look> {
     return track(async () => {
       const { path, publicUrl } = await storeImage(categoryId, participantId, file)
 
-      const { data, error: insertError } = await supabase
-        .from('looks')
-        .insert({
-          category_id: categoryId,
-          participant_id: participantId,
-          image_url: publicUrl,
-          intro,
-        })
-        .select(LOOK_COLUMNS)
-        .single()
+      const { data, error: insertError } = await insertRow(categoryId, participantId, publicUrl, intro)
 
       if (insertError) {
         // Don't leave an orphaned file behind if the row couldn't be written
@@ -95,12 +112,7 @@ export function useLookUpload() {
     return track(async () => {
       const { path, publicUrl } = await storeImage(look.category_id, look.participant_id, file)
 
-      const { data, error: updateError } = await supabase
-        .from('looks')
-        .update({ image_url: publicUrl })
-        .eq('id', look.id)
-        .select(LOOK_COLUMNS)
-        .single()
+      const { data, error: updateError } = await updateImage(look.id, publicUrl)
 
       if (updateError) {
         await bucket().remove([path])

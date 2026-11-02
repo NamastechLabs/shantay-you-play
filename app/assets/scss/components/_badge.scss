@@ -36,6 +36,10 @@
   }
 
   // Category lifecycle
+  &--werk_room {
+    background-color: var(--color-warning);
+  }
+
   &--runway {
     background-color: var(--color-accent);
   }

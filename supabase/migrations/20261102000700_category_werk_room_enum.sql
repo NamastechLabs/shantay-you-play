@@ -1,0 +1,11 @@
+-- =============================================================================
+-- Migration: new category stage 'werk_room' (between 'draft' and 'runway')
+--
+-- The jury uploads the looks around an hour before the runway opens. In the
+-- Werk Room the category is already public (categories_select only hides
+-- 'draft'), while the looks stay hidden until 'runway'.
+--
+-- Kept in its own migration: a new enum value cannot be used (policies,
+-- functions) in the same transaction that adds it.
+-- =============================================================================
+alter type public.category_status add value if not exists 'werk_room' before 'runway';

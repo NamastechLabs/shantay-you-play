@@ -1,21 +1,25 @@
 <script setup lang="ts">
+import type { LookKind } from '~/composables/useLookUpload'
 import type { Tables } from '~/types/database.types'
 
 type Contestant = Pick<Tables<'participants'>, 'id' | 'name' | 'drag_name'>
 type LookSummary = Pick<Tables<'looks'>, 'id' | 'category_id' | 'participant_id' | 'image_url' | 'intro'>
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   categoryId: string
+  /** The queen, or the judge when `kind` is 'jury' */
   contestant: Contestant
   look: LookSummary | null
   /** False once voting opens: looks are then read-only */
   editable: boolean
-}>()
+  /** Jury looks are not voted on and need an intro (shown on the homepage) */
+  kind?: LookKind
+}>(), { kind: 'queen' })
 
 const emit = defineEmits<{ changed: [] }>()
 
 const supabase = useSupabaseClient()
-const { uploadLook, replaceLookImage } = useLookUpload()
+const { uploadLook, replaceLookImage } = useLookUpload(props.kind)
 
 const file = ref<File | null>(null)
 const intro = ref(props.look?.intro ?? '')
@@ -27,7 +31,11 @@ const inputKey = ref(0)
 const displayName = computed(() => props.contestant.drag_name ?? props.contestant.name)
 const normalizedIntro = computed(() => intro.value.trim() || null)
 const introChanged = computed(() => normalizedIntro.value !== (props.look?.intro ?? null))
-const canSave = computed(() => (props.look ? file.value !== null || introChanged.value : file.value !== null))
+const introRequired = computed(() => props.kind === 'jury')
+const canSave = computed(() => {
+  if (introRequired.value && !normalizedIntro.value) return false
+  return props.look ? file.value !== null || introChanged.value : file.value !== null
+})
 
 function onFileChange(event: Event): void {
   file.value = (event.target as HTMLInputElement).files?.[0] ?? null
@@ -44,10 +52,9 @@ async function save(): Promise<void> {
         await replaceLookImage(props.look, file.value)
       }
       if (introChanged.value) {
-        const { error } = await supabase
-          .from('looks')
-          .update({ intro: normalizedIntro.value })
-          .eq('id', props.look.id)
+        const { error } = props.kind === 'jury'
+          ? await supabase.from('jury_looks').update({ intro: normalizedIntro.value ?? '' }).eq('id', props.look.id)
+          : await supabase.from('looks').update({ intro: normalizedIntro.value }).eq('id', props.look.id)
         if (error) throw error
       }
     }
@@ -97,8 +104,9 @@ async function save(): Promise<void> {
           class="field__input"
           rows="2"
           maxlength="500"
+          :required="introRequired"
           :aria-label="`Intro del look de ${displayName}`"
-          placeholder="Intro del look (opcional)"
+          :placeholder="introRequired ? 'Presentación del jurado (obligatoria)' : 'Intro del look (opcional)'"
         />
         <button type="submit" class="btn btn--secondary" :disabled="!canSave || saving">
           {{ saving ? 'Guardando…' : look ? 'Guardar cambios' : 'Subir look' }}

@@ -12,6 +12,8 @@ interface CategoryDetail {
   category: Category
   contestants: Contestant[]
   looks: LookSummary[]
+  judges: Contestant[]
+  juryLooks: LookSummary[]
 }
 
 const route = useRoute()
@@ -21,7 +23,7 @@ const categoryId = String(route.params.id)
 const { data, error: loadError, refresh } = await useAsyncData(
   `admin-category-${categoryId}`,
   async (): Promise<CategoryDetail | null> => {
-    const [category, contestants, looks] = await Promise.all([
+    const [category, contestants, looks, judges, juryLooks] = await Promise.all([
       supabase
         .from('categories')
         .select('id, week_number, title, intro_text, status')
@@ -36,14 +38,31 @@ const { data, error: loadError, refresh } = await useAsyncData(
         .from('looks')
         .select('id, category_id, participant_id, image_url, intro')
         .eq('category_id', categoryId),
+      supabase
+        .from('participants')
+        .select('id, name, drag_name')
+        .eq('role', 'jurado')
+        .order('name', { ascending: true }),
+      supabase
+        .from('jury_looks')
+        .select('id, category_id, participant_id, image_url, intro')
+        .eq('category_id', categoryId),
     ])
 
     if (category.error) throw category.error
     if (contestants.error) throw contestants.error
     if (looks.error) throw looks.error
+    if (judges.error) throw judges.error
+    if (juryLooks.error) throw juryLooks.error
     if (!category.data) return null
 
-    return { category: category.data, contestants: contestants.data, looks: looks.data }
+    return {
+      category: category.data,
+      contestants: contestants.data,
+      looks: looks.data,
+      judges: judges.data,
+      juryLooks: juryLooks.data,
+    }
   },
 )
 
@@ -53,6 +72,15 @@ if (!loadError.value && !data.value) {
 
 const category = computed(() => data.value?.category ?? null)
 const looksByParticipant = computed(() => new Map(data.value?.looks.map(look => [look.participant_id, look])))
+const juryLooksByParticipant = computed(() => new Map(data.value?.juryLooks.map(look => [look.participant_id, look])))
+
+// --- Looks tabs: queens (voted) and jury (shown on the homepage) ----------
+type LooksTab = 'queens' | 'jury'
+const looksTab = ref<LooksTab>('queens')
+const looksTabs = computed<{ id: LooksTab, label: string, done: number, total: number }[]>(() => [
+  { id: 'queens', label: 'Reinas', done: data.value?.looks.length ?? 0, total: data.value?.contestants.length ?? 0 },
+  { id: 'jury', label: 'Jurados', done: data.value?.juryLooks.length ?? 0, total: data.value?.judges.length ?? 0 },
+])
 const previousStatus = computed(() => (category.value ? adjacentStatus(category.value.status, -1) : null))
 const nextStatus = computed(() => (category.value ? adjacentStatus(category.value.status, 1) : null))
 const currentStatusIndex = computed(() => (category.value ? CATEGORY_STATUSES.indexOf(category.value.status) : -1))
@@ -196,25 +224,78 @@ async function changeStatus(status: CategoryStatus): Promise<void> {
 
     <section class="section" aria-labelledby="looks-title">
       <h2 id="looks-title">
-        Looks ({{ data?.looks.length ?? 0 }} / {{ data?.contestants.length ?? 0 }})
+        Looks
       </h2>
+
+      <div class="tabs" role="tablist" aria-labelledby="looks-title">
+        <button
+          v-for="tab in looksTabs"
+          :id="`looks-tab-${tab.id}`"
+          :key="tab.id"
+          type="button"
+          role="tab"
+          class="tabs__tab"
+          :class="{ 'tabs__tab--active': looksTab === tab.id }"
+          :aria-selected="looksTab === tab.id"
+          :aria-controls="`looks-panel-${tab.id}`"
+          :tabindex="looksTab === tab.id ? 0 : -1"
+          @click="looksTab = tab.id"
+        >
+          {{ tab.label }} ({{ tab.done }} / {{ tab.total }})
+        </button>
+      </div>
+
       <p v-if="!canEditLooks(category.status)" class="hint">
         La votación ya abrió: los looks no se pueden modificar.
       </p>
-      <ul v-if="data?.contestants.length" class="row-list">
-        <AdminLookRow
-          v-for="contestant in data.contestants"
-          :key="contestant.id"
-          :category-id="category.id"
-          :contestant="contestant"
-          :look="looksByParticipant.get(contestant.id) ?? null"
-          :editable="canEditLooks(category.status)"
-          @changed="refresh()"
-        />
-      </ul>
-      <p v-else class="empty">
-        Aún no hay concursantes. Regístralos en <NuxtLink to="/admin/participants" class="link">Participantes</NuxtLink>.
-      </p>
+
+      <div
+        v-show="looksTab === 'queens'"
+        id="looks-panel-queens"
+        role="tabpanel"
+        aria-labelledby="looks-tab-queens"
+      >
+        <ul v-if="data?.contestants.length" class="row-list">
+          <AdminLookRow
+            v-for="contestant in data.contestants"
+            :key="contestant.id"
+            :category-id="category.id"
+            :contestant="contestant"
+            :look="looksByParticipant.get(contestant.id) ?? null"
+            :editable="canEditLooks(category.status)"
+            @changed="refresh()"
+          />
+        </ul>
+        <p v-else class="empty">
+          Aún no hay concursantes. Regístralos en <NuxtLink to="/admin/participants" class="link">Participantes</NuxtLink>.
+        </p>
+      </div>
+
+      <div
+        v-show="looksTab === 'jury'"
+        id="looks-panel-jury"
+        role="tabpanel"
+        aria-labelledby="looks-tab-jury"
+      >
+        <p class="hint">
+          Cada jurado sube su foto y una presentación: se muestran en la portada mientras la categoría está en Pasarela.
+        </p>
+        <ul v-if="data?.judges.length" class="row-list">
+          <AdminLookRow
+            v-for="judge in data.judges"
+            :key="judge.id"
+            kind="jury"
+            :category-id="category.id"
+            :contestant="judge"
+            :look="juryLooksByParticipant.get(judge.id) ?? null"
+            :editable="canEditLooks(category.status)"
+            @changed="refresh()"
+          />
+        </ul>
+        <p v-else class="empty">
+          Aún no hay jurados. Asigna el rol en <NuxtLink to="/admin/participants" class="link">Participantes</NuxtLink>.
+        </p>
+      </div>
     </section>
   </main>
 

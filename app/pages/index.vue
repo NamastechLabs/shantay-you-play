@@ -10,12 +10,21 @@ interface TopLook {
   name: string
 }
 
+interface JuryMember {
+  id: string
+  image_url: string
+  intro: string
+  name: string
+}
+
 interface HomeData {
   categories: OpenCategory[]
   /** Voting categories where the current participant already cast a ballot */
   votedCategoryIds: string[]
   /** Top 3 of the category being revealed (empty when there is none) */
   topThree: TopLook[]
+  /** Judges' looks of the week's category while it is on the runway (empty otherwise) */
+  jury: JuryMember[]
 }
 
 interface CategoryAction {
@@ -31,18 +40,20 @@ const { data, error, refresh } = await useAsyncData('home', async (): Promise<Ho
   const { data: categories, error } = await supabase
     .from('categories')
     .select('id, week_number, title, intro_text, status')
-    .in('status', ['runway', 'voting', 'reveal'])
+    .in('status', ['werk_room', 'runway', 'voting', 'reveal'])
     .order('week_number', { ascending: false })
 
   if (error) throw error
 
   const revealCategory = categories.find(category => category.status === 'reveal')
-  const [topThree, votedCategoryIds] = await Promise.all([
+  const featured = pickWeekCategory(categories)
+  const [topThree, votedCategoryIds, jury] = await Promise.all([
     revealCategory ? loadTopThree(revealCategory.id) : [],
     loadVotedCategoryIds(categories),
+    featured?.status === 'runway' ? loadJury(featured.id) : [],
   ])
 
-  return { categories, votedCategoryIds, topThree }
+  return { categories, votedCategoryIds, topThree, jury }
 })
 
 // Status changes (voting -> reveal -> closed) reach everyone without a page refresh
@@ -68,6 +79,22 @@ async function loadTopThree(categoryId: string): Promise<TopLook[]> {
   }))
 }
 
+async function loadJury(categoryId: string): Promise<JuryMember[]> {
+  const { data: rows, error: juryError } = await supabase
+    .from('jury_looks')
+    .select('id, image_url, intro, participant:participants!jury_looks_participant_id_fkey(name, drag_name)')
+    .eq('category_id', categoryId)
+    .order('created_at', { ascending: true })
+  if (juryError) throw juryError
+
+  return rows.map(row => ({
+    id: row.id,
+    image_url: row.image_url,
+    intro: row.intro,
+    name: row.participant.drag_name ?? row.participant.name,
+  }))
+}
+
 async function loadVotedCategoryIds(categories: OpenCategory[]): Promise<string[]> {
   const votingIds = categories.filter(category => category.status === 'voting').map(category => category.id)
   if (!votingIds.length || !participant.value) return []
@@ -85,16 +112,19 @@ async function loadVotedCategoryIds(categories: OpenCategory[]): Promise<string[
 // Several categories can be open at once (last week still voting while the new runway opens):
 // a category being revealed takes the stage, otherwise the newest one is the week's category.
 // The rest stay reachable below it.
-const weekCategory = computed(() =>
-  data.value?.categories.find(category => category.status === 'reveal') ?? data.value?.categories[0] ?? null,
-)
+function pickWeekCategory(categories: OpenCategory[]): OpenCategory | null {
+  return categories.find(category => category.status === 'reveal') ?? categories[0] ?? null
+}
+const weekCategory = computed(() => pickWeekCategory(data.value?.categories ?? []))
 const otherOpenCategories = computed(() =>
   data.value?.categories.filter(category => category.id !== weekCategory.value?.id) ?? [],
 )
 const revealedTopThree = computed(() => (weekCategory.value?.status === 'reveal' ? data.value?.topThree ?? [] : []))
+const runwayJury = computed(() => (weekCategory.value?.status === 'runway' ? data.value?.jury ?? [] : []))
 
 const STATUS_HINTS: Record<OpenCategory['status'], string> = {
   draft: '',
+  werk_room: 'Las reinas se preparan en el Werk Room.',
   runway: 'La votación abrirá pronto.',
   voting: '',
   reveal: 'Pronto se revelará el Top 3.',
@@ -137,8 +167,27 @@ function primaryAction(category: OpenCategory): CategoryAction | null {
           ? '¡La votación está abierta! Elige tu Top 3 de la semana.'
           : weekCategory.status === 'reveal'
             ? '¡La votación terminó! Estas son las tres mejores reinas de la semana.'
-            : 'Las reinas ya están en la pasarela. La votación abrirá pronto.' }}
+            : weekCategory.status === 'werk_room'
+              ? 'Las reinas se están preparando en el Werk Room. ¡La pasarela abrirá pronto!'
+              : 'Las reinas ya están en la pasarela. La votación abrirá pronto.' }}
       </p>
+
+      <section v-if="runwayJury.length" class="jury" aria-labelledby="jury-title">
+        <h2 id="jury-title" class="jury__title">
+          El jurado en la pasarela
+        </h2>
+        <ul class="jury__list">
+          <li v-for="member in runwayJury" :key="member.id" class="jury__card">
+            <img class="jury__photo" :src="member.image_url" :alt="`Look de ${member.name}`" loading="lazy">
+            <div class="jury__body">
+              <strong class="jury__name">{{ member.name }}</strong>
+              <p class="jury__intro">
+                {{ member.intro }}
+              </p>
+            </div>
+          </li>
+        </ul>
+      </section>
 
       <TopThreeReveal
         v-if="revealedTopThree.length"
@@ -245,6 +294,63 @@ function primaryAction(category: OpenCategory): CategoryAction | null {
 
 .week-hero__reveal {
   justify-self: stretch;
+}
+
+.jury {
+  display: grid;
+  gap: var(--space-4);
+  justify-self: stretch;
+}
+
+.jury__title {
+  font-size: 1.25rem;
+}
+
+.jury__list {
+  display: grid;
+  gap: var(--space-4);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+
+  @media (min-width: 48rem) {
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  }
+}
+
+.jury__card {
+  display: grid;
+  grid-template-columns: 6rem 1fr;
+  gap: var(--space-3);
+  align-items: start;
+  padding: var(--space-3);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+.jury__photo {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+
+.jury__body {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.jury__name {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  line-height: 1.3;
+  color: var(--color-title);
+}
+
+.jury__intro {
+  white-space: pre-line;
 }
 
 .week-hero .actions {

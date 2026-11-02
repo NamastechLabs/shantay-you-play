@@ -43,6 +43,61 @@ export type Database = {
         }
         Relationships: []
       }
+      jury_looks: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          image_url: string
+          intro: string
+          participant_id: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          image_url: string
+          intro: string
+          participant_id: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          intro?: string
+          participant_id?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'jury_looks_category_id_fkey'
+            columns: ['category_id']
+            isOneToOne: false
+            referencedRelation: 'categories'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'jury_looks_participant_id_fkey'
+            columns: ['participant_id']
+            isOneToOne: false
+            referencedRelation: 'participants'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'jury_looks_uploaded_by_fkey'
+            columns: ['uploaded_by']
+            isOneToOne: false
+            referencedRelation: 'participants'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       looks: {
         Row: {
           category_id: string
@@ -234,7 +289,7 @@ export type Database = {
       }
     }
     Enums: {
-      category_status: 'draft' | 'runway' | 'voting' | 'reveal' | 'closed'
+      category_status: 'draft' | 'werk_room' | 'runway' | 'voting' | 'reveal' | 'closed'
       participant_role: 'jurado' | 'concursante'
     }
     CompositeTypes: {
