@@ -2,7 +2,20 @@
 const user = useSupabaseUser()
 const { loadingProvider, errorMessage, signInWithGoogle, signInWithMicrosoft } = useAuth()
 
+const route = useRoute()
+
 const busy = computed(() => loadingProvider.value !== null)
+
+const NOT_REGISTERED_MESSAGE
+  = 'Tu correo no está en la lista de participantes. Inicia sesión con el correo con el que te registraron o pídele a un jurado que te añada.'
+const SESSION_FAILED_MESSAGE
+  = 'No pudimos confirmar tu sesión. Inténtalo de nuevo; si usas el navegador de otra app (Instagram, WhatsApp…), abre el enlace en Safari.'
+const displayedError = computed(() =>
+  errorMessage.value
+  ?? (route.query.error === 'not_registered'
+    ? NOT_REGISTERED_MESSAGE
+    : route.query.error === 'session' ? SESSION_FAILED_MESSAGE : null),
+)
 
 // Already signed in: skip the login screen
 watchEffect(() => {
@@ -38,8 +51,8 @@ watchEffect(() => {
         </button>
       </div>
 
-      <p v-if="errorMessage" class="form-error" role="alert">
-        {{ errorMessage }}
+      <p v-if="displayedError" class="form-error" role="alert">
+        {{ displayedError }}
       </p>
     </div>
   </main>
