@@ -1,33 +1,13 @@
 <script setup lang="ts">
-const supabase = useSupabaseClient()
 const user = useSupabaseUser()
+const { loadingProvider, errorMessage, signInWithGoogle, signInWithMicrosoft } = useAuth()
 
-const loading = ref(false)
-const errorMessage = ref<string | null>(null)
+const busy = computed(() => loadingProvider.value !== null)
 
 // Already signed in: skip the login screen
 watchEffect(() => {
   if (user.value) navigateTo('/')
 })
-
-async function signInWithGoogle(): Promise<void> {
-  loading.value = true
-  errorMessage.value = null
-
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      // Must be listed under Auth > URL Configuration > Redirect URLs in Supabase
-      redirectTo: `${useRequestURL().origin}/confirm`,
-    },
-  })
-
-  // On success the browser navigates to Google, so only errors land here
-  if (error) {
-    errorMessage.value = error.message
-    loading.value = false
-  }
-}
 </script>
 
 <template>
@@ -49,9 +29,14 @@ async function signInWithGoogle(): Promise<void> {
         Inicia sesión para entrar a la competencia.
       </p>
 
-      <button type="button" class="btn btn--primary" :disabled="loading" @click="signInWithGoogle">
-        {{ loading ? 'Redirigiendo…' : 'Entrar con Google' }}
-      </button>
+      <div class="auth-split__providers">
+        <button type="button" class="btn btn--primary" :disabled="busy" @click="signInWithGoogle">
+          {{ loadingProvider === 'google' ? 'Redirigiendo…' : 'Entrar con Google' }}
+        </button>
+        <button type="button" class="btn btn--secondary" :disabled="busy" @click="signInWithMicrosoft">
+          {{ loadingProvider === 'azure' ? 'Redirigiendo…' : 'Entrar con Microsoft (Hotmail, Outlook)' }}
+        </button>
+      </div>
 
       <p v-if="errorMessage" class="form-error" role="alert">
         {{ errorMessage }}

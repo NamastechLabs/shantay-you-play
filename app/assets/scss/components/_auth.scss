@@ -46,6 +46,17 @@
       }
     }
   }
+
+  &__providers {
+    display: grid;
+    gap: var(--space-3);
+    justify-items: stretch;
+    width: 100%;
+
+    @media (min-width: 40rem) {
+      justify-items: start;
+    }
+  }
 }
 
 // Onboarding / confirm: centered card
