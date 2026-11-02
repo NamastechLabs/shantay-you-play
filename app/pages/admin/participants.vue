@@ -12,6 +12,7 @@ const ROLE_LABELS: Record<Role, string> = { concursante: 'Concursante', jurado: 
 const UNIQUE_VIOLATION = '23505'
 
 const supabase = useSupabaseClient()
+const { listParticipantFiles, removeFiles } = useParticipantFiles()
 
 const { data: participants, error: loadError, refresh } = await useAsyncData(
   'admin-participants',
@@ -117,6 +118,9 @@ async function removeParticipant(participant: ParticipantRow): Promise<void> {
 
   removeError.value = null
   try {
+    // The looks cascade with the row; list their files first so they can be removed from Storage
+    const files = await listParticipantFiles(participant.id)
+
     const { data, error } = await supabase
       .from('participants')
       .delete()
@@ -125,6 +129,7 @@ async function removeParticipant(participant: ParticipantRow): Promise<void> {
 
     if (error) throw error
     if (!data.length) throw new Error('No se pudo eliminar: esa persona ya inició sesión')
+    await removeFiles(files)
     modalOpen.value = false
     await refresh()
   }

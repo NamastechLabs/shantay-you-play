@@ -77,10 +77,15 @@
 
 .form-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
+  gap: var(--space-2);
   align-items: center;
   justify-content: flex-end;
+
+  // Keep every action on one row, even with three buttons on a phone
+  .btn {
+    padding-inline: var(--space-3);
+    white-space: nowrap;
+  }
 
   &__spacer {
     margin-inline-end: auto;
