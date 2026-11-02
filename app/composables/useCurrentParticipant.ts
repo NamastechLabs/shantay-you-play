@@ -1,8 +1,8 @@
 import type { Tables } from '~/types/database.types'
 
-export type CurrentParticipant = Pick<Tables<'participants'>, 'id' | 'user_id' | 'name' | 'drag_name' | 'email' | 'role'>
+export type CurrentParticipant = Pick<Tables<'participants'>, 'id' | 'user_id' | 'name' | 'drag_name' | 'avatar_url' | 'email' | 'role'>
 
-const PARTICIPANT_COLUMNS = 'id, user_id, name, drag_name, email, role'
+const PARTICIPANT_COLUMNS = 'id, user_id, name, drag_name, avatar_url, email, role'
 
 /** Postgres unique_violation, raised by participants_drag_name_key */
 const UNIQUE_VIOLATION = '23505'
@@ -61,9 +61,31 @@ export function useCurrentParticipant() {
     return data
   }
 
+  /** Saves the user's own details. Throws a friendly error if the drag name is taken. */
+  async function updateProfile(
+    changes: { name: string, drag_name: string, avatar_url: string | null },
+  ): Promise<CurrentParticipant> {
+    const userId = user.value?.sub
+    if (!userId) throw new Error('No has iniciado sesión')
+
+    const { data, error } = await supabase
+      .from('participants')
+      .update({ name: changes.name.trim(), drag_name: changes.drag_name.trim(), avatar_url: changes.avatar_url })
+      .eq('user_id', userId)
+      .select(PARTICIPANT_COLUMNS)
+      .single()
+
+    if (error) {
+      if (error.code === UNIQUE_VIOLATION) throw new Error('Ese nombre drag ya está en uso')
+      throw error
+    }
+    participant.value = data
+    return data
+  }
+
   function clear(): void {
     participant.value = null
   }
 
-  return { participant: readonly(participant), isJurado, load, setDragName, clear }
+  return { participant: readonly(participant), isJurado, load, setDragName, updateProfile, clear }
 }

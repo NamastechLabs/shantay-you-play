@@ -66,7 +66,12 @@ async function signOut(): Promise<void> {
 
         <ul v-show="menuOpen" :id="menuId" class="user-menu__list">
           <li>
-            <NuxtLink to="/my-looks" class="user-menu__item" @click="closeMenu()">
+            <NuxtLink to="/profile" class="user-menu__item" @click="closeMenu()">
+              Mi perfil
+            </NuxtLink>
+          </li>
+          <li>
+            <NuxtLink to="/my-looks"class="user-menu__item" @click="closeMenu()">
               Mis looks
             </NuxtLink>
           </li>

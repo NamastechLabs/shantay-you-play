@@ -44,6 +44,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       runwayLooksBucket: 'runway-looks',
+      avatarsBucket: 'participant-avatars',
     },
   },
 })
