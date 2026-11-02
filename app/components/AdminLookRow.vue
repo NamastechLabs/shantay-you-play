@@ -37,6 +37,18 @@ const canSave = computed(() => {
   return props.look ? file.value !== null || introChanged.value : file.value !== null
 })
 
+// Shows the chosen file in place of the saved photo until it is saved
+const previewUrl = ref<string | null>(null)
+watch(file, (next) => {
+  if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
+  previewUrl.value = next ? URL.createObjectURL(next) : null
+})
+onBeforeUnmount(() => {
+  if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
+})
+
+const photoSrc = computed(() => previewUrl.value ?? props.look?.image_url ?? null)
+
 function onFileChange(event: Event): void {
   file.value = (event.target as HTMLInputElement).files?.[0] ?? null
 }
@@ -82,23 +94,26 @@ async function save(): Promise<void> {
 
 <template>
   <li class="look-slot">
-    <div>
-      <img v-if="look" class="look-slot__photo" :src="look.image_url" :alt="`Look de ${displayName}`" loading="lazy">
-      <span v-else class="look-slot__placeholder">Sin look</span>
-    </div>
-
-    <form class="look-slot__form" @submit.prevent="save">
-      <strong class="look-slot__name">{{ displayName }}</strong>
-
+    <component :is="editable ? 'label' : 'div'" class="look-slot__picture" :class="{ 'look-slot__picture--editable': editable }">
+      <img v-if="photoSrc" class="look-slot__photo" :src="photoSrc" :alt="`Look de ${displayName}`">
+      <span v-else class="look-slot__placeholder">{{ editable ? 'Añadir foto' : 'Sin look' }}</span>
       <template v-if="editable">
+        <span v-if="photoSrc" class="look-slot__change" aria-hidden="true">Cambiar foto</span>
         <input
           :key="inputKey"
-          class="field__input field__input--file"
+          class="sr-only"
           type="file"
           accept="image/*"
           :aria-label="`Foto del look de ${displayName}`"
           @change="onFileChange"
         >
+      </template>
+    </component>
+
+    <form class="look-slot__form" @submit.prevent="save">
+      <strong class="look-slot__name">{{ displayName }}</strong>
+
+      <template v-if="editable">
         <textarea
           v-model="intro"
           class="field__input"

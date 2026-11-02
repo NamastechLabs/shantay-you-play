@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Tables } from '~/types/database.types'
 import type { CategoryStatus } from '~/utils/categoryStatus'
+import type { LookKind } from '~/composables/useLookUpload'
 
 definePageMeta({ middleware: 'jurado' })
 
@@ -84,6 +85,79 @@ const looksTabs = computed<{ id: LooksTab, label: string, done: number, total: n
 const previousStatus = computed(() => (category.value ? adjacentStatus(category.value.status, -1) : null))
 const nextStatus = computed(() => (category.value ? adjacentStatus(category.value.status, 1) : null))
 const currentStatusIndex = computed(() => (category.value ? CATEGORY_STATUSES.indexOf(category.value.status) : -1))
+
+// --- Paste an image from the clipboard to assign it to a queen / judge ----
+const pastedFile = ref<File | null>(null)
+const pastedPreview = ref<string | null>(null)
+const pasteTargetId = ref('')
+const pasteSaving = ref(false)
+const pasteError = ref<string | null>(null)
+
+// Composables need the Nuxt context, so both are created here rather than on paste
+const queenUploads = useLookUpload('queen')
+const juryUploads = useLookUpload('jury')
+
+const pasteKind = computed<LookKind>(() => (looksTab.value === 'jury' ? 'jury' : 'queen'))
+const pasteCandidates = computed(() => (pasteKind.value === 'jury' ? data.value?.judges : data.value?.contestants) ?? [])
+const pasteExistingLooks = computed(() => (pasteKind.value === 'jury' ? juryLooksByParticipant.value : looksByParticipant.value))
+const pasteTargetHasLook = computed(() => pasteExistingLooks.value.has(pasteTargetId.value))
+// Jury looks need an intro, so a judge without a look must be filled in by hand
+const pasteTargetBlocked = computed(() => pasteKind.value === 'jury' && !!pasteTargetId.value && !pasteTargetHasLook.value)
+
+function optionLabel(person: Contestant): string {
+  const name = person.drag_name ?? person.name
+  return pasteExistingLooks.value.has(person.id) ? `${name} (reemplazar look)` : name
+}
+
+function closePaste(): void {
+  if (pasteSaving.value) return
+  pastedFile.value = null
+}
+
+watch(pastedFile, (next) => {
+  if (pastedPreview.value) URL.revokeObjectURL(pastedPreview.value)
+  pastedPreview.value = next ? URL.createObjectURL(next) : null
+  pasteTargetId.value = ''
+  pasteError.value = null
+})
+
+function onPaste(event: ClipboardEvent): void {
+  if (!category.value || !canEditLooks(category.value.status) || pastedFile.value) return
+  const image = Array.from(event.clipboardData?.files ?? []).find(file => file.type.startsWith('image/'))
+  if (!image) return
+  event.preventDefault()
+  pastedFile.value = image
+}
+
+onMounted(() => document.addEventListener('paste', onPaste))
+onBeforeUnmount(() => {
+  document.removeEventListener('paste', onPaste)
+  if (pastedPreview.value) URL.revokeObjectURL(pastedPreview.value)
+})
+
+async function savePasted(): Promise<void> {
+  const file = pastedFile.value
+  const target = pasteCandidates.value.find(person => person.id === pasteTargetId.value)
+  if (!file || !target || pasteTargetBlocked.value || pasteSaving.value) return
+
+  const { uploadLook, replaceLookImage } = pasteKind.value === 'jury' ? juryUploads : queenUploads
+  const existing = pasteExistingLooks.value.get(target.id)
+
+  pasteSaving.value = true
+  pasteError.value = null
+  try {
+    if (existing) await replaceLookImage(existing, file)
+    else await uploadLook({ categoryId, participantId: target.id, file })
+    pastedFile.value = null
+    await refresh()
+  }
+  catch (error) {
+    pasteError.value = toErrorMessage(error)
+  }
+  finally {
+    pasteSaving.value = false
+  }
+}
 
 // --- Edit title / intro ---------------------------------------------------
 const title = ref(category.value?.title ?? '')
@@ -248,6 +322,9 @@ async function changeStatus(status: CategoryStatus): Promise<void> {
       <p v-if="!canEditLooks(category.status)" class="hint">
         La votación ya abrió: los looks no se pueden modificar.
       </p>
+      <p v-else class="hint">
+        Haz clic en la foto para elegir una imagen, o pega una imagen del portapapeles (Ctrl+V) para asignarla.
+      </p>
 
       <div
         v-show="looksTab === 'queens'"
@@ -297,6 +374,38 @@ async function changeStatus(status: CategoryStatus): Promise<void> {
         </p>
       </div>
     </section>
+
+    <AppModal
+      :open="pastedFile !== null"
+      :title="pasteKind === 'jury' ? 'Asignar imagen a un jurado' : 'Asignar imagen a una reina'"
+      @close="closePaste"
+    >
+      <form class="form" @submit.prevent="savePasted">
+        <img v-if="pastedPreview" class="paste-preview" :src="pastedPreview" alt="Imagen pegada">
+        <div class="field">
+          <label for="paste-target" class="field__label">{{ pasteKind === 'jury' ? 'Jurado' : 'Reina' }}</label>
+          <select id="paste-target" v-model="pasteTargetId" class="field__input" required>
+            <option value="" disabled>
+              Selecciona…
+            </option>
+            <option v-for="person in pasteCandidates" :key="person.id" :value="person.id">
+              {{ optionLabel(person) }}
+            </option>
+          </select>
+        </div>
+        <p v-if="pasteTargetBlocked" class="hint">
+          Los jurados necesitan una presentación: sube su primera foto desde su fila.
+        </p>
+        <p v-if="pasteError" class="form-error" role="alert">
+          {{ pasteError }}
+        </p>
+        <div>
+          <button type="submit" class="btn btn--primary" :disabled="!pasteTargetId || pasteTargetBlocked || pasteSaving">
+            {{ pasteSaving ? 'Guardando…' : 'Asignar' }}
+          </button>
+        </div>
+      </form>
+    </AppModal>
   </main>
 
   <main v-else class="page">
