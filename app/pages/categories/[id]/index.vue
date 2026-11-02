@@ -84,6 +84,13 @@ const displayName = (look: RunwayLook): string => look.participant.drag_name ?? 
 
 // --- Enlarged view --------------------------------------------------------
 const selectedLook = ref<RunwayLook | null>(null)
+
+// Step through the queens in gallery order, wrapping around at both ends
+function showAdjacentLook(step: 1 | -1): void {
+  const current = looks.value.findIndex(look => look.id === selectedLook.value?.id)
+  if (current === -1) return
+  selectedLook.value = looks.value[(current + step + looks.value.length) % looks.value.length] ?? null
+}
 </script>
 
 <template>
@@ -132,12 +139,20 @@ const selectedLook = ref<RunwayLook | null>(null)
       Todavía no hay looks en la pasarela.
     </p>
 
-    <AppModal :open="selectedLook !== null" :title="selectedLook ? displayName(selectedLook) : ''" @close="selectedLook = null">
+    <AppModal wide :open="selectedLook !== null" :title="selectedLook ? displayName(selectedLook) : ''" @close="selectedLook = null">
       <figure v-if="selectedLook" class="look-full">
         <img :src="selectedLook.image_url" :alt="`Look de ${displayName(selectedLook)}`">
         <figcaption v-if="selectedLook.intro" class="look-full__intro">
           {{ selectedLook.intro }}
         </figcaption>
+        <nav v-if="looks.length > 1" class="look-full__nav" aria-label="Navegar entre reinas">
+          <button type="button" class="btn btn--secondary" @click="showAdjacentLook(-1)">
+            ← Reina anterior
+          </button>
+          <button type="button" class="btn btn--secondary" @click="showAdjacentLook(1)">
+            Reina siguiente →
+          </button>
+        </nav>
       </figure>
     </AppModal>
   </main>

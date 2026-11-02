@@ -162,7 +162,6 @@ async function saveBallot(): Promise<void> {
       <div class="page-header__titles">
         <p class="kicker">
           Semana {{ category.week_number }} · {{ category.title }}
-          <StatusBadge :status="category.status" />
         </p>
         <h1>Tu Top 3</h1>
       </div>

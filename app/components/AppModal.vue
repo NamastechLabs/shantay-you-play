@@ -2,6 +2,8 @@
 const props = defineProps<{
   open: boolean
   title: string
+  /** Wider card on desktop, for side-by-side content */
+  wide?: boolean
 }>()
 
 const emit = defineEmits<{ close: [] }>()
@@ -25,6 +27,7 @@ onMounted(() => sync(props.open))
   <dialog
     ref="dialog"
     class="modal"
+    :class="{ 'modal--wide': wide }"
     :aria-labelledby="titleId"
     @click.self="emit('close')"
     @close="emit('close')"

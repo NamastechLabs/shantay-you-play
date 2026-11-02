@@ -25,6 +25,8 @@ interface HomeData {
   topThree: TopLook[]
   /** Judges' looks of the week's category while it is on the runway (empty otherwise) */
   jury: JuryMember[]
+  /** Most recent closed category with its winner (null when none has closed yet) */
+  previousWeek: { category: Pick<Tables<'categories'>, 'id' | 'week_number' | 'title'>, winner: CategoryWinner | null } | null
 }
 
 interface CategoryAction {
@@ -33,6 +35,7 @@ interface CategoryAction {
 }
 
 const supabase = useSupabaseClient()
+const { loadWinners } = useCategoryWinners()
 const { participant } = useCurrentParticipant()
 
 // RLS already hides drafts from contestants
@@ -47,14 +50,30 @@ const { data, error, refresh } = await useAsyncData('home', async (): Promise<Ho
 
   const revealCategory = categories.find(category => category.status === 'reveal')
   const featured = pickWeekCategory(categories)
-  const [topThree, votedCategoryIds, jury] = await Promise.all([
+  const [topThree, votedCategoryIds, jury, previousWeek] = await Promise.all([
     revealCategory ? loadTopThree(revealCategory.id) : [],
     loadVotedCategoryIds(categories),
     featured?.status === 'runway' ? loadJury(featured.id) : [],
+    loadPreviousWeek(),
   ])
 
-  return { categories, votedCategoryIds, topThree, jury }
+  return { categories, votedCategoryIds, topThree, jury, previousWeek }
 })
+
+async function loadPreviousWeek(): Promise<HomeData['previousWeek']> {
+  const { data: closed, error: closedError } = await supabase
+    .from('categories')
+    .select('id, week_number, title')
+    .eq('status', 'closed')
+    .order('week_number', { ascending: false })
+    .limit(1)
+  if (closedError) throw closedError
+
+  const category = closed[0]
+  if (!category) return null
+  const winners = await loadWinners([category.id])
+  return { category, winner: winners[category.id] ?? null }
+}
 
 // Status changes (voting -> reveal -> closed) reach everyone without a page refresh
 useCategoriesRealtime(refresh)
@@ -240,6 +259,13 @@ function primaryAction(category: OpenCategory): CategoryAction | null {
       </ul>
     </section>
 
+    <section v-if="data?.previousWeek" class="section" aria-labelledby="previous-title">
+      <h2 id="previous-title">
+        La semana pasada
+      </h2>
+      <PastCategoryCard :category="data.previousWeek.category" :winner="data.previousWeek.winner" />
+    </section>
+
     <NuxtLink to="/categories/past" class="row row--link past-link">
       <span class="row__main">
         <span class="row__title">Categorías pasadas</span>
@@ -276,6 +302,8 @@ function primaryAction(category: OpenCategory): CategoryAction | null {
   flex-wrap: wrap;
   gap: var(--space-2);
   align-items: center;
+  justify-content: space-between;
+  justify-self: stretch;
 }
 
 .week-hero__title {

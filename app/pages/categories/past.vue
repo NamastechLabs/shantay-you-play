@@ -5,16 +5,19 @@ type CategorySummary = Pick<Tables<'categories'>, 'id' | 'week_number' | 'title'
 
 const supabase = useSupabaseClient()
 
-const { data: categories, error } = await useAsyncData('past-categories', async (): Promise<CategorySummary[]> => {
-  const { data, error } = await supabase
+const { loadWinners } = useCategoryWinners()
+
+const { data, error } = await useAsyncData('past-categories', async () => {
+  const { data: categories, error } = await supabase
     .from('categories')
     .select('id, week_number, title, status')
     .eq('status', 'closed')
     .order('week_number', { ascending: false })
 
   if (error) throw error
-  return data
+  return { categories: categories as CategorySummary[], winners: await loadWinners(categories.map(category => category.id)) }
 })
+const categories = computed(() => data.value?.categories ?? [])
 </script>
 
 <template>
@@ -35,12 +38,9 @@ const { data: categories, error } = await useAsyncData('past-categories', async 
       {{ toErrorMessage(error) }}
     </p>
 
-    <ul v-else-if="categories?.length" class="row-list">
+    <ul v-else-if="categories.length" class="past-list">
       <li v-for="category in categories" :key="category.id">
-        <NuxtLink :to="`/categories/${category.id}`" class="row row--link">
-          <span>Semana {{ category.week_number }} · {{ category.title }}</span>
-          <StatusBadge :status="category.status" />
-        </NuxtLink>
+        <PastCategoryCard :category="category" :winner="data?.winners[category.id]" />
       </li>
     </ul>
 
@@ -49,3 +49,13 @@ const { data: categories, error } = await useAsyncData('past-categories', async 
     </p>
   </main>
 </template>
+
+<style scoped lang="scss">
+.past-list {
+  display: grid;
+  gap: var(--space-4);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+</style>

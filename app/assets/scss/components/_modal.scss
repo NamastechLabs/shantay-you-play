@@ -1,23 +1,66 @@
-// Native <dialog>: centered on desktop, bottom sheet on phones.
+// Native <dialog>: full screen on phones, centered card on desktop. Never rounded.
 .modal {
-  width: min(32.5rem, 100% - var(--space-5));
-  max-height: calc(100dvh - var(--space-5));
+  width: 100vw;
+  max-width: 100vw;
+  height: 100vh;
+  max-height: 100vh;
   padding: 0;
+  margin: 0;
   overflow: auto;
+  scrollbar-color: var(--color-primary) transparent;
+  scrollbar-width: thin;
   color: var(--color-text);
   background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-raised);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--color-primary);
+    border-radius: var(--radius-pill);
+    box-shadow: var(--glow-primary);
+  }
 
   &::backdrop {
-    background: var(--scrim, rgb(15 8 40 / 70%));
+    background: color-mix(in srgb, var(--scrim, rgb(15 8 40 / 70%)) 45%, transparent);
+    backdrop-filter: blur(8px);
+  }
+
+  @media (min-width: 40rem) {
+    width: min(32.5rem, 100% - var(--space-5));
+    max-width: none;
+    height: auto;
+    max-height: calc(100dvh - var(--space-5));
+    margin: auto;
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-raised);
+
+    &.modal--wide {
+      width: min(60rem, 100% - var(--space-5));
+    }
   }
 
   &__body {
     display: grid;
     gap: var(--space-4);
+    width: 100%;
+    max-width: 48rem;
     padding: var(--space-5) var(--space-4);
+    margin-inline: auto;
+
+    .modal--wide & {
+      @media (min-width: 40rem) {
+        max-width: none;
+      }
+    }
 
     @media (min-width: 40rem) {
       padding: var(--space-6);
@@ -49,13 +92,5 @@
       color: var(--color-text);
       background-color: var(--color-surface-raised);
     }
-  }
-
-  @media (max-width: 39.99rem) {
-    width: 100%;
-    max-width: 100%;
-    margin: auto 0 0;
-    border-bottom: 0;
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   }
 }
