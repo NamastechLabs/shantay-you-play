@@ -7,6 +7,14 @@
 - **ORM / Client:** Supabase JS Client
 - **Styling:** Plain CSS via SCSS (`sass`). No Tailwind, no Nuxt UI.
 
+## Language & Copy
+
+- **The website is in Spanish.** All user-facing copy (headings, buttons, labels, placeholders, errors, empty states, badges, footer, meta tags) must be written in Spanish.
+- The Figma designs use English placeholder copy. When implementing a design, translate every string to Spanish, **except the brand name "Drag Race Game", which stays as is** (never translate it).
+- Set `<html lang="es">`. Prefer a central place for strings (e.g. an i18n file or constants) over hardcoding text in components, so a future language is possible.
+- Code, identifiers, CSS classes, database names and commit messages stay in English.
+- Use a natural, neutral Spanish with the playful drag tone (e.g. "Pre-register" → "Preinscríbete", "Every look. Every queen." → "Cada look. Cada reina."). Use Spanish typographic conventions (¿…?, ¡…!).
+
 ## Design & Theming
 
 - **Figma file:** `drag-race-game` — https://www.figma.com/design/c04WKHtm4bzVWADZjqQQT8
