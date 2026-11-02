@@ -27,7 +27,7 @@ const supabase = useSupabaseClient()
 const { participant } = useCurrentParticipant()
 
 // RLS already hides drafts from contestants
-const { data, error } = await useAsyncData('home', async (): Promise<HomeData> => {
+const { data, error, refresh } = await useAsyncData('home', async (): Promise<HomeData> => {
   const { data: categories, error } = await supabase
     .from('categories')
     .select('id, week_number, title, intro_text, status')
@@ -44,6 +44,9 @@ const { data, error } = await useAsyncData('home', async (): Promise<HomeData> =
 
   return { categories, votedCategoryIds, topThree }
 })
+
+// Status changes (voting -> reveal -> closed) reach everyone without a page refresh
+useCategoriesRealtime(refresh)
 
 async function loadTopThree(categoryId: string): Promise<TopLook[]> {
   const { data: ranking, error: rankingError } = await supabase.rpc('category_top_three', { p_category_id: categoryId })

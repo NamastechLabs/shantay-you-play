@@ -22,7 +22,7 @@ const supabase = useSupabaseClient()
 const categoryId = String(route.params.id)
 
 // RLS hides draft categories (and their looks) from contestants, so they get a 404
-const { data, error: loadError } = await useAsyncData(
+const { data, error: loadError, refresh } = await useAsyncData(
   `runway-${categoryId}`,
   async (): Promise<RunwayData | null> => {
     const [category, looks] = await Promise.all([
@@ -52,6 +52,9 @@ const { data, error: loadError } = await useAsyncData(
     return { category: category.data, looks: looks.data, placeByLook }
   },
 )
+
+// The final ranking appears as soon as the jurado closes the category
+useCategoriesRealtime(refresh, categoryId)
 
 if (!loadError.value && !data.value) {
   throw createError({ statusCode: 404, statusMessage: 'Categoría no encontrada', fatal: true })
