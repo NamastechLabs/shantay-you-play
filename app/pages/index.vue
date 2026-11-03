@@ -200,6 +200,13 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
         :queens="revealedTopThree"
       />
 
+      <!-- Queens upload their own look while the week is in the Werk Room -->
+      <div v-if="weekRunway.status === 'werk_room' && participant?.role === 'concursante'" class="actions">
+        <NuxtLink :to="`/semana/${weekRunway.week_number}/werk-room`" class="btn btn--primary">
+          Ya tienes tu look, súbelo
+        </NuxtLink>
+      </div>
+
       <div v-if="primaryAction(weekRunway)" class="actions">
         <NuxtLink :to="primaryAction(weekRunway)!.to" class="btn btn--primary">
           {{ primaryAction(weekRunway)!.label }}

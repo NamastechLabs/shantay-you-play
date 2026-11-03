@@ -1,3 +1,6 @@
+// A literal, so supabase-js can infer the row type (keep in sync with LOOK_SLOTS)
+const QUEEN_LOOK_IMAGES = 'image_url, image2_url, image3_url, image4_url'
+
 /**
  * Storage cleanup for rows removed through cascading foreign keys. Deleting a
  * participant (or a category) cascades to their looks, but the files in Storage are not touched by
@@ -23,7 +26,7 @@ export function useParticipantFiles() {
   /** Lists every stored file owned by a participant. Call it BEFORE deleting the participant row. */
   async function listParticipantFiles(participantId: string) {
     const [looks, juryLooks, participant] = await Promise.all([
-      supabase.from('looks').select('image_url').eq('participant_id', participantId),
+      supabase.from('looks').select(QUEEN_LOOK_IMAGES).eq('participant_id', participantId),
       supabase.from('jury_looks').select('image_url').eq('participant_id', participantId),
       supabase.from('participants').select('avatar_url').eq('id', participantId).maybeSingle(),
     ])
@@ -32,7 +35,7 @@ export function useParticipantFiles() {
     if (participant.error) throw participant.error
 
     return {
-      looks: toPaths(config.runwayLooksBucket, [...looks.data, ...juryLooks.data].map((row) => row.image_url)),
+      looks: toPaths(config.runwayLooksBucket, [...looks.data.flatMap(lookImageUrls), ...juryLooks.data.map(row => row.image_url)]),
       avatars: toPaths(config.avatarsBucket, [participant.data?.avatar_url ?? null]),
     }
   }
@@ -40,14 +43,14 @@ export function useParticipantFiles() {
   /** Lists every look file of a category. Call it BEFORE deleting the category row. */
   async function listCategoryFiles(categoryId: string) {
     const [looks, juryLooks] = await Promise.all([
-      supabase.from('looks').select('image_url').eq('category_id', categoryId),
+      supabase.from('looks').select(QUEEN_LOOK_IMAGES).eq('category_id', categoryId),
       supabase.from('jury_looks').select('image_url').eq('category_id', categoryId),
     ])
     if (looks.error) throw looks.error
     if (juryLooks.error) throw juryLooks.error
 
     return {
-      looks: toPaths(config.runwayLooksBucket, [...looks.data, ...juryLooks.data].map((row) => row.image_url)),
+      looks: toPaths(config.runwayLooksBucket, [...looks.data.flatMap(lookImageUrls), ...juryLooks.data.map(row => row.image_url)]),
       avatars: [],
     }
   }

@@ -6,6 +6,11 @@
   gap: var(--space-2);
 
   &__tab {
+    // Also used on links (section navigation), which need centering and no underline
+    display: grid;
+    place-items: center;
+    text-align: center;
+    text-decoration: none;
     min-height: 2.75rem;
     padding: var(--space-2) var(--space-4);
     font-size: 0.875rem;

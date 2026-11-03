@@ -10,11 +10,15 @@ const NOT_REGISTERED_MESSAGE
   = 'Tu correo no está en la lista de participantes. Inicia sesión con el correo con el que te registraron o pídele a un jurado que te añada.'
 const SESSION_FAILED_MESSAGE
   = 'No pudimos confirmar tu sesión. Inténtalo de nuevo; si usas el navegador de otra app (Instagram, WhatsApp…), abre el enlace en Safari.'
+const NO_PROFILE_MESSAGE
+  = 'Tu cuenta existe, pero no está vinculada a ninguna participante. Pídele a un jurado que revise el correo con el que te registró.'
 const displayedError = computed(() =>
   errorMessage.value
   ?? (route.query.error === 'not_registered'
     ? NOT_REGISTERED_MESSAGE
-    : route.query.error === 'session' ? SESSION_FAILED_MESSAGE : null),
+    : route.query.error === 'session'
+      ? SESSION_FAILED_MESSAGE
+      : route.query.error === 'no_profile' ? NO_PROFILE_MESSAGE : null),
 )
 
 // Already signed in: skip the login screen

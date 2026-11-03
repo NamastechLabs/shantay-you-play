@@ -129,6 +129,9 @@ export type Database = {
           category_id: string
           created_at: string
           id: string
+          image2_url: string | null
+          image4_url: string | null
+          image3_url: string | null
           image_url: string
           intro: string | null
           participant_id: string
@@ -139,6 +142,9 @@ export type Database = {
           category_id: string
           created_at?: string
           id?: string
+          image2_url?: string | null
+          image4_url?: string | null
+          image3_url?: string | null
           image_url: string
           intro?: string | null
           participant_id: string
@@ -149,6 +155,9 @@ export type Database = {
           category_id?: string
           created_at?: string
           id?: string
+          image2_url?: string | null
+          image4_url?: string | null
+          image3_url?: string | null
           image_url?: string
           intro?: string | null
           participant_id?: string

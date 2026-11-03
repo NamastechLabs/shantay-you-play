@@ -3,25 +3,35 @@ import type { Tables } from '~/types/database.types'
 export type Look = Tables<'looks'>
 export type JuryLook = Tables<'jury_looks'>
 
-/** Queens' looks are voted on; the jury's looks are only shown on the homepage. */
-export type LookKind = 'queen' | 'jury'
+export interface SaveLookInput {
+  /** The look being edited, or null to create it (then the front photo is required) */
+  look: Pick<Look, 'id'> & LookImages | null
+  categoryId: string
+  participantId: string
+  /** New photos, by slot (replacing whatever the slot held) */
+  files: Partial<Record<LookSlot, File>>
+  /** Slots to empty; the front photo can only be replaced, never removed */
+  removed: LookSlot[]
+  intro: string | null
+}
 
-export interface UploadLookInput {
+export interface UploadJuryLookInput {
   categoryId: string
   participantId: string
   file: File
-  intro?: string | null
+  intro: string
 }
 
-const LOOK_COLUMNS = 'id, category_id, participant_id, image_url, intro, uploaded_by, created_at, updated_at'
+const QUEEN_COLUMNS = 'id, category_id, participant_id, image_url, image2_url, image3_url, image4_url, intro, uploaded_by, created_at, updated_at'
+const JURY_COLUMNS = 'id, category_id, participant_id, image_url, intro, uploaded_by, created_at, updated_at'
 
 /**
- * Judge-only: compresses a runway photo, stores it in the 'runway-looks' bucket
- * under {category_id}/{participant_id}/ and writes the matching row: `looks` for
- * queens, `jury_looks` for the jury.
+ * Judge-only: compresses runway photos, stores them in the 'runway-looks' bucket
+ * under {category_id}/{participant_id}/ and writes the matching row: `looks` (up
+ * to 4 photos) for queens, `jury_looks` (one photo) for the jury.
  * RLS rejects the upload/insert for non-judges or closed categories.
  */
-export function useLookUpload(kind: LookKind = 'queen') {
+export function useLookUpload() {
   const supabase = useSupabaseClient()
   const bucketName = useRuntimeConfig().public.runwayLooksBucket
   const bucket = () => supabase.storage.from(bucketName)
@@ -48,10 +58,17 @@ export function useLookUpload(kind: LookKind = 'queen') {
   }
 
   /** Recovers the object path from a public URL (…/object/public/<bucket>/<path>). */
-  function pathFromPublicUrl(publicUrl: string): string | null {
+  function pathFromPublicUrl(publicUrl: string | null | undefined): string | null {
+    if (!publicUrl) return null
     const marker = `/object/public/${bucketName}/`
     const index = publicUrl.indexOf(marker)
     return index === -1 ? null : decodeURIComponent(publicUrl.slice(index + marker.length))
+  }
+
+  /** Best effort: a leftover file is harmless, so never fail an operation over it. */
+  async function removeUrls(urls: (string | null | undefined)[]): Promise<void> {
+    const paths = urls.flatMap(url => pathFromPublicUrl(url) ?? [])
+    if (paths.length) await bucket().remove(paths)
   }
 
   /** Runs an upload action, tracking loading/error state. Errors are re-thrown. */
@@ -70,36 +87,71 @@ export function useLookUpload(kind: LookKind = 'queen') {
     }
   }
 
-  // Both tables share the same columns; the jury's intro is just required
-  function insertRow(categoryId: string, participantId: string, imageUrl: string, intro: string | null) {
-    return kind === 'jury'
-      ? supabase
-          .from('jury_looks')
-          .insert({ category_id: categoryId, participant_id: participantId, image_url: imageUrl, intro: intro ?? '' })
-          .select(LOOK_COLUMNS)
-          .single()
-      : supabase
-          .from('looks')
-          .insert({ category_id: categoryId, participant_id: participantId, image_url: imageUrl, intro })
-          .select(LOOK_COLUMNS)
-          .single()
+  /**
+   * Creates or updates a queen's look in one go: uploads the new photos, writes
+   * the row, then deletes the files that were replaced or removed.
+   */
+  function saveLook({ look, categoryId, participantId, files, removed, intro }: SaveLookInput): Promise<Look> {
+    return track(async () => {
+      const stored: { slot: LookSlot, path: string, publicUrl: string }[] = []
+      // Only optional slots can be set to null: the front photo is never removed
+      const changes: { image_url?: string } & Partial<Record<Exclude<LookSlot, 'image_url'>, string | null>> = {}
+
+      try {
+        for (const { key } of LOOK_SLOTS) {
+          const file = files[key]
+          if (!file) continue
+          const image = await storeImage(categoryId, participantId, file)
+          stored.push({ slot: key, ...image })
+          changes[key] = image.publicUrl
+        }
+        for (const slot of removed) {
+          if (slot !== 'image_url' && !files[slot]) changes[slot] = null
+        }
+
+        const result = look
+          ? await supabase.from('looks').update({ ...changes, intro }).eq('id', look.id).select(QUEEN_COLUMNS).single()
+          : await supabase
+              .from('looks')
+              .insert({ category_id: categoryId, participant_id: participantId, ...changes, image_url: changes.image_url ?? '', intro })
+              .select(QUEEN_COLUMNS)
+              .single()
+        if (result.error) throw result.error
+
+        const replaced = look ? LOOK_SLOTS.flatMap(({ key }) => (key in changes ? look[key] ?? [] : [])) : []
+        // The row is saved at this point, so a failed cleanup must not delete the new files
+        await removeUrls(replaced).catch(() => undefined)
+        return result.data
+      }
+      catch (err) {
+        // Don't leave orphaned files behind if the row couldn't be written
+        await bucket().remove(stored.map(item => item.path))
+        throw err
+      }
+    })
   }
 
-  function updateImage(lookId: string, imageUrl: string) {
-    return kind === 'jury'
-      ? supabase.from('jury_looks').update({ image_url: imageUrl }).eq('id', lookId).select(LOOK_COLUMNS).single()
-      : supabase.from('looks').update({ image_url: imageUrl }).eq('id', lookId).select(LOOK_COLUMNS).single()
+  /** Resets a queen's look: deletes the row (photos and intro) and then its files. */
+  function deleteLook(look: Pick<Look, 'id'> & LookImages): Promise<void> {
+    return track(async () => {
+      const { error: deleteError } = await supabase.from('looks').delete().eq('id', look.id)
+      if (deleteError) throw deleteError
+      await removeUrls(lookImageUrls(look)).catch(() => undefined)
+    })
   }
 
-  /** Creates a new look for a participant in a category. */
-  function uploadLook({ categoryId, participantId, file, intro = null }: UploadLookInput): Promise<Look> {
+  /** Creates a jury look: one photo plus the (required) presentation text. */
+  function uploadJuryLook({ categoryId, participantId, file, intro }: UploadJuryLookInput): Promise<JuryLook> {
     return track(async () => {
       const { path, publicUrl } = await storeImage(categoryId, participantId, file)
 
-      const { data, error: insertError } = await insertRow(categoryId, participantId, publicUrl, intro)
+      const { data, error: insertError } = await supabase
+        .from('jury_looks')
+        .insert({ category_id: categoryId, participant_id: participantId, image_url: publicUrl, intro })
+        .select(JURY_COLUMNS)
+        .single()
 
       if (insertError) {
-        // Don't leave an orphaned file behind if the row couldn't be written
         await bucket().remove([path])
         throw insertError
       }
@@ -107,26 +159,27 @@ export function useLookUpload(kind: LookKind = 'queen') {
     })
   }
 
-  /** Swaps the photo of an existing look and deletes the previous file. */
-  function replaceLookImage(look: Pick<Look, 'id' | 'category_id' | 'participant_id' | 'image_url'>, file: File): Promise<Look> {
+  /** Swaps the photo of an existing jury look and deletes the previous file. */
+  function replaceJuryImage(look: Pick<JuryLook, 'id' | 'category_id' | 'participant_id' | 'image_url'>, file: File): Promise<JuryLook> {
     return track(async () => {
       const { path, publicUrl } = await storeImage(look.category_id, look.participant_id, file)
 
-      const { data, error: updateError } = await updateImage(look.id, publicUrl)
+      const { data, error: updateError } = await supabase
+        .from('jury_looks')
+        .update({ image_url: publicUrl })
+        .eq('id', look.id)
+        .select(JURY_COLUMNS)
+        .single()
 
       if (updateError) {
         await bucket().remove([path])
         throw updateError
       }
 
-      // Best effort: a leftover old file is harmless, so don't fail the replace over it
-      const previousPath = pathFromPublicUrl(look.image_url)
-      if (previousPath) {
-        await bucket().remove([previousPath])
-      }
+      await removeUrls([look.image_url])
       return data
     })
   }
 
-  return { uploading: readonly(uploading), error: readonly(error), uploadLook, replaceLookImage }
+  return { uploading: readonly(uploading), error: readonly(error), saveLook, deleteLook, uploadJuryLook, replaceJuryImage }
 }
