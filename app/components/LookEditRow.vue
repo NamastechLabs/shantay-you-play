@@ -44,6 +44,7 @@ function reset(): void {
   files.value = {}
   removed.value = new Set()
   intro.value = props.look?.intro ?? ''
+  pickNotice.value = null
   inputKey.value++
 }
 
@@ -55,13 +56,33 @@ function srcFor(slot: LookSlot): string | null {
   return removed.value.has(slot) ? null : props.look?.[slot] ?? null
 }
 
-function onFileChange(slot: LookSlot, event: Event): void {
-  const file = (event.target as HTMLInputElement).files?.[0]
-  if (!file) return
+function setFile(slot: LookSlot, file: File): void {
   if (previews.value[slot]) URL.revokeObjectURL(previews.value[slot]!)
   files.value = { ...files.value, [slot]: file }
   previews.value = { ...previews.value, [slot]: URL.createObjectURL(file) }
   removed.value.delete(slot)
+}
+
+// Replaces the photo of one slot
+function onFileChange(slot: LookSlot, event: Event): void {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (file) setFile(slot, file)
+}
+
+// The photos that are shown, and the slots still free (the first free one is the front until it is set)
+const filledSlots = computed(() => LOOK_SLOTS.filter(slot => srcFor(slot.key)))
+const freeSlots = computed(() => LOOK_SLOTS.filter(slot => !srcFor(slot.key)))
+const pickNotice = ref<string | null>(null)
+
+// The file dialog allows several files, but cannot cap them: extra ones are dropped here
+function onFilesAdded(event: Event): void {
+  const picked = Array.from((event.target as HTMLInputElement).files ?? [])
+  const free = freeSlots.value
+  picked.slice(0, free.length).forEach((file, index) => setFile(free[index]!.key, file))
+  pickNotice.value = picked.length > free.length
+    ? `Solo caben ${LOOK_SLOTS.length} fotos por look: se usaron las primeras ${free.length}.`
+    : null
+  inputKey.value++
 }
 
 function removeSlot(slot: LookSlot): void {
@@ -130,7 +151,60 @@ async function save(): Promise<void> {
   <li class="look-slot look-slot--queen">
     <strong class="look-slot__name">{{ title ?? displayName }}</strong>
 
-    <ul class="look-slot__grid" :aria-label="`Fotos del look de ${displayName}`">
+    <!-- Tablet portrait and smaller: the photos plus one stacked placeholder -->
+    <ul class="look-slot__grid look-slot__grid--stacked" :aria-label="`Fotos del look de ${displayName}`">
+      <li v-for="slot in filledSlots" :key="slot.key" class="look-slot__cell">
+        <component :is="editable ? 'label' : 'div'" class="look-slot__picture" :class="{ 'look-slot__picture--editable': editable }">
+          <img class="look-slot__photo" :src="srcFor(slot.key)!" :alt="`${slot.label} del look de ${displayName}`">
+          <span class="look-slot__tag">{{ slot.label }}</span>
+          <template v-if="editable">
+            <span class="look-slot__change" aria-hidden="true">Cambiar</span>
+            <input
+              :key="`${slot.key}-${inputKey}`"
+              class="sr-only"
+              type="file"
+              accept="image/*"
+              :aria-label="`${slot.label}: cambiar la foto del look de ${displayName}`"
+              @change="onFileChange(slot.key, $event)"
+            >
+          </template>
+        </component>
+        <button
+          v-if="editable && slot.key !== 'image_url'"
+          type="button"
+          class="look-slot__remove"
+          :aria-label="`Quitar la foto ${slot.label}`"
+          @click="removeSlot(slot.key)"
+        >
+          ×
+        </button>
+      </li>
+
+      <!-- One placeholder, stacked like several photos, that takes up to as many files as there are free slots -->
+      <li v-if="editable && freeSlots.length" class="look-slot__cell">
+        <label class="look-slot__add">
+          <span class="look-slot__add-title">{{ filledSlots.length ? '+ Añadir' : 'Añadir fotos' }}</span>
+          <span class="look-slot__add-hint">
+            {{ filledSlots.length ? `Caben ${freeSlots.length} más` : `Hasta ${LOOK_SLOTS.length} · la primera es el frente` }}
+          </span>
+          <input
+            :key="`add-${inputKey}`"
+            class="sr-only"
+            type="file"
+            accept="image/*"
+            multiple
+            :aria-label="`Añadir fotos al look de ${displayName} (hasta ${freeSlots.length})`"
+            @change="onFilesAdded"
+          >
+        </label>
+      </li>
+    </ul>
+    <p v-if="pickNotice" class="hint" role="status">
+      {{ pickNotice }}
+    </p>
+
+    <!-- Tablet landscape and larger: the four slots side by side, each with its own placeholder -->
+    <ul class="look-slot__grid look-slot__grid--slots" :aria-label="`Fotos del look de ${displayName}`">
       <li v-for="slot in LOOK_SLOTS" :key="slot.key" class="look-slot__cell">
         <component :is="editable ? 'label' : 'div'" class="look-slot__picture" :class="{ 'look-slot__picture--editable': editable }">
           <img v-if="srcFor(slot.key)" class="look-slot__photo" :src="srcFor(slot.key)!" :alt="`${slot.label} del look de ${displayName}`">
@@ -138,7 +212,7 @@ async function save(): Promise<void> {
           <template v-if="editable">
             <span class="look-slot__change" aria-hidden="true">{{ srcFor(slot.key) ? 'Cambiar' : 'Añadir' }}</span>
             <input
-              :key="`${slot.key}-${inputKey}`"
+              :key="`slot-${slot.key}-${inputKey}`"
               class="sr-only"
               type="file"
               accept="image/*"
@@ -158,6 +232,7 @@ async function save(): Promise<void> {
         </button>
       </li>
     </ul>
+
 
     <form :id="formId" class="look-slot__form" @submit.prevent="save">
       <template v-if="editable">

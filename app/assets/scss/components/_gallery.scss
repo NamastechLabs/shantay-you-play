@@ -315,15 +315,100 @@
     border-radius: var(--radius-sm);
   }
 
-  // Row of 4 photos (front, back, rebuild, extra) that share the available width
   &__grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: var(--space-3);
+
+    // Tablet portrait and smaller: the photos plus one stacked "add" tile, 2 per row on phones
+    // Flex instead of grid so a lone tile or an incomplete last row stays centered
+    &--stacked {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+
+      > .look-slot__cell {
+        flex: 0 0 calc((100% - var(--space-3)) / 2);
+      }
+
+      @media (min-width: 40rem) {
+        > .look-slot__cell {
+          flex-basis: calc((100% - var(--space-3) * 3) / 4);
+        }
+      }
+
+      @media (min-width: 64rem) {
+        display: none;
+      }
+    }
+
+    // Tablet landscape and larger: the 4 slots side by side, sharing the available width
+    &--slots {
+      display: none;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+
+      @media (min-width: 64rem) {
+        display: grid;
+      }
+    }
   }
 
   &__cell {
     position: relative;
+  }
+
+  // Which slot a photo is (Frente, Espalda…)
+  &__tag {
+    position: absolute;
+    top: var(--space-1);
+    left: var(--space-1);
+    padding: 0 var(--space-2);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    background: rgb(0 0 0 / 0.6);
+    border-radius: var(--radius-pill);
+    pointer-events: none;
+  }
+
+  // Placeholder that looks like a pile of photos: two offset outlines behind it
+  &__add {
+    display: grid;
+    gap: var(--space-1);
+    place-content: center;
+    width: calc(100% - var(--space-4));
+    aspect-ratio: 3 / 4;
+    padding: var(--space-2);
+    text-align: center;
+    cursor: pointer;
+    background-color: var(--color-surface-raised);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-sm);
+    box-shadow:
+      var(--space-2) var(--space-2) 0 0 var(--color-surface-raised),
+      var(--space-2) var(--space-2) 0 1px var(--color-border),
+      calc(var(--space-2) * 2) calc(var(--space-2) * 2) 0 0 var(--color-surface-raised),
+      calc(var(--space-2) * 2) calc(var(--space-2) * 2) 0 1px var(--color-border);
+    // Room for the shadows, so they are not clipped
+    margin-bottom: var(--space-4);
+
+    &:hover {
+      border-color: var(--color-primary);
+    }
+
+    &:focus-within {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+  }
+
+  &__add-title {
+    font-weight: 700;
+    color: var(--color-title);
+  }
+
+  &__add-hint {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
   }
 
   &__remove {

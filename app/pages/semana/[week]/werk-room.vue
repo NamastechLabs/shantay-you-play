@@ -82,11 +82,15 @@ const multipleCategories = computed(() => (data.value?.categories.length ?? 0) >
         ]"
       />
 
+      <!-- Neon sign; the word is the whole message, so screen readers get the page title instead -->
+      <div class="werk-sign" aria-hidden="true">
+        <span class="werk-sign__text">WERK</span>
+      </div>
+
       <header class="page-header">
         <div class="page-header__titles">
           <p class="kicker">
             Semana {{ data.runway.week_number }} · {{ formatRunwayDate(data.runway.runway_date) }}
-            <StatusBadge :status="data.runway.status" />
           </p>
           <h1>Tu look para {{ runwayTitle(data.categories) }}</h1>
         </div>
@@ -135,6 +139,56 @@ const multipleCategories = computed(() => (data.value?.categories.length ?? 0) >
 </template>
 
 <style scoped lang="scss">
+// Pink neon sign on a dark curtain, built from the theme's primary color
+.werk-sign {
+  display: grid;
+  place-items: center;
+  padding: var(--space-6) var(--space-4);
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--color-primary) 22%, black) 0 0.75rem,
+      color-mix(in srgb, var(--color-primary) 10%, black) 0.75rem 1.5rem
+    );
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 0 4rem black;
+}
+
+.werk-sign__text {
+  --neon: var(--color-primary);
+  --core: color-mix(in srgb, var(--color-primary) 25%, white);
+
+  font-family: var(--font-body);
+  font-size: clamp(3rem, 2rem + 8vw, 6rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  // The trailing letter-spacing would push the word off-center
+  padding-left: 0.12em;
+  color: var(--core);
+  text-shadow:
+    0 0 0.05em var(--core),
+    0 0 0.12em var(--neon),
+    0 0 0.3em var(--neon),
+    0 0 0.6em var(--neon),
+    0 0 1em var(--neon);
+
+  @media (prefers-reduced-motion: no-preference) {
+    animation: neon-flicker 5s infinite;
+  }
+}
+
+@keyframes neon-flicker {
+  0%, 18%, 22%, 62%, 64%, 100% {
+    opacity: 1;
+  }
+
+  20%, 63% {
+    opacity: 0.75;
+  }
+}
+
 .week-empty {
   display: grid;
   gap: var(--space-3);
