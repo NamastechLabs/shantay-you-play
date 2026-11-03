@@ -34,9 +34,10 @@ export function useCurrentParticipant() {
       .from('participants')
       .select(PARTICIPANT_COLUMNS)
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
 
     if (error) throw error
+    // null: signed in, but no participant is linked to this login
     participant.value = data
     return data
   }

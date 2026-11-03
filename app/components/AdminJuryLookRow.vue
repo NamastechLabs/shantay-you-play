@@ -1,25 +1,21 @@
 <script setup lang="ts">
-import type { LookKind } from '~/composables/useLookUpload'
 import type { Tables } from '~/types/database.types'
 
-type Contestant = Pick<Tables<'participants'>, 'id' | 'name' | 'drag_name'>
-type LookSummary = Pick<Tables<'looks'>, 'id' | 'category_id' | 'participant_id' | 'image_url' | 'intro'>
+type Judge = Pick<Tables<'participants'>, 'id' | 'name' | 'drag_name'>
+type JuryLookSummary = Pick<Tables<'jury_looks'>, 'id' | 'category_id' | 'participant_id' | 'image_url' | 'intro'>
 
-const props = withDefaults(defineProps<{
+const props = defineProps<{
   categoryId: string
-  /** The queen, or the judge when `kind` is 'jury' */
-  contestant: Contestant
-  look: LookSummary | null
+  judge: Judge
+  look: JuryLookSummary | null
   /** False once voting opens: looks are then read-only */
   editable: boolean
-  /** Jury looks are not voted on and need an intro (shown on the homepage) */
-  kind?: LookKind
-}>(), { kind: 'queen' })
+}>()
 
 const emit = defineEmits<{ changed: [] }>()
 
 const supabase = useSupabaseClient()
-const { uploadLook, replaceLookImage } = useLookUpload(props.kind)
+const { uploadJuryLook, replaceJuryImage } = useLookUpload()
 
 const file = ref<File | null>(null)
 const intro = ref(props.look?.intro ?? '')
@@ -28,12 +24,12 @@ const errorMessage = ref<string | null>(null)
 // Bumping the key remounts the file input, which is the only way to clear it
 const inputKey = ref(0)
 
-const displayName = computed(() => props.contestant.drag_name ?? props.contestant.name)
-const normalizedIntro = computed(() => intro.value.trim() || null)
-const introChanged = computed(() => normalizedIntro.value !== (props.look?.intro ?? null))
-const introRequired = computed(() => props.kind === 'jury')
+const displayName = computed(() => props.judge.drag_name ?? props.judge.name)
+const normalizedIntro = computed(() => intro.value.trim())
+const introChanged = computed(() => normalizedIntro.value !== (props.look?.intro ?? ''))
+// The intro is required: the jury is shown on the homepage with it
 const canSave = computed(() => {
-  if (introRequired.value && !normalizedIntro.value) return false
+  if (!normalizedIntro.value) return false
   return props.look ? file.value !== null || introChanged.value : file.value !== null
 })
 
@@ -61,19 +57,17 @@ async function save(): Promise<void> {
   try {
     if (props.look) {
       if (file.value) {
-        await replaceLookImage(props.look, file.value)
+        await replaceJuryImage(props.look, file.value)
       }
       if (introChanged.value) {
-        const { error } = props.kind === 'jury'
-          ? await supabase.from('jury_looks').update({ intro: normalizedIntro.value ?? '' }).eq('id', props.look.id)
-          : await supabase.from('looks').update({ intro: normalizedIntro.value }).eq('id', props.look.id)
+        const { error } = await supabase.from('jury_looks').update({ intro: normalizedIntro.value }).eq('id', props.look.id)
         if (error) throw error
       }
     }
     else if (file.value) {
-      await uploadLook({
+      await uploadJuryLook({
         categoryId: props.categoryId,
-        participantId: props.contestant.id,
+        participantId: props.judge.id,
         file: file.value,
         intro: normalizedIntro.value,
       })
@@ -119,13 +113,15 @@ async function save(): Promise<void> {
           class="field__input"
           rows="2"
           maxlength="1000"
-          :required="introRequired"
-          :aria-label="`Intro del look de ${displayName}`"
-          :placeholder="introRequired ? 'Presentación del jurado (obligatoria)' : 'Intro del look (opcional)'"
+          required
+          :aria-label="`Presentación de ${displayName}`"
+          placeholder="Presentación del jurado (obligatoria)"
         />
-        <button type="submit" class="btn btn--secondary" :disabled="!canSave || saving">
-          {{ saving ? 'Guardando…' : look ? 'Guardar cambios' : 'Subir look' }}
-        </button>
+        <div class="form-actions">
+          <button type="submit" class="btn btn--primary" :disabled="!canSave || saving">
+            {{ saving ? 'Guardando…' : 'Guardar' }}
+          </button>
+        </div>
       </template>
       <p v-else-if="look?.intro" class="muted">
         {{ look.intro }}

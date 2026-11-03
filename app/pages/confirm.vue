@@ -6,6 +6,8 @@
 const user = useSupabaseUser()
 const route = useRoute()
 const redirectInfo = useSupabaseCookieRedirect()
+const supabase = useSupabaseClient()
+const { load: loadParticipant } = useCurrentParticipant()
 
 const hashParams = import.meta.client ? new URLSearchParams(window.location.hash.slice(1)) : null
 const hasAuthError = Boolean(route.query.error || route.query.error_code || hashParams?.get('error'))
@@ -17,11 +19,20 @@ if (hasAuthError) {
 }
 
 let done = false
-function finish() {
+async function finish() {
   if (done) return
   done = true
+
+  // A login without a participant row would leave the app without a profile: say so instead of hanging
+  const participant = await loadParticipant().catch(() => null)
+  if (!participant) {
+    await supabase.auth.signOut()
+    await navigateTo({ path: '/login', query: { error: 'no_profile' } }, { replace: true })
+    return
+  }
+
   const path = redirectInfo.pluck()
-  navigateTo(path || '/', { replace: true })
+  await navigateTo(path || '/', { replace: true })
 }
 
 watch(
@@ -35,7 +46,6 @@ watch(
 // Mobile Safari (iOS) can finish the code exchange without useSupabaseUser ever updating,
 // so also listen to the client directly, and give up with a message instead of hanging.
 if (import.meta.client) {
-  const supabase = useSupabaseClient()
   const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
     if (session) finish()
   })
