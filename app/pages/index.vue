@@ -163,7 +163,10 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
       </h1>
       <span class="rule" aria-hidden="true" />
 
-      <RunwayCategories :categories="weekRunway.categories" />
+      <RunwayCategories
+        :categories="weekRunway.categories"
+        :class="{ 'week-hero__categories--revealing': weekRunway.status === 'reveal' }"
+      />
 
       <p class="week-hero__status">
         {{ weekRunway.status === 'voting'
@@ -305,6 +308,13 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
 
 .week-hero__status {
   font-weight: 600;
+}
+
+// On phones the reveal gets the whole screen: the category intro is hidden while it runs
+.week-hero__categories--revealing {
+  @media (max-width: 47.99rem) {
+    display: none;
+  }
 }
 
 .week-hero__reveal {
