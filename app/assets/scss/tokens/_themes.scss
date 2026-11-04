@@ -16,6 +16,9 @@ $y2k-camp: (
   'color-text-muted': #5c5688,
   'color-on-primary': #1b1340,
   'color-on-accent': #1b1340,
+  // Control buttons (modal arrows and close): white glyphs on a solid fill, same in every theme
+  'color-on-solid': #fff,
+  'color-neutral': #8a8a99,
   'color-primary': #ff5fc8,
   'color-primary-hover': #ff85d5,
   'color-accent': #6de3ff,
@@ -54,6 +57,9 @@ $retro-glam: (
   'color-text-muted': #6d6064,
   'color-on-primary': #fff,
   'color-on-accent': #2f3d38,
+  // Control buttons (modal arrows and close): white glyphs on a solid fill, same in every theme
+  'color-on-solid': #fff,
+  'color-neutral': #8a8a99,
   'color-primary': #bf4d65,
   'color-primary-hover': #cf6177,
   'color-accent': #a9cbbd,
@@ -92,6 +98,9 @@ $neon-nightclub: (
   'color-text-muted': #b4b4ac,
   'color-on-primary': #0a0a0a,
   'color-on-accent': #0a0a0a,
+  // Control buttons (modal arrows and close): white glyphs on a solid fill, same in every theme
+  'color-on-solid': #fff,
+  'color-neutral': #8a8a99,
   'color-primary': #ff1fa9,
   'color-primary-hover': #ff55c0,
   'color-accent': #ff8a1f,

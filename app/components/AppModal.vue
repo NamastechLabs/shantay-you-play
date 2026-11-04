@@ -37,6 +37,8 @@ onMounted(() => sync(props.open))
         <h2 :id="titleId">
           {{ title }}
         </h2>
+        <!-- Optional controls next to the title (e.g. previous / next arrows) -->
+        <slot name="header-actions" />
         <button type="button" class="modal__close" aria-label="Cerrar" @click="emit('close')">
           ×
         </button>

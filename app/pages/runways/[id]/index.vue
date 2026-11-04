@@ -9,6 +9,9 @@ interface RunwayLook {
   id: string
   category_id: string
   image_url: string
+  image2_url: string | null
+  image3_url: string | null
+  image4_url: string | null
   intro: string | null
   participant: Pick<Tables<'participants'>, 'id' | 'name' | 'drag_name'>
 }
@@ -37,7 +40,7 @@ const { data, error: loadError, refresh } = await useAsyncData(
         .maybeSingle(),
       supabase
         .from('looks')
-        .select('id, category_id, image_url, intro, participant:participants!looks_participant_id_fkey(id, name, drag_name), category:categories!looks_category_id_fkey!inner(runway_id)')
+        .select('id, category_id, image_url, image2_url, image3_url, image4_url, intro, participant:participants!looks_participant_id_fkey(id, name, drag_name), category:categories!looks_category_id_fkey!inner(runway_id)')
         .eq('category.runway_id', runwayId)
         .order('created_at', { ascending: true }),
     ])
@@ -89,19 +92,19 @@ const breadcrumb = computed<BreadcrumbItem[]>(() => {
 
 const displayName = (look: RunwayLook): string => look.participant.drag_name ?? look.participant.name
 
-// --- Enlarged view --------------------------------------------------------
-const selectedLook = ref<RunwayLook | null>(null)
-const selectedCategoryTitle = computed(() =>
+// --- Look dialog: every photo of a look ------------------------------------
+const fullLook = ref<RunwayLook | null>(null)
+const fullLookCategoryTitle = computed(() =>
   hasSeveralCategories.value
-    ? runway.value?.categories.find(category => category.id === selectedLook.value?.category_id)?.title ?? null
+    ? runway.value?.categories.find(category => category.id === fullLook.value?.category_id)?.title ?? null
     : null,
 )
 
 // Step through the looks in gallery order, wrapping around at both ends
 function showAdjacentLook(step: 1 | -1): void {
-  const current = allLooks.value.findIndex(look => look.id === selectedLook.value?.id)
+  const current = allLooks.value.findIndex(look => look.id === fullLook.value?.id)
   if (current === -1) return
-  selectedLook.value = allLooks.value[(current + step + allLooks.value.length) % allLooks.value.length] ?? null
+  fullLook.value = allLooks.value[(current + step + allLooks.value.length) % allLooks.value.length] ?? null
 }
 </script>
 
@@ -138,20 +141,40 @@ function showAdjacentLook(step: 1 | -1): void {
 
         <ul v-if="section.looks.length" class="gallery">
           <li v-for="look in section.looks" :key="look.id">
-            <button type="button" class="look-card" @click="selectedLook = look">
+            <article class="look-card">
               <span v-if="placeByParticipant[look.participant.id]" class="look-card__rank">{{ placeByParticipant[look.participant.id] }}</span>
               <span v-if="placeByParticipant[look.participant.id] === 1" class="look-card__crown" role="img" aria-label="Ganadora">♛</span>
-              <img
-                class="look-card__photo"
-                :src="look.image_url"
-                :alt="`Look de ${displayName(look)}`"
-                loading="lazy"
-              >
-              <span class="look-card__body">
-                <span class="look-card__name">{{ displayName(look) }}</span>
-                <span v-if="look.intro" class="look-card__intro">{{ look.intro }}</span>
-              </span>
-            </button>
+              <button type="button" class="look-card__open" @click="fullLook = look">
+                <img
+                  class="look-card__photo"
+                  :src="look.image_url"
+                  :alt="`Look de ${displayName(look)}`"
+                  loading="lazy"
+                >
+                <span class="look-card__body">
+                  <span class="look-card__name">
+                    {{ displayName(look) }}
+                    <svg
+                      v-if="lookPhotos(look).length > 1"
+                      class="look-card__multi"
+                      role="img"
+                      :aria-label="`${lookPhotos(look).length} fotos`"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <title>{{ lookPhotos(look).length }} fotos</title>
+                      <rect x="8" y="3" width="13" height="13" rx="2.5" />
+                      <path d="M16 20H6.5A2.5 2.5 0 0 1 4 17.5V8" />
+                    </svg>
+                  </span>
+                  <span v-if="look.intro" class="look-card__intro">{{ look.intro }}</span>
+                </span>
+              </button>
+            </article>
           </li>
         </ul>
         <p v-else class="empty">
@@ -163,25 +186,17 @@ function showAdjacentLook(step: 1 | -1): void {
       Todavía no hay looks en la pasarela.
     </p>
 
-    <AppModal wide :open="selectedLook !== null" :title="selectedLook ? displayName(selectedLook) : ''" @close="selectedLook = null">
-      <figure v-if="selectedLook" class="look-full">
-        <img :src="selectedLook.image_url" :alt="`Look de ${displayName(selectedLook)}`">
-        <figcaption class="look-full__intro">
-          <strong v-if="selectedCategoryTitle">{{ selectedCategoryTitle }}</strong>
-          <template v-if="selectedLook.intro">
-            {{ selectedLook.intro }}
-          </template>
-        </figcaption>
-        <nav v-if="allLooks.length > 1" class="look-full__nav" aria-label="Navegar entre looks">
-          <button type="button" class="btn btn--secondary" @click="showAdjacentLook(-1)">
-            ← Look anterior
-          </button>
-          <button type="button" class="btn btn--secondary" @click="showAdjacentLook(1)">
-            Look siguiente →
-          </button>
-        </nav>
-      </figure>
-    </AppModal>
+    <LookGalleryDialog
+      :open="fullLook !== null"
+      :title="fullLook ? displayName(fullLook) : ''"
+      :photos="fullLook ? lookPhotos(fullLook) : []"
+      :category-title="fullLookCategoryTitle"
+      :intro="fullLook?.intro"
+      :can-navigate="allLooks.length > 1"
+      @previous="showAdjacentLook(-1)"
+      @next="showAdjacentLook(1)"
+      @close="fullLook = null"
+    />
   </main>
 
   <main v-else class="page">
