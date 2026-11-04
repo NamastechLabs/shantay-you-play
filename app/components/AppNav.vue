@@ -87,6 +87,11 @@ async function signOut(): Promise<void> {
             <ThemeSwitcher />
           </li>
           <li>
+            <NuxtLink to="/help" class="user-menu__item" @click="closeMenu()">
+              Ayuda
+            </NuxtLink>
+          </li>
+          <li>
             <button type="button" class="user-menu__item" @click="signOut">
               Salir
             </button>
