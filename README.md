@@ -166,6 +166,52 @@ update public.participants set role = 'jurado' where email = 'someone@gmail.com'
 
 A **runway** is one week (date and time + status) with one or more **categories**; each queen uploads one look per category and voters rank a Top 3 of queens for the whole runway. Runway lifecycle: `draft` → `werk_room` → `runway` → `voting` → `reveal` → `closed`. During `reveal` the homepage animates the Top 3 (via the `runway_top_three` function); individual votes are visible to everyone once a runway is `closed`.
 
+**Sharing your look ("A desfilar"):** while a runway is in `runway` (pasarela), each `concursante` sees an **A desfilar** button in the homepage hero card. It shares her own look for the week (all its photos, front/back/reveal/extra, plus the intro) through the native share sheet so she can post it in the WhatsApp group where everyone comments. If the week has several categories, each intro is prefixed with its category title. Implemented in [`useShareLooks`](app/composables/useShareLooks.ts) with the Web Share API (level 2, files):
+
+- Needs **HTTPS** (or `localhost`) and a user tap. Supported in Chrome on Android and Safari on iOS.
+- The photos are downloaded when the page loads (`prefetch`), because browsers only allow `navigator.share` right after a tap.
+- The photos are fetched with `fetch`, so the `runway-looks` bucket must be reachable cross-origin (public Supabase buckets send permissive CORS headers).
+- Where file sharing isn't supported (most desktop browsers) the intro text is copied to the clipboard and a message says so.
+- WhatsApp may attach the text to only the first photo, or drop it, when several photos are shared. That is WhatsApp's behavior, not the app's.
+
+---
+
+## Testing on a phone (Cloudflare Tunnel)
+
+The share sheet only works over HTTPS, so a plain LAN IP (`http://192.168.x.x:3000`) won't do. A Cloudflare quick tunnel exposes your local dev server on a public HTTPS URL. No Cloudflare account is needed.
+
+1. **Install** `cloudflared` once:
+
+   ```powershell
+   winget install Cloudflare.cloudflared      # Windows
+   brew install cloudflared                   # macOS
+   ```
+
+2. **Start the dev server and the tunnel**, in two terminals:
+
+   ```bash
+   pnpm dev
+   cloudflared tunnel --url http://localhost:3000
+   ```
+
+   `cloudflared` prints a URL like `https://random-words.trycloudflare.com`. It changes every time the tunnel restarts. Open it on your phone.
+
+3. **Vite host check:** [`nuxt.config.ts`](nuxt.config.ts) already sets `vite.server.allowedHosts: ['.trycloudflare.com']`, so any `*.trycloudflare.com` host is accepted. Without it the phone shows *"Blocked request. This host … is not allowed"*. Restart `pnpm dev` after changing that setting; it is only read at startup. If you use another tunnel (ngrok, VS Code dev tunnels), add its domain there too.
+
+4. **Allow the tunnel in Supabase** (one time). In **Authentication → URL Configuration → Redirect URLs** add:
+
+   ```
+   https://*.trycloudflare.com/**
+   ```
+
+   The app builds `redirectTo` from the current origin ([`useAuth.ts`](app/composables/useAuth.ts)), so Supabase must accept the tunnel host. The wildcard covers every new tunnel URL. Leave **Site URL** as it is. Remove the wildcard when you finish testing: it lets any trycloudflare tunnel receive your auth redirects.
+
+5. **Google / Microsoft (Azure) need no change.** The providers only redirect to the fixed Supabase callback (`https://<project-ref>.supabase.co/auth/v1/callback`), which is already registered. Never add the tunnel URL in the Google or Azure consoles.
+
+**Skipping login on the phone:** in dev, the "Dev: entrar como…" widget ([`DevImpersonate.vue`](app/components/DevImpersonate.vue)) signs you in as any participant without OAuth. It needs `NUXT_SUPABASE_SECRET_KEY` in `.env`. While a tunnel is open, anyone with the URL can reach that dev server, so keep it short-lived.
+
+**Android only, no tunnel:** connect the phone by USB, open `chrome://inspect#devices`, add port forwarding `3000 → localhost:3000`, and open `http://localhost:3000` on the phone. Chrome treats it as a secure context, so the share sheet works.
+
 ---
 
 ## Project structure
@@ -174,7 +220,7 @@ A **runway** is one week (date and time + status) with one or more **categories*
 app/
   pages/          login, confirm (OAuth callback), onboarding (drag name), index
   middleware/     drag-name.global.ts: forces onboarding until drag_name is set
-  composables/    useCurrentParticipant, useLookUpload
+  composables/    useCurrentParticipant, useLookUpload, useShareLooks (native share of a queen's look)
   utils/          compressImage (client-side resize → WebP), toErrorMessage
   types/          database.types.ts (generated Supabase types)
 supabase/
@@ -197,5 +243,8 @@ Runway photos are resized to max 1600px and re-encoded as WebP in the browser be
 | After login you land on the Site URL instead of `/confirm` | Add `http://localhost:3000/confirm` to Supabase **Redirect URLs** |
 | `permission denied for table …` | A migration is missing: run `pnpm dlx supabase db push`. New tables need an explicit `GRANT` |
 | `Missing NUXT_PUBLIC_SUPABASE_URL` warning | `.env` is missing or empty → section 1 |
+| Tunnel URL shows `Blocked request. This host … is not allowed` | Host missing from `vite.server.allowedHosts` in `nuxt.config.ts`; restart `pnpm dev` after editing |
+| Login through the tunnel ends on `localhost` | Add `https://*.trycloudflare.com/**` to Supabase **Redirect URLs** |
+| "A desfilar" shows a download error | The look photos can't be fetched cross-origin: check the `runway-looks` bucket is public / CORS |
 | `pnpm: command not found` (e.g. after upgrading Node) | Run `corepack enable` (on Windows, from an admin terminal if it fails with `EPERM`), or prefix commands with `corepack`, e.g. `corepack pnpm dev` |
 | `Unsupported engine` error from pnpm | Upgrade Node to 24.15.0+ (`nvm install` reads `.nvmrc`) |

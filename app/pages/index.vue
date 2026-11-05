@@ -14,6 +14,12 @@ interface JuryMember {
   categoryTitle: string | null
 }
 
+interface MyLook {
+  intro: string | null
+  categoryTitle: string
+  imageUrls: string[]
+}
+
 interface HomeData {
   runways: OpenRunway[]
   /** Voting runways where the current participant already cast a ballot */
@@ -22,6 +28,8 @@ interface HomeData {
   topThree: RunwayQueen[]
   /** Judges' looks of the week's runway while it is on the runway (empty otherwise) */
   jury: JuryMember[]
+  /** The signed-in queen's own look(s) of the week's runway while it is on the runway (empty otherwise) */
+  myLooks: MyLook[]
   /** Most recent closed runway with its winner (null when none has closed yet) */
   previousWeek: { runway: OpenRunway, winner: RunwayQueen | null } | null
 }
@@ -50,15 +58,35 @@ const { data, error, refresh } = await useAsyncData('home', async (): Promise<Ho
 
   const revealRunway = runways.find(runway => runway.status === 'reveal')
   const featured = pickWeekRunway(runways)
-  const [topThree, votedRunwayIds, jury, previousWeek] = await Promise.all([
+  const [topThree, votedRunwayIds, jury, myLooks, previousWeek] = await Promise.all([
     revealRunway ? loadTopThree(revealRunway.id) : [],
     loadVotedRunwayIds(runways),
     featured?.status === 'runway' ? loadJury(featured) : [],
+    featured?.status === 'runway' ? loadMyLooks(featured) : [],
     loadPreviousWeek(),
   ])
 
-  return { runways, votedRunwayIds, topThree, jury, previousWeek }
+  return { runways, votedRunwayIds, topThree, jury, myLooks, previousWeek }
 })
+
+async function loadMyLooks(runway: OpenRunway): Promise<MyLook[]> {
+  const categoryIds = runway.categories.map(category => category.id)
+  if (!categoryIds.length || !participant.value) return []
+
+  const { data: rows, error: looksError } = await supabase
+    .from('looks')
+    .select('category_id, intro, image_url, image2_url, image3_url, image4_url')
+    .eq('participant_id', participant.value.id)
+    .in('category_id', categoryIds)
+  if (looksError) throw looksError
+
+  const titleByCategory = new Map(runway.categories.map(category => [category.id, category.title]))
+  return rows.map(row => ({
+    intro: row.intro,
+    categoryTitle: titleByCategory.get(row.category_id) ?? '',
+    imageUrls: lookImageUrls(row),
+  }))
+}
 
 async function loadPreviousWeek(): Promise<HomeData['previousWeek']> {
   const { data: closed, error: closedError } = await supabase
@@ -127,7 +155,38 @@ const otherOpenRunways = computed(() =>
 const revealedTopThree = computed(() => (weekRunway.value?.status === 'reveal' ? data.value?.topThree ?? [] : []))
 const runwayJury = computed(() => (weekRunway.value?.status === 'runway' ? data.value?.jury ?? [] : []))
 
-const STATUS_HINTS: Record<OpenRunway['status'], string> = {
+// The queen's own look, ready to paste into the WhatsApp group where everyone comments
+const myLooks = computed(() => (weekRunway.value?.status === 'runway' ? data.value?.myLooks ?? [] : []))
+const sharePayload = computed(() => ({
+  imageUrls: myLooks.value.flatMap(look => look.imageUrls),
+  text: myLooks.value
+    .map(look => [myLooks.value.length > 1 ? `*${look.categoryTitle}*` : '', look.intro ?? ''].filter(Boolean).join('\n'))
+    .filter(Boolean)
+    .join('\n\n'),
+}))
+
+const { sharing, prefetch, share } = useShareLooks()
+const shareMessage = ref('')
+const shareError = ref('')
+
+// Download the images while the page is idle so the share sheet opens right on tap
+watch(sharePayload, (payload) => {
+  if (import.meta.client) prefetch(payload.imageUrls)
+}, { immediate: true })
+
+async function shareMyLook() {
+  shareMessage.value = ''
+  shareError.value = ''
+  try {
+    const result = await share(sharePayload.value)
+    if (result === 'copied') shareMessage.value = 'Texto copiado. Tu navegador no permite compartir imágenes desde aquí.'
+  }
+  catch (error) {
+    shareError.value = toErrorMessage(error)
+  }
+}
+
+const STATUS_HINTS:Record<OpenRunway['status'], string> = {
   draft: '',
   werk_room: 'Las reinas se preparan en el Werk Room.',
   runway: 'La votación abrirá pronto.',
@@ -195,6 +254,25 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
           </li>
         </ul>
       </section>
+
+      <!-- Queens share their look in the WhatsApp group once the week is on the runway -->
+      <div v-if="myLooks.length && participant?.role === 'concursante'" class="actions">
+        <button type="button" class="btn btn--primary" :disabled="sharing" @click="shareMyLook">
+          <svg class="btn__icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" />
+          </svg>
+          {{ sharing ? 'Preparando…' : 'A desfilar' }}
+        </button>
+        <p v-if="shareMessage" class="muted" role="status">
+          {{ shareMessage }}
+        </p>
+        <p v-if="shareError" class="form-error" role="alert">
+          {{ shareError }}
+        </p>
+      </div>
 
       <TopThreeReveal
         v-if="revealedTopThree.length"

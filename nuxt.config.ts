@@ -43,6 +43,13 @@ export default defineNuxtConfig({
     },
   },
 
+  // Dev only: let HTTPS tunnels (Cloudflare) reach the dev server, e.g. to test sharing on a phone
+  vite: {
+    server: {
+      allowedHosts: ['.trycloudflare.com'],
+    },
+  },
+
   runtimeConfig: {
     public: {
       runwayLooksBucket: 'runway-looks',

@@ -50,7 +50,7 @@ export const HELP_COPY = {
       icon: '👠',
       title: 'Pasarela',
       who: 'Todas',
-      text: 'Se abre el telón: todos los looks son públicos y puedes verlos en grande. Tus looks quedan congelados, así que ya no se pueden cambiar. Admira, aplaude y ve pensando tu Top 3.',
+      text: 'Se abre el telón: todos los looks son públicos y puedes verlos en grande. Tus looks quedan congelados, así que ya no se pueden cambiar. Admira, aplaude y ve pensando tu Top 3. Si eres concursante, pulsa «A desfilar» en la página de inicio para compartir tu look (fotos y presentación) en el grupo de WhatsApp.',
     },
     {
       icon: '🗳️',
@@ -117,6 +117,7 @@ export const HELP_COPY = {
   faq: [
     { title: 'Entré con otro correo y me rechazó. ¿Qué hago?', text: 'Inicia sesión con el mismo correo con el que te registró el jurado. Si quieres usar otro, pídele que cambie tu correo en Participantes.' },
     { title: 'Mi sesión se queda en «Confirmando sesión…»', text: 'Suele pasar en el navegador interno de apps como Instagram o WhatsApp. Abre el enlace en Safari o Chrome e inténtalo de nuevo.' },
+    { title: '¿Cómo comparto mi look en el grupo de WhatsApp?', text: 'Cuando la semana esté en la pasarela, pulsa «A desfilar» en la página de inicio desde tu móvil. Se abre el menú de compartir con todas las fotos de tu look y tu presentación: elige WhatsApp y el grupo. En el ordenador solo se copia el texto, así que usa el móvil para enviar las fotos. Si hay varias fotos, WhatsApp puede mostrar la presentación solo en la primera, o no mostrarla.' },
     { title: '¿Puedo cambiar mi nombre drag?', text: 'Claro, en «Mi perfil». Es el nombre que verán todas en la pasarela y en el Top 3.' },
     { title: '¿Por qué no veo la semana nueva?', text: 'Porque sigue en borrador. Cuando el jurado la pase al Werk Room, aparecerá.' },
   ] satisfies HelpFact[],
