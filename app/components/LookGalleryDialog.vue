@@ -75,10 +75,14 @@ onBeforeUnmount(() => query?.removeEventListener('change', onBreakpoint))
     <template v-if="canNavigate" #header-actions>
       <nav class="look-nav" aria-label="Navegar entre looks">
         <button type="button" class="look-nav__btn" aria-label="Look anterior" @click="$emit('previous')">
-          ←
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m15 5-7 7 7 7" />
+          </svg>
         </button>
         <button type="button" class="look-nav__btn" aria-label="Look siguiente" @click="$emit('next')">
-          →
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m9 5 7 7-7 7" />
+          </svg>
         </button>
       </nav>
     </template>

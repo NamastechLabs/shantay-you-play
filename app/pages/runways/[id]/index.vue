@@ -145,32 +145,13 @@ function showAdjacentLook(step: 1 | -1): void {
               <span v-if="placeByParticipant[look.participant.id]" class="look-card__rank">{{ placeByParticipant[look.participant.id] }}</span>
               <span v-if="placeByParticipant[look.participant.id] === 1" class="look-card__crown" role="img" aria-label="Ganadora">♛</span>
               <button type="button" class="look-card__open" @click="fullLook = look">
-                <img
-                  class="look-card__photo"
+                <LookCardPhoto
                   :src="look.image_url"
                   :alt="`Look de ${displayName(look)}`"
-                  loading="lazy"
-                >
+                  :count="lookPhotos(look).length"
+                />
                 <span class="look-card__body">
-                  <span class="look-card__name">
-                    {{ displayName(look) }}
-                    <svg
-                      v-if="lookPhotos(look).length > 1"
-                      class="look-card__multi"
-                      role="img"
-                      :aria-label="`${lookPhotos(look).length} fotos`"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <title>{{ lookPhotos(look).length }} fotos</title>
-                      <rect x="8" y="3" width="13" height="13" rx="2.5" />
-                      <path d="M16 20H6.5A2.5 2.5 0 0 1 4 17.5V8" />
-                    </svg>
-                  </span>
+                  <span class="look-card__name">{{ displayName(look) }}</span>
                   <span v-if="look.intro" class="look-card__intro">{{ look.intro }}</span>
                 </span>
               </button>

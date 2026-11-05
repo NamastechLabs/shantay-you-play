@@ -112,33 +112,14 @@ function pendingLabel(look: MyLook): string {
             :aria-label="`Ver mi look de la semana ${look.category.runway.week_number}`"
             @click="fullLook = look"
           >
-            <img
-              class="look-card__photo"
+            <LookCardPhoto
               :src="look.image_url"
               :alt="`Mi look de la semana ${look.category.runway.week_number}`"
-              loading="lazy"
-            >
+              :count="lookPhotos(look).length"
+            />
           </button>
           <NuxtLink :to="`/runways/${look.category.runway.id}`" class="look-card__body look-card__link">
-            <span class="look-card__name">
-              {{ look.category.title }}
-              <svg
-                v-if="lookPhotos(look).length > 1"
-                class="look-card__multi"
-                role="img"
-                :aria-label="`${lookPhotos(look).length} fotos`"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <title>{{ lookPhotos(look).length }} fotos</title>
-                <rect x="8" y="3" width="13" height="13" rx="2.5" />
-                <path d="M16 20H6.5A2.5 2.5 0 0 1 4 17.5V8" />
-              </svg>
-            </span>
+            <span class="look-card__name">{{ look.category.title }}</span>
             <span class="look-card__intro">
               Semana {{ look.category.runway.week_number }} ·
               <template v-if="look.place">

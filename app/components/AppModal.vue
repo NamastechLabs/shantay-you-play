@@ -40,7 +40,9 @@ onMounted(() => sync(props.open))
         <!-- Optional controls next to the title (e.g. previous / next arrows) -->
         <slot name="header-actions" />
         <button type="button" class="modal__close" aria-label="Cerrar" @click="emit('close')">
-          ×
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
         </button>
       </div>
       <slot />

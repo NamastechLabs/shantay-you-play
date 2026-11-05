@@ -1,3 +1,5 @@
+@use 'glass-button' as *;
+
 .gallery {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 17.5rem), 1fr));
@@ -121,12 +123,34 @@
     line-height: 1.4;
   }
 
-  // "This look has several photos" marker, at the right end of the name
-  &__multi {
-    flex: none;
-    width: 1.5rem;
-    height: 1.5rem;
-    color: var(--color-kicker);
+  // Wraps the photo so the photo count badge can sit on its corner
+  &__media {
+    position: relative;
+    display: block;
+  }
+
+  // "This look has several photos" badge, bottom right of the photo (not clickable)
+  &__count {
+    position: absolute;
+    right: var(--space-3);
+    bottom: var(--space-3);
+    display: inline-flex;
+    gap: var(--space-1);
+    align-items: center;
+    padding: var(--space-1) var(--space-3);
+    pointer-events: none;
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--color-text);
+    background-color: color-mix(in srgb, var(--color-surface) 88%, transparent);
+    border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-card);
+
+    svg {
+      width: 1rem;
+      height: 1rem;
+    }
   }
 
   &__intro {
@@ -146,25 +170,7 @@
   margin-left: auto;
 
   &__btn {
-    display: grid;
-    place-items: center;
-    width: 2.75rem;
-    height: 2.75rem;
-    padding: 0;
-    font-size: 1.75rem;
-    font-weight: 700;
-    line-height: 1;
-    color: var(--color-on-solid);
-    cursor: pointer;
-    background-color: var(--color-primary);
-    border: 0;
-    border-radius: var(--radius-pill);
-    transition: background-color 0.15s, box-shadow 0.15s;
-
-    &:hover {
-      background-color: var(--color-primary-hover);
-      box-shadow: var(--glow-primary);
-    }
+    @include glass-button(var(--color-primary));
   }
 }
 

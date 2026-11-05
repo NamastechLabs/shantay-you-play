@@ -1,3 +1,5 @@
+@use 'glass-button' as *;
+
 // Native <dialog>: full screen on phones, centered card on desktop. Never rounded.
 .modal {
   width: 100vw;
@@ -78,25 +80,8 @@
   }
 
   &__close {
-    display: grid;
-    flex: none;
-    place-items: center;
+    @include glass-button(var(--color-neutral));
     margin-left: auto;
-    width: 2.75rem;
-    height: 2.75rem;
-    padding: 0;
-    font-size: 2rem;
-    line-height: 1;
-    color: var(--color-on-solid);
-    cursor: pointer;
-    background-color: var(--color-neutral);
-    border: 0;
-    border-radius: var(--radius-pill);
-    transition: filter 0.15s;
-
-    &:hover {
-      filter: brightness(0.9);
-    }
 
     // Right after the look arrows: the arrows already pushed everything to the right
     .look-nav + & {
