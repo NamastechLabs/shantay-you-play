@@ -3,7 +3,7 @@ import type { Tables } from '~/types/database.types'
 
 type Person = Pick<Tables<'participants'>, 'id' | 'name' | 'drag_name'>
 type QueenLook = Pick<Tables<'looks'>, 'id' | 'category_id' | 'participant_id' | 'intro'> & LookImages
-type JuryLookSummary = Pick<Tables<'jury_looks'>, 'id' | 'category_id' | 'participant_id' | 'image_url' | 'intro'>
+type JuryLookSummary = Pick<Tables<'jury_looks'>, 'id' | 'category_id' | 'participant_id' | 'intro'> & LookImages
 
 const supabase = useSupabaseClient()
 const { runway, categories, refresh: refreshRunway } = useAdminRunway()
@@ -17,7 +17,10 @@ const { data, error: loadError, refresh } = await useAsyncData(`admin-runway-${r
       .select('id, category_id, participant_id, image_url, image2_url, image3_url, image4_url, intro')
       .in('category_id', categoryIds),
     supabase.from('participants').select('id, name, drag_name').eq('role', 'jurado').order('name', { ascending: true }),
-    supabase.from('jury_looks').select('id, category_id, participant_id, image_url, intro').in('category_id', categoryIds),
+    supabase
+      .from('jury_looks')
+      .select('id, category_id, participant_id, image_url, image2_url, image3_url, image4_url, intro')
+      .in('category_id', categoryIds),
   ])
   if (contestants.error) throw contestants.error
   if (looks.error) throw looks.error
@@ -64,7 +67,7 @@ const pasteSaving = ref(false)
 const pasteError = ref<string | null>(null)
 
 // Composables need the Nuxt context, so it is created here rather than on paste
-const { saveLook, replaceJuryImage } = useLookUpload()
+const { saveLook, saveJuryLook } = useLookUpload()
 
 const pasteIsJury = computed(() => looksTab.value === 'jury')
 const pasteCandidates = computed(() => (pasteIsJury.value ? data.value?.judges : data.value?.contestants) ?? [])
@@ -73,7 +76,7 @@ const pasteExisting = (personId: string) =>
 const pasteTargetLook = computed(() => pasteExisting(pasteTargetId.value))
 // Jury looks need an intro and queens need a front photo, so a new look must be filled in by hand / at the front
 const pasteTargetBlocked = computed(() => pasteIsJury.value && !!pasteTargetId.value && !pasteTargetLook.value)
-const pasteSlotLocked = computed(() => !pasteIsJury.value && !pasteTargetLook.value)
+const pasteSlotLocked = computed(() => !pasteTargetLook.value)
 
 function optionLabel(person: Person): string {
   return pasteExisting(person.id) ? `${personName(person)} (ya tiene look)` : personName(person)
@@ -93,10 +96,10 @@ watch(pastedFile, (next) => {
   pasteError.value = null
 })
 
-// Picking a queen preselects the first empty slot of her look (a new look starts at the front)
+// Picking a queen / judge preselects the first empty slot of the look (a new look starts at the front)
 watch(pasteTargetId, () => {
-  const look = pasteTargetLook.value as QueenLook | undefined
-  pasteSlot.value = !pasteIsJury.value && look ? LOOK_SLOTS.find(slot => !look[slot.key])?.key ?? 'image_url' : 'image_url'
+  const look = pasteTargetLook.value as LookImages | undefined
+  pasteSlot.value = look ? LOOK_SLOTS.find(slot => !look[slot.key])?.key ?? 'image_url' : 'image_url'
 })
 
 function onPaste(event: ClipboardEvent): void {
@@ -122,7 +125,16 @@ async function savePasted(): Promise<void> {
   pasteError.value = null
   try {
     if (pasteIsJury.value) {
-      await replaceJuryImage(pasteTargetLook.value as JuryLookSummary, file)
+      // Never null: a new jury look is blocked (it needs an intro), so only existing ones get here
+      const existing = pasteTargetLook.value as JuryLookSummary
+      await saveJuryLook({
+        look: existing,
+        categoryId: pasteCategoryId.value,
+        participantId: target.id,
+        files: { [pasteSlot.value]: file },
+        removed: [],
+        intro: existing.intro,
+      })
     }
     else {
       const existing = pasteTargetLook.value as QueenLook | undefined
@@ -225,7 +237,7 @@ async function savePasted(): Promise<void> {
       aria-labelledby="looks-tab-jury"
     >
       <p class="hint">
-        Cada jurado sube su foto y una presentación por categoría: se muestran en la portada mientras la semana está en Pasarela.
+        Cada jurado tiene un look por categoría, con hasta 4 fotos y una presentación obligatoria: se muestran en la portada mientras la semana está en Pasarela. Haz clic en una foto para elegirla, o pega una imagen del portapapeles (Ctrl+V) para asignarla.
       </p>
       <ul v-if="data?.judges.length && category" class="row-list">
         <AdminJuryLookRow
@@ -270,7 +282,7 @@ async function savePasted(): Promise<void> {
           </option>
         </select>
       </div>
-      <div v-if="!pasteIsJury" class="field">
+      <div class="field">
         <label for="paste-slot" class="field__label">Foto</label>
         <select id="paste-slot" v-model="pasteSlot" class="field__input" :disabled="pasteSlotLocked">
           <option v-for="slot in LOOK_SLOTS" :key="slot.key" :value="slot.key">
