@@ -1,17 +1,9 @@
 <script setup lang="ts">
 import type { Tables } from '~/types/database.types'
+import type { JuryMember } from '~/components/JuryLooks.vue'
 
 interface OpenRunway extends Pick<Tables<'runways'>, 'id' | 'week_number' | 'runway_date' | 'status'> {
   categories: Pick<Tables<'categories'>, 'id' | 'title' | 'intro_text'>[]
-}
-
-interface JuryMember {
-  id: string
-  image_url: string
-  intro: string
-  name: string
-  /** Only set when the runway has several categories */
-  categoryTitle: string | null
 }
 
 interface MyLook {
@@ -113,7 +105,7 @@ async function loadJury(runway: OpenRunway): Promise<JuryMember[]> {
 
   const { data: rows, error: juryError } = await supabase
     .from('jury_looks')
-    .select('id, category_id, image_url, intro, participant:participants!jury_looks_participant_id_fkey(name, drag_name)')
+    .select('id, category_id, image_url, image2_url, image3_url, image4_url, intro, participant:participants!jury_looks_participant_id_fkey(name, drag_name)')
     .in('category_id', categoryIds)
     .order('created_at', { ascending: true })
   if (juryError) throw juryError
@@ -121,7 +113,7 @@ async function loadJury(runway: OpenRunway): Promise<JuryMember[]> {
   const titleByCategory = new Map(runway.categories.map(category => [category.id, category.title]))
   return rows.map(row => ({
     id: row.id,
-    image_url: row.image_url,
+    photos: lookPhotos(row),
     intro: row.intro,
     name: row.participant.drag_name ?? row.participant.name,
     categoryTitle: runway.categories.length > 1 ? titleByCategory.get(row.category_id) ?? null : null,
@@ -237,23 +229,7 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
               : 'Las reinas ya están en la pasarela. La votación abrirá pronto.' }}
       </p>
 
-      <section v-if="runwayJury.length" class="jury" aria-labelledby="jury-title">
-        <h2 id="jury-title" class="jury__title">
-          El jurado en la pasarela
-        </h2>
-        <ul class="jury__list">
-          <li v-for="member in runwayJury" :key="member.id" class="jury__card">
-            <img class="jury__photo" :src="member.image_url" :alt="`Look de ${member.name}`" loading="lazy">
-            <div class="jury__body">
-              <strong class="jury__name">{{ member.name }}</strong>
-              <span v-if="member.categoryTitle" class="muted">{{ member.categoryTitle }}</span>
-              <p class="jury__intro">
-                {{ member.intro }}
-              </p>
-            </div>
-          </li>
-        </ul>
-      </section>
+      <JuryLooks :members="runwayJury" title="El jurado en la pasarela" />
 
       <!-- Queens share their look in the WhatsApp group once the week is on the runway -->
       <div v-if="myLooks.length && participant?.role === 'concursante'" class="actions">
@@ -397,63 +373,6 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
 
 .week-hero__reveal {
   justify-self: stretch;
-}
-
-.jury {
-  display: grid;
-  gap: var(--space-4);
-  justify-self: stretch;
-}
-
-.jury__title {
-  font-size: 1.25rem;
-}
-
-.jury__list {
-  display: grid;
-  gap: var(--space-4);
-  padding: 0;
-  margin: 0;
-  list-style: none;
-
-  @media (min-width: 48rem) {
-    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-  }
-}
-
-.jury__card {
-  display: grid;
-  grid-template-columns: 6rem 1fr;
-  gap: var(--space-3);
-  align-items: start;
-  padding: var(--space-3);
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
-}
-
-.jury__photo {
-  width: 100%;
-  aspect-ratio: 3 / 4;
-  object-fit: cover;
-  border-radius: var(--radius-sm);
-}
-
-.jury__body {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.jury__name {
-  font-family: var(--font-display);
-  font-size: 1.125rem;
-  line-height: 1.3;
-  color: var(--color-title);
-}
-
-.jury__intro {
-  white-space: pre-line;
 }
 
 .week-hero .actions {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Tables } from '~/types/database.types'
 import type { BreadcrumbItem } from '~/components/AppBreadcrumb.vue'
+import type { JuryMember } from '~/components/JuryLooks.vue'
 
 type Category = Pick<Tables<'categories'>, 'id' | 'title' | 'intro_text'>
 type Runway = Pick<Tables<'runways'>, 'id' | 'week_number' | 'runway_date' | 'status'> & { categories: Category[] }
@@ -19,6 +20,8 @@ interface RunwayLook {
 interface RunwayData {
   runway: Runway
   looks: RunwayLook[]
+  /** The judges' looks (not voted on), shown above the queens of their category */
+  juryLooks: (LookImages & { id: string, category_id: string, intro: string, participant: Pick<Tables<'participants'>, 'name' | 'drag_name'> })[]
   /** Final place per queen (participant id); only filled once the runway is closed */
   placeByParticipant: Record<string, number>
 }
@@ -31,7 +34,7 @@ const runwayId = String(route.params.id)
 const { data, error: loadError, refresh } = await useAsyncData(
   `runway-${runwayId}`,
   async (): Promise<RunwayData | null> => {
-    const [runway, looks] = await Promise.all([
+    const [runway, looks, juryLooks] = await Promise.all([
       supabase
         .from('runways')
         .select('id, week_number, runway_date, status, categories(id, title, intro_text)')
@@ -43,10 +46,16 @@ const { data, error: loadError, refresh } = await useAsyncData(
         .select('id, category_id, image_url, image2_url, image3_url, image4_url, intro, participant:participants!looks_participant_id_fkey(id, name, drag_name), category:categories!looks_category_id_fkey!inner(runway_id)')
         .eq('category.runway_id', runwayId)
         .order('created_at', { ascending: true }),
+      supabase
+        .from('jury_looks')
+        .select('id, category_id, image_url, image2_url, image3_url, image4_url, intro, participant:participants!jury_looks_participant_id_fkey(name, drag_name), category:categories!jury_looks_category_id_fkey!inner(runway_id)')
+        .eq('category.runway_id', runwayId)
+        .order('created_at', { ascending: true }),
     ])
 
     if (runway.error) throw runway.error
     if (looks.error) throw looks.error
+    if (juryLooks.error) throw juryLooks.error
     if (!runway.data) return null
 
     let placeByParticipant: Record<string, number> = {}
@@ -56,7 +65,7 @@ const { data, error: loadError, refresh } = await useAsyncData(
       placeByParticipant = Object.fromEntries(ranking.data.map(row => [row.participant_id, row.place]))
     }
 
-    return { runway: runway.data, looks: looks.data, placeByParticipant }
+    return { runway: runway.data, looks: looks.data, juryLooks: juryLooks.data, placeByParticipant }
   },
 )
 
@@ -76,10 +85,19 @@ const sections = computed(() => {
   const place = (look: RunwayLook): number => placeByParticipant.value[look.participant.id] ?? Infinity
   return (runway.value?.categories ?? []).map((category) => {
     const looks = (data.value?.looks ?? []).filter(look => look.category_id === category.id)
-    return { category, looks: isClosed.value ? [...looks].sort((a, b) => place(a) - place(b)) : looks }
+    const jury: JuryMember[] = (data.value?.juryLooks ?? [])
+      .filter(look => look.category_id === category.id)
+      .map(look => ({
+        id: look.id,
+        name: look.participant.drag_name ?? look.participant.name,
+        intro: look.intro,
+        photos: lookPhotos(look),
+      }))
+    return { category, jury, looks: isClosed.value ? [...looks].sort((a, b) => place(a) - place(b)) : looks }
   })
 })
 const allLooks = computed(() => sections.value.flatMap(section => section.looks))
+const hasAnyLooks = computed(() => allLooks.value.length > 0 || sections.value.some(section => section.jury.length > 0))
 const hasSeveralCategories = computed(() => (runway.value?.categories.length ?? 0) > 1)
 
 // Closed runways are reached from "Semanas pasadas", so the trail goes back through it
@@ -130,7 +148,7 @@ function showAdjacentLook(step: 1 | -1): void {
 
     <RunwayCategories v-if="!hasSeveralCategories" :categories="runway.categories" />
 
-    <template v-if="allLooks.length">
+    <template v-if="hasAnyLooks">
       <section v-for="section in sections" :key="section.category.id" class="section">
         <template v-if="hasSeveralCategories">
           <h2>{{ section.category.title }}</h2>
@@ -138,6 +156,13 @@ function showAdjacentLook(step: 1 | -1): void {
             {{ section.category.intro_text }}
           </p>
         </template>
+
+        <!-- The jury walks first: its looks set the bar and are not voted on -->
+        <JuryLooks :members="section.jury" title="El jurado" :level="hasSeveralCategories ? 3 : 2" />
+
+        <component :is="hasSeveralCategories ? 'h3' : 'h2'" v-if="section.jury.length" class="queens-title">
+          Las reinas
+        </component>
 
         <ul v-if="section.looks.length" class="gallery">
           <li v-for="look in section.looks" :key="look.id">
@@ -190,6 +215,10 @@ function showAdjacentLook(step: 1 | -1): void {
 </template>
 
 <style scoped>
+.queens-title {
+  font-size: 1.25rem;
+}
+
 .intro {
   max-width: 44rem;
   white-space: pre-line;
