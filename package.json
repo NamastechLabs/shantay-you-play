@@ -4,6 +4,10 @@
   "type": "module",
   "scripts": {
     "dev": "nuxt dev",
+    "dev:local": "nuxt dev --dotenv .env.local",
+    "db:start": "pnpm dlx supabase start -x studio,imgproxy,vector,logflare,edge-runtime,mailpit",
+    "db:stop": "pnpm dlx supabase stop",
+    "db:reset": "pnpm dlx supabase db reset",
     "build": "nuxt build",
     "generate": "nuxt generate",
     "preview": "nuxt preview",

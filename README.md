@@ -37,6 +37,9 @@ Before the app works end to end you need to complete the three setup steps below
 | Command | What it does |
 |---|---|
 | `pnpm dev` | Start the dev server on http://localhost:3000 |
+| `pnpm dev:local` | Same, but against the local Supabase from `.env.local` (see [Local test database](#local-test-database)) |
+| `pnpm db:start` / `db:stop` | Start / stop the local Supabase stack (needs Docker) |
+| `pnpm db:reset` | Re-apply all migrations and `supabase/seed.sql` to the local DB |
 | `pnpm build` | Production build (`.output/`) |
 | `pnpm preview` | Serve the production build locally |
 | `pnpm typecheck` | Type-check the whole project with `vue-tsc` |
@@ -173,6 +176,28 @@ A **runway** is one week (date and time + status) with one or more **categories*
 - The photos are fetched with `fetch`, so the `runway-looks` bucket must be reachable cross-origin (public Supabase buckets send permissive CORS headers).
 - Where file sharing isn't supported (most desktop browsers) the intro text is copied to the clipboard and a message says so.
 - WhatsApp may attach the text to only the first photo, or drop it, when several photos are shared. That is WhatsApp's behavior, not the app's.
+
+---
+
+## Local test database
+
+Friends use the live Supabase project, so test status changes (Werk Room → Runway → Voting → Reveal → Closed) against a local copy instead. Needs Docker Desktop.
+
+1. `pnpm db:start` (first run pulls the Docker images). It applies every migration and `supabase/seed.sql`.
+2. Create `.env.local` from the output of `pnpm dlx supabase status -o env`:
+
+   ```
+   SUPABASE_URL=http://127.0.0.1:54321
+   SUPABASE_KEY=<PUBLISHABLE_KEY>
+   NUXT_SUPABASE_SECRET_KEY=<SECRET_KEY>
+   ```
+
+3. `pnpm dev:local` runs the app against the local DB. Plain `pnpm dev` keeps using `.env` (live).
+4. Sign in with email and password, or use the "Dev: entrar como…" widget. Every seeded account uses the password `password123`: jurados `ana@local.test`, `bea@local.test`; concursantes `carla@`, `dani@`, `eva@`, `fran@`, `gina@`, `hugo@` (all `@local.test`).
+5. The seed has week 1 (closed, with votes) and week 2 (`runway`, with jury and queen looks). Sign in as a jurado and use `/admin` to move a runway to any status.
+6. `pnpm db:reset` restores the seed data. `pnpm db:stop` shuts it down. Studio is disabled by default; remove `studio` from the `-x` list in `db:start` to get it on http://127.0.0.1:54323.
+
+Google/Azure sign-in does not work locally (no provider configured), and the seed photos are loaded from picsum.photos, so you need internet to see them.
 
 ---
 
