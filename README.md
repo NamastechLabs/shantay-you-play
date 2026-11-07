@@ -40,6 +40,7 @@ Before the app works end to end you need to complete the three setup steps below
 | `pnpm dev:local` | Same, but against the local Supabase from `.env.local` (see [Local test database](#local-test-database)) |
 | `pnpm db:start` / `db:stop` | Start / stop the local Supabase stack (needs Docker) |
 | `pnpm db:reset` | Re-apply all migrations and `supabase/seed.sql` to the local DB |
+| `pnpm tunnel:api` / `tunnel:app` | Cloudflare tunnels to the local Supabase API (54321) / the app (3000), for [phone debugging](#debugging-the-local-database-on-a-phone) |
 | `pnpm build` | Production build (`.output/`) |
 | `pnpm preview` | Serve the production build locally |
 | `pnpm typecheck` | Type-check the whole project with `vue-tsc` |
@@ -199,8 +200,9 @@ Friends use the live Supabase project, so test status changes (Werk Room → Run
 
 ### Debugging the local database on a phone
 
-The phone cannot reach `127.0.0.1`, so tunnel both the app and the Supabase API:
+The phone cannot reach `127.0.0.1`, so tunnel both the app and the Supabase API. Run each command in its own terminal, in this order:
 
+0. `pnpm db:start` (skip if the local stack is already running).
 1. `pnpm tunnel:api` → copy its `https://….trycloudflare.com` URL into `SUPABASE_URL` in `.env.local`.
 2. Add `NUXT_DEV_ALLOW_TUNNEL=true` to `.env.local` (lets the "Dev: entrar como…" widget answer through a tunnel; never set it against the live project).
 3. `pnpm dev:local`, then `pnpm tunnel:app` and open that URL on the phone.
