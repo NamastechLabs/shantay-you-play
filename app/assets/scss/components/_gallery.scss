@@ -49,6 +49,7 @@
     position: absolute;
     top: 0;
     left: 0;
+    z-index: 1; // above the photo, which is positioned and comes later in the DOM
     display: grid;
     place-items: start;
     pointer-events: none;
@@ -75,6 +76,7 @@
     position: absolute;
     top: var(--space-3);
     right: var(--space-3);
+    z-index: 1;
     display: grid;
     place-items: center;
     pointer-events: none;
