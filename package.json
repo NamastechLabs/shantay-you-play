@@ -7,6 +7,8 @@
     "dev:local": "nuxt dev --dotenv .env.local",
     "db:start": "pnpm dlx supabase start -x studio,imgproxy,vector,logflare,edge-runtime,mailpit",
     "db:stop": "pnpm dlx supabase stop",
+    "tunnel:app": "cloudflared tunnel --url http://localhost:3000",
+    "tunnel:api": "cloudflared tunnel --url http://localhost:54321",
     "db:reset": "pnpm dlx supabase db reset",
     "build": "nuxt build",
     "generate": "nuxt generate",

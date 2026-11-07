@@ -201,9 +201,9 @@ Friends use the live Supabase project, so test status changes (Werk Room → Run
 
 The phone cannot reach `127.0.0.1`, so tunnel both the app and the Supabase API:
 
-1. `cloudflared tunnel --url http://localhost:54321` → copy its `https://….trycloudflare.com` URL into `SUPABASE_URL` in `.env.local`.
+1. `pnpm tunnel:api` → copy its `https://….trycloudflare.com` URL into `SUPABASE_URL` in `.env.local`.
 2. Add `NUXT_DEV_ALLOW_TUNNEL=true` to `.env.local` (lets the "Dev: entrar como…" widget answer through a tunnel; never set it against the live project).
-3. `pnpm dev:local`, then `cloudflared tunnel --url http://localhost:3000` and open that URL on the phone.
+3. `pnpm dev:local`, then `pnpm tunnel:app` and open that URL on the phone.
 
 Restart `pnpm dev:local` whenever the API tunnel URL changes.
 
