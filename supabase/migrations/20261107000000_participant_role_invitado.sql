@@ -1,0 +1,13 @@
+-- =============================================================================
+-- Migration: new participant role 'invitado' (special guest of the jury)
+--
+-- A guest signs in like everyone else (Google / Microsoft, pre-registered by
+-- email) but is NOT a queen and NOT a judge. The role is only a marker: it keeps
+-- guests out of the queens list (looks require 'concursante') and out of the
+-- admin policies (those require 'jurado'). What a guest can actually do is
+-- granted per runway in public.runway_guests (next migration).
+--
+-- Kept in its own migration: a new enum value cannot be used (policies,
+-- functions) in the same transaction that adds it.
+-- =============================================================================
+alter type public.participant_role add value if not exists 'invitado';

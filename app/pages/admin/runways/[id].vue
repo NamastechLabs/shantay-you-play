@@ -43,6 +43,7 @@ const sections = computed(() => [
   { to: `/admin/runways/${runwayId}`, label: 'Resumen', exact: true },
   { to: `/admin/runways/${runwayId}/categories`, label: 'Categorías', exact: false },
   { to: `/admin/runways/${runwayId}/looks`, label: 'Looks', exact: false },
+  { to: `/admin/runways/${runwayId}/guests`, label: 'Invitados', exact: false },
 ])
 const isActive = (section: { to: string, exact: boolean }): boolean =>
   section.exact ? route.path === section.to : route.path.startsWith(section.to)

@@ -6,7 +6,7 @@ definePageMeta({ middleware: 'jurado' })
 type ParticipantRow = Pick<Tables<'participants'>, 'id' | 'user_id' | 'name' | 'drag_name' | 'email' | 'role'>
 type Role = Enums<'participant_role'>
 
-const ROLE_LABELS: Record<Role, string> = { concursante: 'Concursante', jurado: 'Jurado' }
+const ROLE_LABELS: Record<Role, string> = { concursante: 'Concursante', jurado: 'Jurado', invitado: 'Invitado especial' }
 
 /** Postgres unique_violation: duplicate email or drag name */
 const UNIQUE_VIOLATION = '23505'

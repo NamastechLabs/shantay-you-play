@@ -7,6 +7,7 @@
 --
 --   jurado       ana@local.test, bea@local.test
 --   concursante  carla@, dani@, eva@, fran@, gina@, hugo@ (all @local.test)
+--   invitado     gus@ (invited to week 2), ivy@ (registered, invited to nothing)
 --
 -- Runways: week 1 is closed (with votes), week 2 is in `runway` (jury looks and
 -- queen looks visible, ready to open voting). Use /admin to move any runway to
@@ -24,7 +25,9 @@ values
   ('00000000-0000-4000-8000-000000000013', 'Eva',   'Eva Nescente',       'eva@local.test',   'concursante'),
   ('00000000-0000-4000-8000-000000000014', 'Fran',  'Fran Tasía',         'fran@local.test',  'concursante'),
   ('00000000-0000-4000-8000-000000000015', 'Gina',  'Gina Tónica',        'gina@local.test',  'concursante'),
-  ('00000000-0000-4000-8000-000000000016', 'Hugo',  'Hugo Boss Queen',    'hugo@local.test',  'concursante');
+  ('00000000-0000-4000-8000-000000000016', 'Hugo',  'Hugo Boss Queen',    'hugo@local.test',  'concursante'),
+  ('00000000-0000-4000-8000-000000000021', 'Gus',   'Gus Tosa',           'gus@local.test',   'invitado'),
+  ('00000000-0000-4000-8000-000000000022', 'Ivy',   'Ivy Sinacceso',      'ivy@local.test',   'invitado');
 
 -- Auth users (email + password login, magic links for the impersonation widget).
 insert into auth.users (
@@ -104,6 +107,11 @@ select
 from public.categories c
 cross join public.participants p
 where p.role = 'jurado';
+
+-- Special guests: Gus is invited to week 2 (can upload a jury look and vote);
+-- Ivy is registered but invited to nothing, so she sees no runway at all.
+insert into public.runway_guests (runway_id, participant_id, invited_by)
+values ('10000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000021', '00000000-0000-4000-8000-000000000001');
 
 -- Week 1 votes (closed): contestants vote for three other queens.
 insert into public.votes (runway_id, voter_id, top_1_participant_id, top_2_participant_id, top_3_participant_id)

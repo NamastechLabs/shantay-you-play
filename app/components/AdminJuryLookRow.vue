@@ -8,6 +8,8 @@ const props = defineProps<{
   categoryId: string
   judge: Judge
   look: JuryLookSummary | null
+  /** Heading of the row; defaults to the judge's name (e.g. the category title on a guest's own page) */
+  title?: string
   /** False once voting opens: looks are then read-only */
   editable: boolean
 }>()
@@ -128,7 +130,7 @@ async function save(): Promise<void> {
 
 <template>
   <li class="look-slot look-slot--queen">
-    <strong class="look-slot__name">{{ displayName }}</strong>
+    <strong class="look-slot__name">{{ title ?? displayName }}</strong>
 
     <!-- Tablet portrait and smaller: the photos plus one stacked placeholder -->
     <ul class="look-slot__grid look-slot__grid--stacked" :aria-label="`Fotos del look de ${displayName}`">

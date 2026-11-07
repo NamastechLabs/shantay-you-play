@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Tables } from '~/types/database.types'
 import type { JuryMember } from '~/components/JuryLooks.vue'
+import type { SharePhoto } from '~/composables/useShareLooks'
 
 interface OpenRunway extends Pick<Tables<'runways'>, 'id' | 'week_number' | 'runway_date' | 'status'> {
   categories: Pick<Tables<'categories'>, 'id' | 'title' | 'intro_text'>[]
@@ -9,7 +10,7 @@ interface OpenRunway extends Pick<Tables<'runways'>, 'id' | 'week_number' | 'run
 interface MyLook {
   intro: string | null
   categoryTitle: string
-  imageUrls: string[]
+  photos: SharePhoto[]
 }
 
 interface HomeData {
@@ -20,7 +21,7 @@ interface HomeData {
   topThree: RunwayQueen[]
   /** Judges' looks of the week's runway while it is on the runway (empty otherwise) */
   jury: JuryMember[]
-  /** The signed-in queen's own look(s) of the week's runway while it is on the runway (empty otherwise) */
+  /** The signed-in queen's or jury member's own look(s) of the week's runway while it is on the runway (empty otherwise) */
   myLooks: MyLook[]
   /** Most recent closed runway with its winner (null when none has closed yet) */
   previousWeek: { runway: OpenRunway, winner: RunwayQueen | null } | null
@@ -65,8 +66,10 @@ async function loadMyLooks(runway: OpenRunway): Promise<MyLook[]> {
   const categoryIds = runway.categories.map(category => category.id)
   if (!categoryIds.length || !participant.value) return []
 
+  // The jury (judges and special guests) keeps its looks in jury_looks, queens in looks
+  const table = participant.value.role === 'concursante' ? 'looks' : 'jury_looks'
   const { data: rows, error: looksError } = await supabase
-    .from('looks')
+    .from(table)
     .select('category_id, intro, image_url, image2_url, image3_url, image4_url')
     .eq('participant_id', participant.value.id)
     .in('category_id', categoryIds)
@@ -76,7 +79,7 @@ async function loadMyLooks(runway: OpenRunway): Promise<MyLook[]> {
   return rows.map(row => ({
     intro: row.intro,
     categoryTitle: titleByCategory.get(row.category_id) ?? '',
-    imageUrls: lookImageUrls(row),
+    photos: lookPhotos(row),
   }))
 }
 
@@ -150,7 +153,8 @@ const runwayJury = computed(() => (weekRunway.value?.status === 'runway' ? data.
 // The queen's own look, ready to paste into the WhatsApp group where everyone comments
 const myLooks = computed(() => (weekRunway.value?.status === 'runway' ? data.value?.myLooks ?? [] : []))
 const sharePayload = computed(() => ({
-  imageUrls: myLooks.value.flatMap(look => look.imageUrls),
+  photos: myLooks.value.flatMap(look => look.photos),
+  owner: participant.value?.drag_name ?? participant.value?.name ?? '',
   text: myLooks.value
     .map(look => [myLooks.value.length > 1 ? `*${look.categoryTitle}*` : '', look.intro ?? ''].filter(Boolean).join('\n'))
     .filter(Boolean)
@@ -163,7 +167,7 @@ const shareError = ref('')
 
 // Download the images while the page is idle so the share sheet opens right on tap
 watch(sharePayload, (payload) => {
-  if (import.meta.client) prefetch(payload.imageUrls)
+  if (import.meta.client) prefetch(payload.photos)
 }, { immediate: true })
 
 async function shareMyLook() {
@@ -231,8 +235,8 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
 
       <JuryLooks :members="runwayJury" title="El jurado en la pasarela" />
 
-      <!-- Queens share their look in the WhatsApp group once the week is on the runway -->
-      <div v-if="myLooks.length && participant?.role === 'concursante'" class="actions">
+      <!-- Queens and the jury (judges and special guests) share their look in the WhatsApp group once the week is on the runway -->
+      <div v-if="myLooks.length" class="actions">
         <button type="button" class="btn btn--primary" :disabled="sharing" @click="shareMyLook">
           <svg class="btn__icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="18" cy="5" r="3" />
@@ -261,6 +265,13 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
       <div v-if="weekRunway.status === 'werk_room' && participant?.role === 'concursante'" class="actions">
         <NuxtLink :to="`/semana/${weekRunway.week_number}/werk-room`" class="btn btn--primary">
           Ya tienes tu look, súbelo
+        </NuxtLink>
+      </div>
+
+      <!-- Special guests of the jury upload their own look while the week is in the Werk Room -->
+      <div v-if="weekRunway.status === 'werk_room' && participant?.role === 'invitado'" class="actions">
+        <NuxtLink :to="`/semana/${weekRunway.week_number}/invitado`" class="btn btn--primary">
+          Sube tu look de jurado
         </NuxtLink>
       </div>
 

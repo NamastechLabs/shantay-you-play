@@ -1,6 +1,14 @@
+export interface SharePhoto {
+  url: string
+  /** What the photo shows (Frente, Espalda…); it goes into the file name */
+  label: string
+}
+
 export interface SharePayload {
   /** Photos to attach, in order */
-  imageUrls: string[]
+  photos: SharePhoto[]
+  /** Drag name of whoever owns the look; it goes into the file names */
+  owner: string
   /** Message that goes with the photos */
   text: string
 }
@@ -14,12 +22,32 @@ const MIME_EXTENSIONS: Record<string, string> = {
   'image/gif': 'gif',
 }
 
-async function downloadFile(url: string, index: number): Promise<File> {
+async function downloadBlob(url: string): Promise<Blob> {
   const response = await fetch(url)
   if (!response.ok) throw new Error('No se pudo descargar una de las fotos del look.')
-  const blob = await response.blob()
+  return response.blob()
+}
+
+/** Lowercase ASCII without accents, words joined by `separator` ("Ana Conda" → "ana_conda") */
+function slugify(text: string, separator: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+    .join(separator)
+}
+
+/**
+ * Sortable file name ("01-frente-ana_conda.webp", "02-espalda-ana_conda.webp"…):
+ * apps that order the attachments by name, and people who save them, get the
+ * photos in the right order, and know whose look they are.
+ */
+function fileName(blob: Blob, index: number, label: string, owner: string): string {
   const extension = MIME_EXTENSIONS[blob.type] ?? 'jpg'
-  return new File([blob], `look-${index + 1}.${extension}`, { type: blob.type || 'image/jpeg' })
+  const parts = [slugify(label, '-') || 'look', slugify(owner, '_')].filter(Boolean)
+  return `${String(index + 1).padStart(2, '0')}-${parts.join('-')}.${extension}`
 }
 
 /**
@@ -32,28 +60,32 @@ async function downloadFile(url: string, index: number): Promise<File> {
  */
 export function useShareLooks() {
   const sharing = ref(false)
-  const cache = new Map<string, Promise<File>>()
+  const cache = new Map<string, Promise<Blob>>()
 
-  function fileFor(url: string, index: number): Promise<File> {
-    let file = cache.get(url)
-    if (!file) {
-      file = downloadFile(url, index)
+  function blobFor(url: string): Promise<Blob> {
+    let blob = cache.get(url)
+    if (!blob) {
+      blob = downloadBlob(url)
       // A failed download must be retried on the next attempt
-      file.catch(() => cache.delete(url))
-      cache.set(url, file)
+      blob.catch(() => cache.delete(url))
+      cache.set(url, blob)
     }
-    return file
+    return blob
   }
 
-  function prefetch(imageUrls: string[]) {
-    imageUrls.forEach((url, index) => fileFor(url, index).catch(() => {}))
+  function prefetch(photos: SharePhoto[]) {
+    photos.forEach(photo => blobFor(photo.url).catch(() => {}))
   }
 
-  async function share({ imageUrls, text }: SharePayload): Promise<ShareResult> {
+  async function share({ photos, owner, text }: SharePayload): Promise<ShareResult> {
     sharing.value = true
 
     try {
-      const files = await Promise.all(imageUrls.map(fileFor))
+      // Named after their position, so the order survives wherever the files go
+      const files = await Promise.all(photos.map(async (photo, index) => {
+        const blob = await blobFor(photo.url)
+        return new File([blob], fileName(blob, index, photo.label, owner), { type: blob.type || 'image/jpeg' })
+      }))
 
       if (navigator.canShare?.({ files })) {
         await navigator.share({ files, text })
