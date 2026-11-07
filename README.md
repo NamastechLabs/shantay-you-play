@@ -197,6 +197,16 @@ Friends use the live Supabase project, so test status changes (Werk Room → Run
 5. The seed has week 1 (closed, with votes) and week 2 (`runway`, with jury and queen looks). Sign in as a jurado and use `/admin` to move a runway to any status.
 6. `pnpm db:reset` restores the seed data. `pnpm db:stop` shuts it down. Studio is disabled by default; remove `studio` from the `-x` list in `db:start` to get it on http://127.0.0.1:54323.
 
+### Debugging the local database on a phone
+
+The phone cannot reach `127.0.0.1`, so tunnel both the app and the Supabase API:
+
+1. `cloudflared tunnel --url http://localhost:54321` → copy its `https://….trycloudflare.com` URL into `SUPABASE_URL` in `.env.local`.
+2. Add `NUXT_DEV_ALLOW_TUNNEL=true` to `.env.local` (lets the "Dev: entrar como…" widget answer through a tunnel; never set it against the live project).
+3. `pnpm dev:local`, then `cloudflared tunnel --url http://localhost:3000` and open that URL on the phone.
+
+Restart `pnpm dev:local` whenever the API tunnel URL changes.
+
 Google/Azure sign-in does not work locally (no provider configured), and the seed photos are loaded from picsum.photos, so you need internet to see them.
 
 ---

@@ -51,6 +51,8 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    // Server only; set NUXT_DEV_ALLOW_TUNNEL=true in .env.local to let /api/dev answer through a Cloudflare tunnel
+    devAllowTunnel: false,
     public: {
       runwayLooksBucket: 'runway-looks',
       avatarsBucket: 'participant-avatars',
