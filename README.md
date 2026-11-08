@@ -251,6 +251,18 @@ The share sheet only works over HTTPS, so a plain LAN IP (`http://192.168.x.x:30
 
 ---
 
+## Commentary endpoint (AI)
+
+`GET /api/commentary/runway` returns the runway in the **Pasarela** stage with its categories, each queen's intro and photo URLs (plus the jury's looks), so an AI can write the commentary without pasting photos by hand. `?week=N` selects another week. The project skill [`runway-commentary`](.claude/skills/runway-commentary/SKILL.md) calls it and downloads the photos.
+
+1. Apply the migration `20261108000000_service_role_read_runway_looks.sql` (read grants for `service_role`).
+2. Set `NUXT_COMMENTARY_API_TOKEN` (and `NUXT_SUPABASE_SECRET_KEY`) on the server that runs the app. With no token the route answers 404.
+3. Call it with `Authorization: Bearer <token>`. Photo URLs are public, no auth needed.
+
+The route reads with the service-role key, which bypasses RLS: keep the token secret and only enable it where you accept that key.
+
+---
+
 ## Project structure
 
 ```

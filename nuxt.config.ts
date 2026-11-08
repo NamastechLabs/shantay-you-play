@@ -53,6 +53,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // Server only; set NUXT_DEV_ALLOW_TUNNEL=true in .env.local to let /api/dev answer through a Cloudflare tunnel
     devAllowTunnel: false,
+    // Server only; bearer token for /api/commentary/*. Set NUXT_COMMENTARY_API_TOKEN; unset = routes answer 404
+    commentaryApiToken: '',
     public: {
       runwayLooksBucket: 'runway-looks',
       avatarsBucket: 'participant-avatars',
