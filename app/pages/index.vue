@@ -182,6 +182,46 @@ async function shareMyLook() {
   }
 }
 
+// Intro video of the runway. It only plays by itself when the status flips from
+// werk_room to runway while this screen is open; anyone arriving later gets a button.
+// The video is one file overwritten every week in the public 'runway-intro' bucket; the
+// week number in the URL keeps a replaced video from being served stale from cache.
+const introBucket = useRuntimeConfig().public.runwayIntroBucket
+const introVideoSrc = computed(() => {
+  const { data } = supabase.storage.from(introBucket).getPublicUrl('intro.mp4')
+  return `${data.publicUrl}?v=${weekRunway.value?.week_number ?? 0}`
+})
+const FADE_OUT_MS = 700
+const introOpen = ref(false)
+const contentFading = ref(false)
+let introTimer: ReturnType<typeof setTimeout> | undefined
+
+function playIntro(): void {
+  clearTimeout(introTimer)
+  introOpen.value = true
+}
+
+function playIntroAfterFade(): void {
+  contentFading.value = true
+  introTimer = setTimeout(playIntro, FADE_OUT_MS)
+}
+
+function closeIntro(): void {
+  introOpen.value = false
+  contentFading.value = false
+}
+
+watch(
+  () => weekRunway.value && { id: weekRunway.value.id, status: weekRunway.value.status },
+  (current, previous) => {
+    if (previous?.status === 'werk_room' && current?.status === 'runway' && current.id === previous.id) {
+      playIntroAfterFade()
+    }
+  },
+)
+
+onBeforeUnmount(() => clearTimeout(introTimer))
+
 const STATUS_HINTS:Record<OpenRunway['status'], string> = {
   draft: '',
   werk_room: 'Las reinas se preparan en el Werk Room.',
@@ -200,7 +240,12 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
 </script>
 
 <template>
-  <main class="page">
+  <main class="page" :class="{ 'page--fading': contentFading }">
+    <!-- Outside the faded content: teleported so it does not inherit the page's opacity -->
+    <Teleport to="body">
+      <RunwayIntro v-if="introOpen" :src="introVideoSrc" @close="closeIntro" />
+    </Teleport>
+
     <AppNav />
 
     <p v-if="error" class="form-error" role="alert">
@@ -234,6 +279,12 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
       </p>
 
       <JuryLooks :members="runwayJury" title="El jurado en la pasarela" />
+
+      <div v-if="weekRunway.status === 'runway'" class="actions">
+        <button type="button" class="btn btn--secondary" @click="playIntro">
+          Ver la intro de la pasarela
+        </button>
+      </div>
 
       <!-- Queens and the jury (judges and special guests) share their look in the WhatsApp group once the week is on the runway -->
       <div v-if="myLooks.length" class="actions">
@@ -337,6 +388,22 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
 </template>
 
 <style scoped lang="scss">
+.page {
+  transition: opacity 0.7s ease;
+}
+
+// Content fades out before the intro's black backdrop comes in
+.page--fading {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page {
+    transition-duration: 0.01s;
+  }
+}
+
 .week-hero {
   position: relative;
   display: grid;

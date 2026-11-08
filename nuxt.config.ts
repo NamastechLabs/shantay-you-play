@@ -61,6 +61,7 @@ export default defineNuxtConfig({
     supabase: { secretKey: '', serviceKey: '' },
     public: {
       runwayLooksBucket: 'runway-looks',
+      runwayIntroBucket: 'runway-intro',
       avatarsBucket: 'participant-avatars',
     },
   },
