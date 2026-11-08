@@ -42,7 +42,9 @@ export default defineEventHandler(async (event) => {
   const runwayQuery = db.from('runways').select('id, week_number, runway_date, status')
   const { data: runways, error: runwayError } = await (byWeek
     ? runwayQuery.eq('week_number', week)
-    : runwayQuery.eq('status', 'runway').order('week_number', { ascending: false }))
+    // TEMPORARY: the stage check is off, so this returns the latest week whatever its status.
+    // Restore `.eq('status', 'runway')` before the `.order(...)` to only serve the Pasarela stage.
+    : runwayQuery.order('week_number', { ascending: false }))
     .limit(1)
   if (runwayError) throw createError({ statusCode: 500, statusMessage: runwayError.message })
 
@@ -50,7 +52,7 @@ export default defineEventHandler(async (event) => {
   if (!runway) {
     throw createError({
       statusCode: 404,
-      statusMessage: byWeek ? `No runway for week ${week}` : 'No runway is in the "runway" (Pasarela) stage',
+      statusMessage: byWeek ? `No runway for week ${week}` : 'No runways found',
     })
   }
 
