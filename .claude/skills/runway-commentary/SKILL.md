@@ -30,7 +30,7 @@ If either is missing, ask the user for it once and stop.
 
 3. Read the images (view each file) together with the queen's `intro`.
 
-4. Write the commentary **in Spanish**, in the playful drag tone of the game. Respect this structure: runway week and date → for each category: its `title` and `intro` (the theme the looks must answer to) → for each queen: a comment on her look against the theme, using her intro and what you see in all her photos (front, back, reveal). Refer to queens by `queen` (drag name), never by `real_name` unless the user asks.
+4. Write the commentary **in Spanish**, in the playful drag tone of the game. Respect this structure: runway week and date → for each category: its `title` and `intro` (the theme the looks must answer to) → for each queen: a comment on her look against the theme, using her intro and what you see in all her photos (front, back, reveal). Refer to queens by `queen` (drag name); the payload does not include real names.
 
 ## Payload
 
@@ -39,7 +39,7 @@ If either is missing, ask the user for it once and stop.
   "runway": { "week_number": 3, "date": "2026-11-08", "status": "runway" },
   "categories": [{
     "title": "…", "intro": "…",
-    "looks": [{ "queen": "…", "real_name": "…", "intro": "…", "photos": [{ "label": "Frente", "url": "https://…" }] }],
+    "looks": [{ "queen": "…", "intro": "…", "photos": [{ "label": "Frente", "url": "https://…" }] }],
     "jury_looks": [ /* same shape */ ]
   }]
 }

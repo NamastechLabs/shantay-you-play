@@ -15,13 +15,12 @@ type LookRow = {
   image2_url: string | null
   image3_url: string | null
   image4_url: string | null
-  participant: { name: string, drag_name: string | null } | null
+  participant: { drag_name: string | null } | null
 }
 
 function toLook(row: LookRow) {
   return {
-    queen: row.participant?.drag_name ?? row.participant?.name ?? null,
-    real_name: row.participant?.name ?? null,
+    queen: row.participant?.drag_name ?? null,
     intro: row.intro,
     photos: SLOTS.flatMap(({ column, label }) => (row[column] ? [{ label, url: row[column] as string }] : [])),
   }
@@ -64,7 +63,7 @@ export default defineEventHandler(async (event) => {
   if (categoriesError) throw createError({ statusCode: 500, statusMessage: categoriesError.message })
 
   const categoryIds = (categories ?? []).map(category => category.id)
-  const columns = 'category_id, intro, image_url, image2_url, image3_url, image4_url, participant:participants!{fk}(name, drag_name)'
+  const columns = 'category_id, intro, image_url, image2_url, image3_url, image4_url, participant:participants!{fk}(drag_name)'
   const [looks, juryLooks] = await Promise.all([
     db.from('looks').select(columns.replace('{fk}', 'looks_participant_id_fkey')).in('category_id', categoryIds).order('created_at', { ascending: true }),
     db.from('jury_looks').select(columns.replace('{fk}', 'jury_looks_participant_id_fkey')).in('category_id', categoryIds).order('created_at', { ascending: true }),
