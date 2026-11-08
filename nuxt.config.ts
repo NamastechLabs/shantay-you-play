@@ -55,6 +55,10 @@ export default defineNuxtConfig({
     devAllowTunnel: false,
     // Server only; bearer token for /api/commentary/*. Set NUXT_COMMENTARY_API_TOKEN; unset = routes answer 404
     commentaryApiToken: '',
+    // @nuxtjs/supabase copies these env vars into the bundle at BUILD time (and Netlify's secret scan then
+    // fails the build). Declaring them empty keeps the value out of the output; at runtime
+    // NUXT_SUPABASE_SECRET_KEY still overrides it.
+    supabase: { secretKey: '', serviceKey: '' },
     public: {
       runwayLooksBucket: 'runway-looks',
       avatarsBucket: 'participant-avatars',
