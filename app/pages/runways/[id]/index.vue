@@ -34,13 +34,21 @@ const runwayId = String(route.params.id)
 const { data, error: loadError, refresh } = await useAsyncData(
   `runway-${runwayId}`,
   async (): Promise<RunwayData | null> => {
-    const [runway, looks, juryLooks] = await Promise.all([
-      supabase
-        .from('runways')
-        .select('id, week_number, runway_date, status, categories(id, title, intro_text)')
-        .eq('id', runwayId)
-        .order('created_at', { referencedTable: 'categories', ascending: true })
-        .maybeSingle(),
+    const runway = await supabase
+      .from('runways')
+      .select('id, week_number, runway_date, status, categories(id, title, intro_text)')
+      .eq('id', runwayId)
+      .order('created_at', { referencedTable: 'categories', ascending: true })
+      .maybeSingle()
+
+    if (runway.error) throw runway.error
+    if (!runway.data) return null
+    // Before voting opens nobody gets the looks, not even the jury (the page answers 403 below)
+    if (!isRunwayPublic(runway.data.status)) {
+      return { runway: runway.data, looks: [], juryLooks: [], placeByParticipant: {} }
+    }
+
+    const [looks, juryLooks] = await Promise.all([
       supabase
         .from('looks')
         .select('id, category_id, image_url, image2_url, image3_url, image4_url, intro, participant:participants!looks_participant_id_fkey(id, name, drag_name), category:categories!looks_category_id_fkey!inner(runway_id)')
@@ -53,10 +61,8 @@ const { data, error: loadError, refresh } = await useAsyncData(
         .order('created_at', { ascending: true }),
     ])
 
-    if (runway.error) throw runway.error
     if (looks.error) throw looks.error
     if (juryLooks.error) throw juryLooks.error
-    if (!runway.data) return null
 
     let placeByParticipant: Record<string, number> = {}
     if (runway.data.status === 'closed') {
@@ -75,6 +81,12 @@ useRunwaysRealtime(refresh, runwayId)
 if (!loadError.value && !data.value) {
   throw createError({ statusCode: 404, statusMessage: 'Semana no encontrada', fatal: true })
 }
+
+// The public runway stays closed until voting opens, whoever asks (even by typing the URL)
+function blockUntilVoting(): never {
+  throw createError({ statusCode: 403, statusMessage: RUNWAY_LOCKED_MESSAGE, fatal: true })
+}
+if (data.value && !isRunwayPublic(data.value.runway.status)) blockUntilVoting()
 
 const runway = computed(() => data.value?.runway ?? null)
 const placeByParticipant = computed(() => data.value?.placeByParticipant ?? {})

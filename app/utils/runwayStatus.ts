@@ -23,3 +23,11 @@ export function adjacentStatus(status: RunwayStatus, direction: 1 | -1): RunwayS
 export function canEditLooks(status: RunwayStatus): boolean {
   return status === 'draft' || status === 'werk_room' || status === 'runway'
 }
+
+/** The public runway page (every queen's look) only opens once voting starts. */
+export function isRunwayPublic(status: RunwayStatus): boolean {
+  return status === 'voting' || status === 'reveal' || status === 'closed'
+}
+
+/** Shown on the 403 page when someone opens the public runway before voting opens. */
+export const RUNWAY_LOCKED_MESSAGE = '¡Alto ahí, reina! La pasarela todavía no ha abierto sus puertas. Los looks se revelan cuando empiece la votación. 💅'
