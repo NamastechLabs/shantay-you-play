@@ -1,6 +1,6 @@
 ---
 name: work-on-ticket
-description: Work on a Jira ticket (project key DRG) end to end. Use when the user says "work on DRG-12", "implement ticket DRG-12" or invokes /work-on-ticket DRG-12. Reads the ticket, creates the branch, plans if the ticket is complex, implements, updates CHANGELOG.md and commits. Never pushes or opens a PR.
+description: Work on a Jira ticket (project key DRG) end to end. Use when the user says "work on DRG-12", "implement ticket DRG-12" or invokes /work-on-ticket DRG-12. Reads the ticket, creates the branch, plans if the ticket is complex, implements, updates CHANGELOG.md, bumps the version and commits. Never pushes or opens a PR.
 ---
 
 # Work on a Jira ticket
@@ -48,7 +48,18 @@ Otherwise, implement directly. Say in one line which path you chose and why.
 - Commit message starts with the key: `DRG-12 Filter runways by week`. English, imperative.
 - Use several commits only if the work splits naturally; every one carries the key.
 
-## 7. Stop and report
+## 7. Prepare the release (merging to `main` deploys)
 
-- Summarize what changed, how it was verified, and the branch name.
+Do this as the last commit of the branch, so the version is decided in the PR and never edited on `main` afterwards. Skip it only if the user says the change should not be released yet.
+
+- Pick the [semantic version](https://semver.org) bump: **patch** for fixes, **minor** for new features, **major** for breaking changes. Ask if unsure.
+- In `CHANGELOG.md`, rename `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD` (today's date) and add a new empty `## [Unreleased]` above it.
+- Set `"version": "X.Y.Z"` in `package.json` (add the field if it is missing; the first release is `0.1.0`).
+- Commit as `DRG-12 Release vX.Y.Z`.
+- If the branch adds a migration under `supabase/migrations/`, say so explicitly: it must be applied to Supabase **before** merging, because the merge deploys.
+
+## 8. Stop and report
+
+- Summarize what changed, how it was verified, the branch name and the release version.
 - **Do not push, open a PR, comment on the ticket or transition its status** unless the user asks. Offer these as next steps.
+- After the PR is merged, remind the user to tag the merge commit (`git tag vX.Y.Z && git push origin vX.Y.Z`). Only do it if asked.
