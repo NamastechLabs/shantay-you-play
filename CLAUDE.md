@@ -52,3 +52,13 @@
 - Provide production-ready, clean TypeScript / SQL code.
 - Keep responses concise and focused on the code changes.
 - When modifying schemas, highlight the diff or provide the complete updated file if short.
+
+## Jira & Git Workflow
+
+- **Jira project key:** `DRG` (issue keys look like `DRG-12`). The repo is linked to Jira, so the key must appear in branch names, commits and PR titles for the Development panel to pick them up (case-sensitive).
+- **Branches:** `feature/DRG-12-short-slug` (also `fix/`, `chore/`), created from an up-to-date `main`.
+- **Commits & PR titles:** start with the key, in English: `DRG-12 Filter runways by week`.
+- **Tickets:** titles in English; description and acceptance criteria may be in English or Spanish. Exact UI copy is given in Spanish.
+- **Changelog:** `CHANGELOG.md` follows Keep a Changelog, in English, with an `Unreleased` section. Add an entry for every user-visible change, ending with the issue key.
+- **When asked to work on a ticket** ("work on DRG-12"), use the `work-on-ticket` skill (`.claude/skills/work-on-ticket/`).
+- **Never** push, open a PR, comment on a ticket or change its status without being asked.
