@@ -88,6 +88,17 @@ function blockUntilVoting(): never {
 }
 if (data.value && !isRunwayPublic(data.value.runway.status)) blockUntilVoting()
 
+// A jurado can move the runway back while someone is looking at it: the realtime refresh brings
+// the new status, and the page closes right away instead of showing an empty gallery
+watch(
+  () => data.value?.runway.status,
+  (status) => {
+    if (status && !isRunwayPublic(status)) {
+      showError({ statusCode: 403, statusMessage: RUNWAY_LOCKED_MESSAGE })
+    }
+  },
+)
+
 const runway = computed(() => data.value?.runway ?? null)
 const placeByParticipant = computed(() => data.value?.placeByParticipant ?? {})
 const isClosed = computed(() => runway.value?.status === 'closed')
