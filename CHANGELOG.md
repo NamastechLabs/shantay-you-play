@@ -5,9 +5,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-09
+
 ### Added
 
 - Themed error page (`app/error.vue`) in Spanish for 403, 404 and unexpected errors (DRG-1)
+
+### Changed
+
+- Project (package and repository) renamed to `shantay-you-play`; the app brand stays "Drag Race Game"
 
 ### Fixed
 
