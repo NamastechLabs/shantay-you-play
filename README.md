@@ -22,8 +22,8 @@ The Supabase CLI does not need a global install; it runs through `pnpm dlx supab
 ## Quick start
 
 ```bash
-git clone https://github.com/clorcar/drag-race-game.git
-cd drag-race-game
+git clone https://github.com/NamastechLabs/shantay-you-play.git
+cd shantay-you-play
 corepack enable          # once per machine, makes pnpm available at the pinned version
 pnpm install
 cp .env.example .env     # then fill in the values (see below)
