@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- App name changed from "Drag Race Game" to "Shantay You Play" in titles, headings, meta tags, help copy and docs, through a single `APP_NAME` constant (`app/utils/brand.ts`). The logo image is unchanged for now
+
 ## [0.1.1] - 2026-11-09
 
 ### Added
@@ -13,7 +17,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- Project (package and repository) renamed to `shantay-you-play`; the app brand stays "Drag Race Game"
+- Project (package and repository) renamed to `shantay-you-play`
 
 ### Fixed
 

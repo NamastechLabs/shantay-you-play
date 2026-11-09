@@ -36,7 +36,7 @@ async function submit(): Promise<void> {
   <main class="auth-center">
     <div class="auth-center__card">
       <p class="auth-center__brand">
-        Drag Race Game
+        {{ APP_NAME }}
       </p>
       <h1>¡Bienvenida a la competencia!</h1>
       <span class="rule" />

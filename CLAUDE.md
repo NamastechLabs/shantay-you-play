@@ -10,7 +10,7 @@
 ## Language & Copy
 
 - **The website is in Spanish.** All user-facing copy (headings, buttons, labels, placeholders, errors, empty states, badges, footer, meta tags) must be written in Spanish.
-- The Figma designs use English placeholder copy. When implementing a design, translate every string to Spanish, **except the brand name "Drag Race Game", which stays as is** (never translate it).
+- The Figma designs use English placeholder copy. When implementing a design, translate every string to Spanish, **except the brand name "Shantay You Play", which stays as is** (never translate it).
 - Set `<html lang="es">`. Prefer a central place for strings (e.g. an i18n file or constants) over hardcoding text in components, so a future language is possible.
 - Code, identifiers, CSS classes, database names and commit messages stay in English.
 - Use a natural, neutral Spanish with the playful drag tone (e.g. "Pre-register" → "Preinscríbete", "Every look. Every queen." → "Cada look. Cada reina."). Use Spanish typographic conventions (¿…?, ¡…!).
@@ -56,8 +56,8 @@
 ## Jira & Git Workflow
 
 - **Jira project key:** `DRG` (issue keys look like `DRG-12`). The repo is linked to Jira, so the key must appear in branch names, commits and PR titles for the Development panel to pick them up (case-sensitive).
-- **Branches:** `feature/DRG-12-short-slug` (also `fix/`, `chore/`), created from an up-to-date `main`.
-- **Commits & PR titles:** start with the key, in English: `DRG-12 Filter runways by week`.
+- **Branches:** only create a branch when working on a Jira ticket: `feature/DRG-12-short-slug` (also `fix/`), from an up-to-date `main`. Everything else (docs, skills, CLAUDE.md, chores, small tweaks) is done directly on `main`, with no branch. Never create a branch without a ticket key.
+- **Commits & PR titles:** start with the key, in English: `DRG-12 Filter runways by week`. Commits made directly on `main` without a ticket have no key.
 - **Tickets:** titles in English; description and acceptance criteria may be in English or Spanish. Exact UI copy is given in Spanish.
 - **Changelog:** `CHANGELOG.md` follows Keep a Changelog, in English, with an `Unreleased` section. Add an entry for every user-visible change, ending with the issue key.
 - **Releases:** merging to `main` deploys, so the version is decided in the PR, never in a later commit on `main`. Use semantic versioning (patch = fix, minor = feature, major = breaking). The PR's last commit renames `Unreleased` to `## [X.Y.Z] - date` in `CHANGELOG.md`, adds a fresh `Unreleased` and sets `version` in `package.json`. After merging, tag the merge commit `vX.Y.Z`.

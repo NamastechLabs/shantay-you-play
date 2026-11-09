@@ -1,6 +1,6 @@
 ---
 name: runway-commentary
-description: Fetch the current Drag Race Game runway (Pasarela stage) with its categories, every queen's intro and look photos, and the jury's looks, and download the photos so you can write the commentary on the looks. Use when the user asks for comments, critiques or a review of the runway looks.
+description: Fetch the current Shantay You Play runway (Pasarela stage) with its categories, every queen's intro and look photos, and the jury's looks, and download the photos so you can write the commentary on the looks. Use when the user asks for comments, critiques or a review of the runway looks.
 ---
 
 # Runway commentary

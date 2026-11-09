@@ -42,7 +42,7 @@ async function signOut(): Promise<void> {
 <template>
   <nav class="app-nav" aria-label="Principal">
     <NuxtLink to="/" class="app-nav__brand">
-      <img class="app-nav__logo" src="/logo.png" alt="Drag Race Game" width="937" height="382">      
+      <img class="app-nav__logo" src="/logo.png" :alt="APP_NAME" width="937" height="382">      
     </NuxtLink>
 
     <div class="app-nav__actions">

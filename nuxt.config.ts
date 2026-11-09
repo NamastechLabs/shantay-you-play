@@ -9,9 +9,9 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: 'Drag Race Game',
+      title: 'Shantay You Play',
       htmlAttrs: { lang: 'es' },
-      meta: [{ name: 'description', content: 'Drag Race Game: la competencia semanal de looks, pasarela y votación.' }],
+      meta: [{ name: 'description', content: 'Shantay You Play: la competencia semanal de looks, pasarela y votación.' }],
       link: [
         { rel: 'icon', type: 'image/png', href: '/favicon.png' },
         { rel: 'apple-touch-icon', href: '/icon-192.png' },

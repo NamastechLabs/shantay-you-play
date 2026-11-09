@@ -1,4 +1,4 @@
-# Drag Race Game
+# Shantay You Play
 
 A Drag Race–style weekly competition for a group of friends. Judges (*jurado*) publish a weekly category and upload each contestant's runway look; then everyone votes for their Top 3.
 
@@ -125,7 +125,7 @@ pnpm typecheck
 
 1. Open https://console.cloud.google.com and create (or select) a project.
 2. Go to **Google Auth Platform** and click **Get started**:
-   - **App information:** app name (e.g. `Drag Race Game`) and support email
+   - **App information:** app name (e.g. `Shantay You Play`) and support email
    - **Audience:** **External**
    - **Contact information:** your email
    - **Finish:** accept the policy → **Create**

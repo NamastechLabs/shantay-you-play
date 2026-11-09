@@ -39,7 +39,7 @@ watchEffect(() => {
         Bienvenida a la competencia
       </p>
       <h1 class="display">
-        Drag Race Game
+        {{ APP_NAME }}
       </h1>
       <span class="rule" />
       <p class="lead">

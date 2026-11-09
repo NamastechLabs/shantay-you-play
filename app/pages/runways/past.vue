@@ -31,7 +31,7 @@ const runways = computed(() => data.value?.runways ?? [])
     <header class="page-header">
       <div class="page-header__titles">
         <p class="kicker">
-          Drag Race Game
+          {{ APP_NAME }}
         </p>
         <h1>Semanas pasadas</h1>
       </div>

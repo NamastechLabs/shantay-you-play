@@ -4,7 +4,7 @@ import type { NuxtError } from '#app'
 const props = defineProps<{ error: NuxtError }>()
 
 const { theme } = useTheme()
-useHead({ htmlAttrs: { 'data-theme': theme, 'lang': 'es' }, title: 'Drag Race Game' })
+useHead({ htmlAttrs: { 'data-theme': theme, 'lang': 'es' }, title: APP_NAME })
 useSeoMeta({ robots: 'noindex' })
 
 const isForbidden = computed(() => props.error.statusCode === 403)

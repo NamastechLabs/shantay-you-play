@@ -16,8 +16,9 @@ Argument: an issue key such as `DRG-12`. If none is given, ask for it.
 
 ## 2. Create the branch
 
+- This skill is the only workflow that creates a branch: tickets get a branch, all other work happens directly on `main`.
 - Make sure the working tree is clean (`git status`); if not, stop and ask.
-- `git checkout main && git pull`, then `git checkout -b feature/DRG-12-short-slug`.
+- `git checkout main && git pull`, then `git checkout -b feature/DRG-12-short-slug` (use `fix/` for bugs).
 - The slug is lowercase English kebab-case taken from the ticket title (max ~5 words).
 
 ## 3. Decide: plan or implement

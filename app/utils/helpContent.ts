@@ -17,7 +17,7 @@ export const HELP_COPY = {
   breadcrumb: 'Ayuda',
 
   gameTitle: 'La lógica del juego',
-  gameIntro: 'Drag Race Game es una competencia semanal de looks entre amigas. Cada semana es una pasarela con una o varias categorías, y todo funciona en cuatro pasos:',
+  gameIntro: `${APP_NAME} es una competencia semanal de looks entre amigas. Cada semana es una pasarela con una o varias categorías, y todo funciona en cuatro pasos:`,
   gameSteps: [
     { title: 'Te registra el jurado', text: 'Solo entra quien el jurado haya invitado con su correo. Sin invitación, no hay corona.' },
     { title: 'Creas tu look', text: 'En el Werk Room subes hasta 4 fotos de tu look para cada categoría y cuentas de qué va.' },

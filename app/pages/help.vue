@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const copy = HELP_COPY
 
-useHead({ title: 'Ayuda · Drag Race Game' })
+useHead({ title: `Ayuda · ${APP_NAME}` })
 useSeoMeta({ robots: 'noindex' })
 </script>
 
