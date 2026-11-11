@@ -3,7 +3,7 @@ import type { Tables } from '~/types/database.types'
 
 type Group = Pick<Tables<'category_groups'>, 'id' | 'position' | 'name'>
 type Member = Pick<Tables<'category_group_members'>, 'id' | 'group_id' | 'participant_id'>
-type Contestant = Pick<Tables<'participants'>, 'id' | 'name' | 'drag_name'>
+type Contestant = Pick<Tables<'participants'>, 'id' | 'name' | 'drag_name' | 'avatar_url'>
 
 /** Index into the two groups: 0 = A, 1 = B */
 type Slot = 0 | 1
@@ -33,10 +33,10 @@ const contestantName = (contestant: Contestant): string => contestant.drag_name 
 const SLOT_LABELS = ['A', 'B'] as const
 const SLOTS: Slot[] = [0, 1]
 
-const membersOf = (slot: Slot): { id: string, name: string }[] =>
+const membersOf = (slot: Slot): { id: string, name: string, avatar: string | null }[] =>
   contestants.value
     .filter(contestant => assignment[contestant.id] === slot)
-    .map(contestant => ({ id: contestant.id, name: contestantName(contestant) }))
+    .map(contestant => ({ id: contestant.id, name: contestantName(contestant), avatar: contestant.avatar_url }))
 
 const unassigned = computed(() => contestants.value.filter(contestant => assignment[contestant.id] === undefined))
 
@@ -63,7 +63,7 @@ async function load(): Promise<void> {
     const [groupRows, memberRows, contestantRows] = await Promise.all([
       supabase.from('category_groups').select('id, position, name').eq('category_id', props.category.id).order('position'),
       supabase.from('category_group_members').select('id, group_id, participant_id').eq('category_id', props.category.id),
-      supabase.from('participants').select('id, name, drag_name').eq('role', 'concursante').order('name'),
+      supabase.from('participants').select('id, name, drag_name, avatar_url').eq('role', 'concursante').order('name'),
     ])
     if (groupRows.error) throw groupRows.error
     if (memberRows.error) throw memberRows.error
@@ -221,9 +221,21 @@ async function deleteGroups(): Promise<void> {
           </p>
           <ul v-else class="group__members">
             <li v-for="member in membersOf(slot)" :key="member.id" class="group__member">
-              <span>{{ member.name }}</span>
-              <button type="button" class="btn btn--ghost" :aria-label="`Quitar a ${member.name} del grupo ${SLOT_LABELS[slot]}`" @click="removeMember(member.id)">
-                Quitar
+              <span class="avatar group__avatar">
+                <img v-if="member.avatar" :src="member.avatar" alt="" class="avatar__img">
+                <span v-else class="avatar__initial" aria-hidden="true">{{ member.name.charAt(0).toUpperCase() }}</span>
+              </span>
+              <span class="group__name">{{ member.name }}</span>
+              <button
+                type="button"
+                class="btn btn--ghost btn--danger group__remove"
+                :aria-label="`Quitar a ${member.name} del grupo ${SLOT_LABELS[slot]}`"
+                :title="`Quitar a ${member.name}`"
+                @click="removeMember(member.id)"
+              >
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6" />
+                </svg>
               </button>
             </li>
           </ul>
@@ -284,9 +296,22 @@ async function deleteGroups(): Promise<void> {
 
 .group__member {
   display: flex;
-  gap: var(--space-2);
+  gap: var(--space-3);
   align-items: center;
-  justify-content: space-between;
+}
+
+.group__avatar .avatar__initial {
+  font-size: 1rem;
+}
+
+.group__name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.group__remove {
+  padding: var(--space-2);
 }
 
 .group__add {
