@@ -6,6 +6,8 @@ const props = defineProps<{
   /** The saved row of the group, or null when it has no photos yet */
   photos: GroupPhotos | null
   editable: boolean
+  /** 'collage' shows all the photos joined; 'gallery' one big photo with clickable thumbnails */
+  display?: 'collage' | 'gallery'
 }>()
 
 const emit = defineEmits<{ changed: [] }>()
@@ -40,6 +42,12 @@ const srcFor = (slot: GroupPhotoSlot): string | null =>
   previews.value[slot] ?? (removed.value.has(slot) ? null : props.photos?.[slot] ?? null)
 
 const currentUrls = computed(() => GROUP_PHOTO_SLOTS.flatMap(slot => srcFor(slot.key) ?? []))
+// Gallery display: the photo shown big; clamped when photos are removed
+const selected = ref(0)
+watch(currentUrls, (urls) => {
+  if (selected.value > urls.length - 1) selected.value = Math.max(urls.length - 1, 0)
+})
+
 const changed = computed(() => Object.keys(files.value).length > 0 || removed.value.size > 0)
 
 async function onFileChange(slot: GroupPhotoSlot, event: Event): Promise<void> {
@@ -95,7 +103,24 @@ async function save(): Promise<void> {
 
 <template>
   <div class="group-photos">
-    <GroupPhotosCollage :urls="currentUrls" :name="groupName" />
+    <template v-if="display === 'gallery' && currentUrls.length">
+      <img class="group-photos__main" :src="currentUrls[selected]" :alt="`Foto ${selected + 1} del grupo ${groupName}`">
+      <ul v-if="currentUrls.length > 1" class="group-photos__thumbs" aria-label="Fotos del grupo">
+        <li v-for="(url, index) in currentUrls" :key="url">
+          <button
+            type="button"
+            class="group-photos__thumb"
+            :class="{ 'group-photos__thumb--active': index === selected }"
+            :aria-label="`Ver foto ${index + 1}`"
+            :aria-pressed="index === selected"
+            @click="selected = index"
+          >
+            <img :src="url" alt="">
+          </button>
+        </li>
+      </ul>
+    </template>
+    <GroupPhotosCollage v-else-if="display !== 'gallery'" :urls="currentUrls" :name="groupName" />
     <p v-if="!currentUrls.length" class="hint">
       Aún no hay fotos del grupo.
     </p>
@@ -156,6 +181,53 @@ async function save(): Promise<void> {
 .group-photos {
   display: grid;
   gap: var(--space-3);
+}
+
+.group-photos__main {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.group-photos__thumbs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.group-photos__thumb {
+  display: block;
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  cursor: pointer;
+  background: none;
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  opacity: 0.7;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &:hover,
+  &--active {
+    opacity: 1;
+  }
+
+  &--active {
+    border-color: var(--color-primary);
+  }
 }
 
 .group-photos__slots {

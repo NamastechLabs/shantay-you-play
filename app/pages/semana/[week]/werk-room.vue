@@ -219,6 +219,7 @@ const multipleCategories = computed(() => (data.value?.categories.length ?? 0) >
               :group-id="viewingTeam.team.groupId"
               :group-name="viewingTeam.team.name"
               :photos="viewingTeam.team.photos"
+              display="gallery"
               editable
               @changed="refresh()"
             />
