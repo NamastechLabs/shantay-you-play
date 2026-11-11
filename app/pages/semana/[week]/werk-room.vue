@@ -5,14 +5,19 @@ type Runway = Pick<Tables<'runways'>, 'id' | 'week_number' | 'runway_date' | 'st
 type Category = Pick<Tables<'categories'>, 'id' | 'title' | 'intro_text' | 'kind'>
 type MyLook = Pick<Tables<'looks'>, 'id' | 'category_id' | 'participant_id' | 'intro'> & LookImages
 
-type TeamLook = Pick<Tables<'looks'>, 'id' | 'category_id' | 'participant_id' | 'intro'> & LookImages & {
-  participant: Pick<Tables<'participants'>, 'name' | 'drag_name'>
+interface TeamMember {
+  id: string
+  name: string
+  avatar: string | null
+  isMe: boolean
+  /** Null while the queen has not uploaded her look yet */
+  look: (Pick<Tables<'looks'>, 'id' | 'intro'> & LookImages) | null
 }
 
-/** The signed-in queen's group in a group category, with the looks her teammates have uploaded */
+/** The signed-in queen's group in a group category, with every member (herself included) */
 interface Team {
   name: string
-  looks: TeamLook[]
+  members: TeamMember[]
 }
 
 interface WerkRoom {
@@ -29,28 +34,41 @@ const { participant } = useCurrentParticipant()
 
 const weekNumber = Number(route.params.week)
 
-/** RLS only shows a queen the looks of her own group while the Werk Room is open */
+/** RLS only shows a queen the members and looks of her own group while the Werk Room is open */
 async function loadTeams(participantId: string, groupCategoryIds: string[]): Promise<Record<string, Team>> {
   if (!groupCategoryIds.length) return {}
 
   const [members, groups, looks] = await Promise.all([
-    supabase.from('category_group_members').select('category_id, group_id').in('category_id', groupCategoryIds).eq('participant_id', participantId),
+    supabase
+      .from('category_group_members')
+      .select('category_id, group_id, participant_id, participant:participants!category_group_members_participant_id_fkey(name, drag_name, avatar_url)')
+      .in('category_id', groupCategoryIds),
     supabase.from('category_groups').select('id, name').in('category_id', groupCategoryIds),
     supabase
       .from('looks')
-      .select('id, category_id, participant_id, image_url, image2_url, image3_url, image4_url, intro, participant:participants!looks_participant_id_fkey(name, drag_name)')
-      .in('category_id', groupCategoryIds)
-      .neq('participant_id', participantId),
+      .select('id, category_id, participant_id, image_url, image2_url, image3_url, image4_url, intro')
+      .in('category_id', groupCategoryIds),
   ])
   if (members.error) throw members.error
   if (groups.error) throw groups.error
   if (looks.error) throw looks.error
 
   const teams: Record<string, Team> = {}
-  for (const member of members.data) {
-    const group = groups.data.find(candidate => candidate.id === member.group_id)
-    if (group) {
-      teams[member.category_id] = { name: group.name, looks: looks.data.filter(look => look.category_id === member.category_id) }
+  for (const mine of members.data.filter(member => member.participant_id === participantId)) {
+    const group = groups.data.find(candidate => candidate.id === mine.group_id)
+    if (!group) continue
+    teams[mine.category_id] = {
+      name: group.name,
+      members: members.data
+        .filter(member => member.group_id === mine.group_id)
+        .map(member => ({
+          id: member.participant_id,
+          name: member.participant.drag_name ?? member.participant.name,
+          avatar: member.participant.avatar_url,
+          isMe: member.participant_id === participantId,
+          look: looks.data.find(look => look.category_id === mine.category_id && look.participant_id === member.participant_id) ?? null,
+        }))
+        .sort((a, b) => Number(b.isMe) - Number(a.isMe) || a.name.localeCompare(b.name, 'es')),
     }
   }
   return teams
@@ -104,6 +122,12 @@ if (!error.value && !isOpen.value && import.meta.server) {
 useHead({ title: isOpen.value ? `Werk Room · Semana ${weekNumber}` : 'Werk Room cerrado' })
 useSeoMeta({ robots: 'noindex' })
 
+const viewingTeamId = ref<string | null>(null)
+const viewingTeam = computed(() => {
+  const team = viewingTeamId.value ? data.value?.teams[viewingTeamId.value] : undefined
+  return team ? { team } : null
+})
+
 const isContestant = computed(() => participant.value?.role === 'concursante')
 const lookByCategory = computed(() => new Map(data.value?.looks.map(look => [look.category_id, look])))
 const multipleCategories = computed(() => (data.value?.categories.length ?? 0) > 1)
@@ -156,13 +180,15 @@ const multipleCategories = computed(() => (data.value?.categories.length ?? 0) >
           <template v-for="category in data.categories" :key="category.id">
             <li v-if="category.kind === 'group'" class="team__notice">
               <span class="badge">Categoría grupal</span>
-              <template v-if="data.teams[category.id]">
+              <span v-if="data.teams[category.id]" class="team__text">
                 «{{ category.title }}»: compites con el grupo <strong>{{ data.teams[category.id]!.name }}</strong>.
-                Más abajo ves los looks de tus compañeras.
-              </template>
-              <template v-else>
+              </span>
+              <span v-else class="team__text">
                 «{{ category.title }}»: el jurado aún no te ha asignado a un grupo.
-              </template>
+              </span>
+              <button v-if="data.teams[category.id]" type="button" class="btn btn--secondary btn--small" @click="viewingTeamId = category.id">
+                Ver grupo
+              </button>
             </li>
             <LookEditRow
               :category-id="category.id"
@@ -175,31 +201,27 @@ const multipleCategories = computed(() => (data.value?.categories.length ?? 0) >
           </template>
         </ul>
 
-        <template v-for="category in data.categories" :key="category.id">
-          <section v-if="data.teams[category.id]" class="team" :aria-labelledby="`team-${category.id}`">
-            <h2 :id="`team-${category.id}`" class="team__title">
-              Looks de tu grupo · {{ data.teams[category.id]!.name }}
-            </h2>
-            <p v-if="!data.teams[category.id]!.looks.length" class="empty">
-              Tus compañeras aún no han subido su look.
-            </p>
-            <ul v-else class="gallery">
-              <li v-for="look in data.teams[category.id]!.looks" :key="look.id">
-                <article class="look-card">
-                  <LookCardPhoto
-                    :src="look.image_url"
-                    :alt="`Look de ${look.participant.drag_name ?? look.participant.name}`"
-                    :count="lookPhotos(look).length"
-                  />
-                  <span class="look-card__body">
-                    <span class="look-card__name">{{ look.participant.drag_name ?? look.participant.name }}</span>
-                    <span v-if="look.intro" class="look-card__intro">{{ look.intro }}</span>
-                  </span>
-                </article>
-              </li>
-            </ul>
-          </section>
-        </template>
+        <AppModal :open="viewingTeam !== null" :title="viewingTeam ? `Grupo ${viewingTeam.team.name}` : ''" @close="viewingTeamId = null">
+          <ul v-if="viewingTeam" class="team__members">
+            <li v-for="member in viewingTeam.team.members" :key="member.id" class="team__member">
+              <div class="team__who">
+                <span class="avatar team__avatar">
+                  <img v-if="member.avatar" :src="member.avatar" alt="" class="avatar__img">
+                  <span v-else class="avatar__initial" aria-hidden="true">{{ member.name.charAt(0).toUpperCase() }}</span>
+                </span>
+                <span class="team__name">{{ member.name }}<template v-if="member.isMe"> (tú)</template></span>
+              </div>
+              <ul v-if="member.look" class="team__photos">
+                <li v-for="photo in lookPhotos(member.look)" :key="photo.url">
+                  <img class="team__photo" :src="photo.url" :alt="`${photo.label} de ${member.name}`" loading="lazy">
+                </li>
+              </ul>
+              <p v-else class="hint">
+                {{ member.isMe ? 'Aún no has subido tu look.' : 'Aún no ha subido su look.' }}
+              </p>
+            </li>
+          </ul>
+        </AppModal>
       </template>
     </template>
 
@@ -219,14 +241,48 @@ const multipleCategories = computed(() => (data.value?.categories.length ?? 0) >
 </template>
 
 <style scoped lang="scss">
-.team {
-  display: grid;
-  gap: var(--space-3);
+.team__text {
+  flex: 1 1 12rem;
 }
 
-.team__title {
-  font-size: 1.125rem;
-  color: var(--color-title);
+.team__members {
+  display: grid;
+  gap: var(--space-4);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.team__member {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.team__who {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  font-weight: 600;
+}
+
+.team__avatar .avatar__initial {
+  font-size: 1rem;
+}
+
+.team__photos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr));
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.team__photo {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: var(--radius-md);
 }
 
 .team__notice {
