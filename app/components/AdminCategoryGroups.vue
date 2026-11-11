@@ -5,155 +5,232 @@ type Group = Pick<Tables<'category_groups'>, 'id' | 'position' | 'name'>
 type Member = Pick<Tables<'category_group_members'>, 'id' | 'group_id' | 'participant_id'>
 type Contestant = Pick<Tables<'participants'>, 'id' | 'name' | 'drag_name'>
 
-const props = defineProps<{ categoryId: string }>()
+/** Index into the two groups: 0 = A, 1 = B */
+type Slot = 0 | 1
+
+const props = defineProps<{
+  category: { id: string, title: string }
+}>()
 
 const supabase = useSupabaseClient()
 
-const { data, error: loadError, refresh } = await useAsyncData(`category-groups-${props.categoryId}`, async () => {
-  const [groups, members, contestants] = await Promise.all([
-    supabase.from('category_groups').select('id, position, name').eq('category_id', props.categoryId).order('position'),
-    supabase.from('category_group_members').select('id, group_id, participant_id').eq('category_id', props.categoryId),
-    supabase.from('participants').select('id, name, drag_name').eq('role', 'concursante').order('name'),
-  ])
-  if (groups.error) throw groups.error
-  if (members.error) throw members.error
-  if (contestants.error) throw contestants.error
-  return { groups: groups.data as Group[], members: members.data as Member[], contestants: contestants.data as Contestant[] }
-})
-
-const groups = computed(() => data.value?.groups ?? [])
-const contestants = computed(() => data.value?.contestants ?? [])
-const contestantName = (contestant: Contestant): string => contestant.drag_name ?? contestant.name
-
-const membersOf = (group: Group): (Member & { name: string })[] =>
-  (data.value?.members ?? [])
-    .filter(member => member.group_id === group.id)
-    .map(member => ({
-      ...member,
-      name: contestantName(contestants.value.find(contestant => contestant.id === member.participant_id) ?? { id: '', name: '—', drag_name: null }),
-    }))
-
-const unassigned = computed(() => {
-  const assigned = new Set((data.value?.members ?? []).map(member => member.participant_id))
-  return contestants.value.filter(contestant => !assigned.has(contestant.id))
-})
-
-const busy = ref(false)
+const open = ref(false)
+const loading = ref(false)
+const saving = ref(false)
 const error = ref('')
 
-async function run(action: () => PromiseLike<{ error: unknown }>): Promise<void> {
-  if (busy.value) return
-  busy.value = true
+// What is stored in the database
+const groups = ref<Group[]>([])
+const members = ref<Member[]>([])
+const contestants = ref<Contestant[]>([])
+
+// The draft being edited: nothing is stored until "Guardar"
+const names = reactive<[string, string]>(['', ''])
+const assignment = reactive<Record<string, Slot>>({})
+const toAdd = reactive<[string, string]>(['', ''])
+
+const contestantName = (contestant: Contestant): string => contestant.drag_name ?? contestant.name
+const SLOT_LABELS = ['A', 'B'] as const
+const SLOTS: Slot[] = [0, 1]
+
+const membersOf = (slot: Slot): { id: string, name: string }[] =>
+  contestants.value
+    .filter(contestant => assignment[contestant.id] === slot)
+    .map(contestant => ({ id: contestant.id, name: contestantName(contestant) }))
+
+const unassigned = computed(() => contestants.value.filter(contestant => assignment[contestant.id] === undefined))
+
+const storedSlot = (member: Member): Slot | undefined => {
+  const position = groups.value.find(group => group.id === member.group_id)?.position
+  return position === 1 ? 0 : position === 2 ? 1 : undefined
+}
+
+const hasGroups = computed(() => groups.value.length === 2)
+const namesValid = computed(() => names.every(name => name.trim().length > 0))
+
+const changed = computed(() => {
+  if (!hasGroups.value) return true
+  if (groups.value.some(group => group.name !== names[group.position - 1]!.trim())) return true
+  const stored = new Map(members.value.map(member => [member.participant_id, storedSlot(member)]))
+  const draft = Object.entries(assignment)
+  return draft.length !== stored.size || draft.some(([participantId, slot]) => stored.get(participantId) !== slot)
+})
+
+async function load(): Promise<void> {
+  loading.value = true
   error.value = ''
   try {
-    const { error: actionError } = await action()
-    if (actionError) throw actionError
-    await refresh()
+    const [groupRows, memberRows, contestantRows] = await Promise.all([
+      supabase.from('category_groups').select('id, position, name').eq('category_id', props.category.id).order('position'),
+      supabase.from('category_group_members').select('id, group_id, participant_id').eq('category_id', props.category.id),
+      supabase.from('participants').select('id, name, drag_name').eq('role', 'concursante').order('name'),
+    ])
+    if (groupRows.error) throw groupRows.error
+    if (memberRows.error) throw memberRows.error
+    if (contestantRows.error) throw contestantRows.error
+
+    groups.value = groupRows.data
+    members.value = memberRows.data
+    contestants.value = contestantRows.data
+
+    names[0] = groupRows.data.find(group => group.position === 1)?.name ?? ''
+    names[1] = groupRows.data.find(group => group.position === 2)?.name ?? ''
+    for (const key of Object.keys(assignment)) delete assignment[key]
+    for (const member of memberRows.data) {
+      const slot = storedSlot(member)
+      if (slot !== undefined) assignment[member.participant_id] = slot
+    }
+    toAdd[0] = ''
+    toAdd[1] = ''
   }
   catch (caught) {
     error.value = toErrorMessage(caught)
   }
   finally {
-    busy.value = false
+    loading.value = false
   }
 }
 
-// --- Create the two groups -----------------------------------------------------
-const names = reactive(['', ''])
-
-const createGroups = () => run(() => supabase.from('category_groups').insert([
-  { category_id: props.categoryId, position: 1, name: names[0]!.trim() },
-  { category_id: props.categoryId, position: 2, name: names[1]!.trim() },
-]))
-
-// --- Rename / delete -------------------------------------------------------------
-const renames = reactive<Record<string, string>>({})
-const nameOf = (group: Group): string => renames[group.id] ?? group.name
-
-const renameGroup = (group: Group) =>
-  run(() => supabase.from('category_groups').update({ name: nameOf(group).trim() }).eq('id', group.id))
-
-const deleteGroups = async (): Promise<void> => {
-  if (!window.confirm('¿Eliminar los dos grupos? También se borrarán sus integrantes y votos.')) return
-  await run(() => supabase.from('category_groups').delete().eq('category_id', props.categoryId))
+function openPanel(): void {
+  open.value = true
+  void load()
 }
 
-// --- Members ---------------------------------------------------------------------
-const toAdd = reactive<Record<string, string>>({})
-
-async function addMember(group: Group): Promise<void> {
-  const participantId = toAdd[group.id]
+function addMember(slot: Slot): void {
+  const participantId = toAdd[slot]
   if (!participantId) return
-  await run(() => supabase.from('category_group_members').insert({
-    category_id: props.categoryId,
-    group_id: group.id,
-    participant_id: participantId,
-  }))
-  toAdd[group.id] = ''
+  assignment[participantId] = slot
+  toAdd[slot] = ''
 }
 
-const removeMember = (member: Member) =>
-  run(() => supabase.from('category_group_members').delete().eq('id', member.id))
+function removeMember(participantId: string): void {
+  delete assignment[participantId]
+}
+
+async function save(): Promise<void> {
+  if (saving.value || loading.value || !namesValid.value || !changed.value) return
+  saving.value = true
+  error.value = ''
+  try {
+    // 1. The groups: create both the first time, rename afterwards
+    let current = groups.value
+    if (!hasGroups.value) {
+      const created = await supabase
+        .from('category_groups')
+        .insert([
+          { category_id: props.category.id, position: 1, name: names[0].trim() },
+          { category_id: props.category.id, position: 2, name: names[1].trim() },
+        ])
+        .select('id, position, name')
+      if (created.error) throw created.error
+      current = created.data
+    }
+    else {
+      for (const group of groups.value) {
+        const name = names[group.position - 1]!.trim()
+        if (name === group.name) continue
+        const renamed = await supabase.from('category_groups').update({ name }).eq('id', group.id)
+        if (renamed.error) throw renamed.error
+      }
+    }
+    const groupIdOf = (slot: Slot): string => current.find(group => group.position === slot + 1)!.id
+
+    // 2. The members: remove the ones that left or moved first (a queen is in one group only), then add
+    const leaving = members.value.filter(member => assignment[member.participant_id] !== storedSlot(member))
+    if (leaving.length) {
+      const removed = await supabase.from('category_group_members').delete().in('id', leaving.map(member => member.id))
+      if (removed.error) throw removed.error
+    }
+
+    const stored = new Map(members.value.map(member => [member.participant_id, storedSlot(member)]))
+    const joining = Object.entries(assignment)
+      .filter(([participantId, slot]) => stored.get(participantId) !== slot)
+      .map(([participantId, slot]) => ({ category_id: props.category.id, group_id: groupIdOf(slot), participant_id: participantId }))
+    if (joining.length) {
+      const added = await supabase.from('category_group_members').insert(joining)
+      if (added.error) throw added.error
+    }
+
+    open.value = false
+  }
+  catch (caught) {
+    const message = toErrorMessage(caught)
+    // Show what is really stored, so a partial save is not hidden
+    await load()
+    error.value = message
+  }
+  finally {
+    saving.value = false
+  }
+}
+
+async function deleteGroups(): Promise<void> {
+  if (saving.value || !window.confirm('¿Eliminar los dos grupos? También se borrarán sus integrantes y votos.')) return
+  saving.value = true
+  error.value = ''
+  try {
+    const { error: deleteError } = await supabase.from('category_groups').delete().eq('category_id', props.category.id)
+    if (deleteError) throw deleteError
+    open.value = false
+  }
+  catch (caught) {
+    error.value = toErrorMessage(caught)
+  }
+  finally {
+    saving.value = false
+  }
+}
 </script>
 
 <template>
-  <section class="card groups" :aria-labelledby="`groups-title-${categoryId}`">
-    <h3 :id="`groups-title-${categoryId}`" class="groups__title">
-      Grupos
-    </h3>
+  <button type="button" class="btn btn--secondary" @click="openPanel">
+    Editar grupos
+  </button>
 
-    <p v-if="loadError" class="form-error" role="alert">
-      {{ toErrorMessage(loadError) }}
-    </p>
-
-    <form v-else-if="!groups.length" class="form" @submit.prevent="createGroups">
-      <p class="hint">
-        Las reinas compiten en dos grupos. Ponles nombre para empezar a asignar integrantes.
+  <!-- Teleported: the panel must not live inside the category <form> -->
+  <Teleport to="body">
+    <AppDrawer :open="open" :title="category.title" @close="open = false">
+      <p v-if="loading" class="hint" role="status">
+        Cargando…
       </p>
-      <div class="field">
-        <label :for="`group-name-1-${categoryId}`" class="field__label">Nombre del grupo A</label>
-        <input :id="`group-name-1-${categoryId}`" v-model="names[0]" class="field__input" type="text" maxlength="60" required>
-      </div>
-      <div class="field">
-        <label :for="`group-name-2-${categoryId}`" class="field__label">Nombre del grupo B</label>
-        <input :id="`group-name-2-${categoryId}`" v-model="names[1]" class="field__input" type="text" maxlength="60" required>
-      </div>
-      <p v-if="error" class="form-error" role="alert">
-        {{ error }}
-      </p>
-      <div class="form-actions">
-        <button type="submit" class="btn btn--primary" :disabled="busy || !names[0]!.trim() || !names[1]!.trim()">
-          Crear los grupos
-        </button>
-      </div>
-    </form>
 
-    <template v-else>
-      <div class="groups__grid">
-        <div v-for="group in groups" :key="group.id" class="groups__group">
-          <form class="groups__rename" @submit.prevent="renameGroup(group)">
-            <label :for="`group-rename-${group.id}`" class="field__label">Grupo {{ group.position === 1 ? 'A' : 'B' }}</label>
-            <input :id="`group-rename-${group.id}`" v-model="renames[group.id]" class="field__input" type="text" maxlength="60" :placeholder="group.name">
-            <button type="submit" class="btn btn--ghost" :disabled="busy || nameOf(group).trim() === group.name || !nameOf(group).trim()">
-              Renombrar
-            </button>
-          </form>
+      <template v-else>
+        <p v-if="!hasGroups" class="hint">
+          Las reinas compiten en dos grupos. Ponles nombre y asigna a las integrantes.
+        </p>
 
-          <p v-if="!membersOf(group).length" class="hint">
+        <fieldset v-for="slot in SLOTS" :key="slot" class="group">
+          <legend class="field__label">
+            Grupo {{ SLOT_LABELS[slot] }}
+          </legend>
+
+          <div class="field">
+            <label :for="`group-name-${category.id}-${slot}`" class="field__label">Nombre</label>
+            <input
+              :id="`group-name-${category.id}-${slot}`"
+              v-model="names[slot]"
+              class="field__input"
+              type="text"
+              maxlength="60"
+              required
+            >
+          </div>
+
+          <p v-if="!membersOf(slot).length" class="hint">
             Aún no hay integrantes.
           </p>
-          <ul v-else class="groups__members">
-            <li v-for="member in membersOf(group)" :key="member.id" class="groups__member">
+          <ul v-else class="group__members">
+            <li v-for="member in membersOf(slot)" :key="member.id" class="group__member">
               <span>{{ member.name }}</span>
-              <button type="button" class="btn btn--ghost" :disabled="busy" :aria-label="`Quitar a ${member.name} del grupo`" @click="removeMember(member)">
+              <button type="button" class="btn btn--ghost" :aria-label="`Quitar a ${member.name} del grupo ${SLOT_LABELS[slot]}`" @click="removeMember(member.id)">
                 Quitar
               </button>
             </li>
           </ul>
 
-          <form class="groups__add" @submit.prevent="addMember(group)">
-            <label :for="`group-add-${group.id}`" class="field__label">Añadir reina</label>
-            <select :id="`group-add-${group.id}`" v-model="toAdd[group.id]" class="field__input" :disabled="!unassigned.length">
+          <div class="group__add">
+            <label :for="`group-add-${category.id}-${slot}`" class="field__label">Añadir reina</label>
+            <select :id="`group-add-${category.id}-${slot}`" v-model="toAdd[slot]" class="field__input" :disabled="!unassigned.length">
               <option value="">
                 {{ unassigned.length ? 'Elige una reina' : 'No quedan reinas sin grupo' }}
               </option>
@@ -161,54 +238,43 @@ const removeMember = (member: Member) =>
                 {{ contestantName(contestant) }}
               </option>
             </select>
-            <button type="submit" class="btn btn--secondary" :disabled="busy || !toAdd[group.id]">
+            <button type="button" class="btn btn--secondary" :disabled="!toAdd[slot]" @click="addMember(slot)">
               Añadir
             </button>
-          </form>
-        </div>
-      </div>
+          </div>
+        </fieldset>
 
-      <p v-if="error" class="form-error" role="alert">
-        {{ error }}
-      </p>
-      <div class="form-actions">
-        <button type="button" class="btn btn--ghost" :disabled="busy" @click="deleteGroups">
-          Eliminar los grupos
+        <p v-if="error" class="form-error" role="alert">
+          {{ error }}
+        </p>
+      </template>
+
+      <template #footer>
+        <button v-if="hasGroups" type="button" class="btn btn--ghost group__delete" :disabled="saving" @click="deleteGroups">
+          Eliminar grupos
         </button>
-      </div>
-    </template>
-  </section>
+        <button type="button" class="btn btn--ghost" :disabled="saving" @click="open = false">
+          Cancelar
+        </button>
+        <button type="button" class="btn btn--primary" :disabled="loading || saving || !namesValid || !changed" @click="save">
+          {{ saving ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </template>
+    </AppDrawer>
+  </Teleport>
 </template>
 
 <style scoped lang="scss">
-.groups {
+.group {
   display: grid;
   gap: var(--space-3);
+  padding: var(--space-3);
+  margin: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 }
 
-.groups__title {
-  font-size: 1.125rem;
-  color: var(--color-title);
-}
-
-.groups__grid {
-  display: grid;
-  gap: var(--space-4);
-
-  @media (min-width: 48rem) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-.groups__group,
-.groups__rename,
-.groups__add {
-  display: grid;
-  gap: var(--space-2);
-  align-content: start;
-}
-
-.groups__members {
+.group__members {
   display: grid;
   gap: var(--space-1);
   padding: 0;
@@ -216,10 +282,19 @@ const removeMember = (member: Member) =>
   list-style: none;
 }
 
-.groups__member {
+.group__member {
   display: flex;
   gap: var(--space-2);
   align-items: center;
   justify-content: space-between;
+}
+
+.group__add {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.group__delete {
+  margin-right: auto;
 }
 </style>
