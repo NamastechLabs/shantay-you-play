@@ -201,7 +201,7 @@ const multipleCategories = computed(() => (data.value?.categories.length ?? 0) >
           </template>
         </ul>
 
-        <AppModal :open="viewingTeam !== null" :title="viewingTeam ? `Grupo ${viewingTeam.team.name}` : ''" @close="viewingTeamId = null">
+        <AppModal wide :open="viewingTeam !== null" :title="viewingTeam ? `Grupo ${viewingTeam.team.name}` : ''" @close="viewingTeamId = null">
           <ul v-if="viewingTeam" class="team__members">
             <li v-for="member in viewingTeam.team.members" :key="member.id" class="team__member">
               <div class="team__who">
@@ -211,11 +211,13 @@ const multipleCategories = computed(() => (data.value?.categories.length ?? 0) >
                 </span>
                 <span class="team__name">{{ member.name }}<template v-if="member.isMe"> (tú)</template></span>
               </div>
-              <ul v-if="member.look" class="team__photos">
-                <li v-for="photo in lookPhotos(member.look)" :key="photo.url">
-                  <img class="team__photo" :src="photo.url" :alt="`${photo.label} de ${member.name}`" loading="lazy">
-                </li>
-              </ul>
+              <LookGallery
+                v-if="member.look"
+                class="team__gallery"
+                :title="member.name"
+                :photos="lookPhotos(member.look)"
+                :intro="member.look.intro"
+              />
               <p v-else class="hint">
                 {{ member.isMe ? 'Aún no has subido tu look.' : 'Aún no ha subido su look.' }}
               </p>
@@ -269,20 +271,9 @@ const multipleCategories = computed(() => (data.value?.categories.length ?? 0) >
   font-size: 1rem;
 }
 
-.team__photos {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr));
-  gap: var(--space-2);
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-
-.team__photo {
-  width: 100%;
-  aspect-ratio: 3 / 4;
-  object-fit: cover;
-  border-radius: var(--radius-md);
+// Several galleries share the modal, so their photos are shorter than in the single-look dialog
+.team__gallery :deep(.look-gallery__slide img) {
+  max-height: 45dvh;
 }
 
 .team__notice {
