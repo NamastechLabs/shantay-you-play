@@ -105,20 +105,6 @@ async function save(): Promise<void> {
   <div class="group-photos">
     <template v-if="display === 'gallery' && currentUrls.length">
       <img class="group-photos__main" :src="currentUrls[selected]" :alt="`Foto ${selected + 1} del grupo ${groupName}`">
-      <ul v-if="currentUrls.length > 1" class="group-photos__thumbs" aria-label="Fotos del grupo">
-        <li v-for="(url, index) in currentUrls" :key="url">
-          <button
-            type="button"
-            class="group-photos__thumb"
-            :class="{ 'group-photos__thumb--active': index === selected }"
-            :aria-label="`Ver foto ${index + 1}`"
-            :aria-pressed="index === selected"
-            @click="selected = index"
-          >
-            <img :src="url" alt="">
-          </button>
-        </li>
-      </ul>
     </template>
     <GroupPhotosCollage v-else-if="display !== 'gallery'" :urls="currentUrls" :name="groupName" />
     <p v-if="!currentUrls.length" class="hint">
@@ -131,7 +117,18 @@ async function save(): Promise<void> {
       </p>
       <ul class="group-photos__slots">
         <li v-for="slot in GROUP_PHOTO_SLOTS" :key="`${slot.key}-${inputKey}`" class="group-photos__slot">
-          <span class="group-photos__frame">
+          <button
+            v-if="display === 'gallery' && srcFor(slot.key)"
+            type="button"
+            class="group-photos__frame group-photos__frame--button"
+            :class="{ 'group-photos__frame--active': currentUrls.indexOf(srcFor(slot.key)!) === selected }"
+            :aria-label="`Ver ${slot.label.toLowerCase()} en grande`"
+            :aria-pressed="currentUrls.indexOf(srcFor(slot.key)!) === selected"
+            @click="selected = currentUrls.indexOf(srcFor(slot.key)!)"
+          >
+            <img :src="srcFor(slot.key)!" alt="">
+          </button>
+          <span v-else class="group-photos__frame">
             <img v-if="srcFor(slot.key)" :src="srcFor(slot.key)!" :alt="`${slot.label} del grupo ${groupName}`">
             <span v-else class="group-photos__empty">{{ slot.label }}</span>
           </span>
@@ -192,44 +189,6 @@ async function save(): Promise<void> {
   box-shadow: var(--shadow-card);
 }
 
-.group-photos__thumbs {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-2);
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-
-.group-photos__thumb {
-  display: block;
-  width: 100%;
-  padding: 0;
-  overflow: hidden;
-  aspect-ratio: 16 / 9;
-  cursor: pointer;
-  background: none;
-  border: 2px solid transparent;
-  border-radius: var(--radius-md);
-  opacity: 0.7;
-
-  img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  &:hover,
-  &--active {
-    opacity: 1;
-  }
-
-  &--active {
-    border-color: var(--color-primary);
-  }
-}
-
 .group-photos__slots {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
@@ -257,6 +216,23 @@ async function save(): Promise<void> {
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+}
+
+.group-photos__frame--button {
+  padding: 0;
+  cursor: pointer;
+  border-style: solid;
+  border-color: transparent;
+  opacity: 0.75;
+
+  &:hover,
+  &.group-photos__frame--active {
+    opacity: 1;
+  }
+
+  &.group-photos__frame--active {
+    border-color: var(--color-primary);
   }
 }
 
