@@ -2,13 +2,25 @@
 import type { Tables } from '~/types/database.types'
 
 type Runway = Pick<Tables<'runways'>, 'id' | 'week_number' | 'runway_date' | 'status'>
-type Category = Pick<Tables<'categories'>, 'id' | 'title' | 'intro_text'>
+type Category = Pick<Tables<'categories'>, 'id' | 'title' | 'intro_text' | 'kind'>
 type MyLook = Pick<Tables<'looks'>, 'id' | 'category_id' | 'participant_id' | 'intro'> & LookImages
+
+type TeamLook = Pick<Tables<'looks'>, 'id' | 'category_id' | 'participant_id' | 'intro'> & LookImages & {
+  participant: Pick<Tables<'participants'>, 'name' | 'drag_name'>
+}
+
+/** The signed-in queen's group in a group category, with the looks her teammates have uploaded */
+interface Team {
+  name: string
+  looks: TeamLook[]
+}
 
 interface WerkRoom {
   runway: Runway
   categories: Category[]
   looks: MyLook[]
+  /** Keyed by category id; only group categories where the queen has a group */
+  teams: Record<string, Team>
 }
 
 const route = useRoute()
@@ -16,6 +28,33 @@ const supabase = useSupabaseClient()
 const { participant } = useCurrentParticipant()
 
 const weekNumber = Number(route.params.week)
+
+/** RLS only shows a queen the looks of her own group while the Werk Room is open */
+async function loadTeams(participantId: string, groupCategoryIds: string[]): Promise<Record<string, Team>> {
+  if (!groupCategoryIds.length) return {}
+
+  const [members, groups, looks] = await Promise.all([
+    supabase.from('category_group_members').select('category_id, group_id').in('category_id', groupCategoryIds).eq('participant_id', participantId),
+    supabase.from('category_groups').select('id, name').in('category_id', groupCategoryIds),
+    supabase
+      .from('looks')
+      .select('id, category_id, participant_id, image_url, image2_url, image3_url, image4_url, intro, participant:participants!looks_participant_id_fkey(name, drag_name)')
+      .in('category_id', groupCategoryIds)
+      .neq('participant_id', participantId),
+  ])
+  if (members.error) throw members.error
+  if (groups.error) throw groups.error
+  if (looks.error) throw looks.error
+
+  const teams: Record<string, Team> = {}
+  for (const member of members.data) {
+    const group = groups.data.find(candidate => candidate.id === member.group_id)
+    if (group) {
+      teams[member.category_id] = { name: group.name, looks: looks.data.filter(look => look.category_id === member.category_id) }
+    }
+  }
+  return teams
+}
 
 // RLS hides draft runways, so a week that does not exist or is not in the Werk Room looks the same: closed
 const { data, error, refresh } = await useAsyncData(`werk-room-${route.params.week}`, async (): Promise<WerkRoom | null> => {
@@ -31,14 +70,14 @@ const { data, error, refresh } = await useAsyncData(`werk-room-${route.params.we
 
   const categories = await supabase
     .from('categories')
-    .select('id, title, intro_text')
+    .select('id, title, intro_text, kind')
     .eq('runway_id', runway.data.id)
     .order('created_at', { ascending: true })
   if (categories.error) throw categories.error
 
   const participantId = participant.value?.id
   const categoryIds = categories.data.map(category => category.id)
-  if (!participantId || !categoryIds.length) return { runway: runway.data, categories: categories.data, looks: [] }
+  if (!participantId || !categoryIds.length) return { runway: runway.data, categories: categories.data, looks: [], teams: {} }
 
   const looks = await supabase
     .from('looks')
@@ -47,7 +86,12 @@ const { data, error, refresh } = await useAsyncData(`werk-room-${route.params.we
     .in('category_id', categoryIds)
   if (looks.error) throw looks.error
 
-  return { runway: runway.data, categories: categories.data, looks: looks.data }
+  return {
+    runway: runway.data,
+    categories: categories.data,
+    looks: looks.data,
+    teams: await loadTeams(participantId, categories.data.filter(category => category.kind === 'group').map(category => category.id)),
+  }
 })
 
 const isOpen = computed(() => data.value !== null && data.value !== undefined)
@@ -109,17 +153,53 @@ const multipleCategories = computed(() => (data.value?.categories.length ?? 0) >
           La foto de frente es obligatoria. Puedes cambiarlo todo mientras el Werk Room siga abierto.
         </p>
         <ul class="row-list">
-          <LookEditRow
-            v-for="category in data.categories"
-            :key="category.id"
-            :category-id="category.id"
-            :contestant="participant!"
-            :look="lookByCategory.get(category.id) ?? null"
-            :title="multipleCategories ? category.title : undefined"
-            editable
-            @changed="refresh()"
-          />
+          <template v-for="category in data.categories" :key="category.id">
+            <li v-if="category.kind === 'group'" class="team__notice">
+              <span class="badge">Categoría grupal</span>
+              <template v-if="data.teams[category.id]">
+                «{{ category.title }}»: compites con el grupo <strong>{{ data.teams[category.id]!.name }}</strong>.
+                Más abajo ves los looks de tus compañeras.
+              </template>
+              <template v-else>
+                «{{ category.title }}»: el jurado aún no te ha asignado a un grupo.
+              </template>
+            </li>
+            <LookEditRow
+              :category-id="category.id"
+              :contestant="participant!"
+              :look="lookByCategory.get(category.id) ?? null"
+              :title="multipleCategories ? category.title : undefined"
+              editable
+              @changed="refresh()"
+            />
+          </template>
         </ul>
+
+        <template v-for="category in data.categories" :key="category.id">
+          <section v-if="data.teams[category.id]" class="team" :aria-labelledby="`team-${category.id}`">
+            <h2 :id="`team-${category.id}`" class="team__title">
+              Looks de tu grupo · {{ data.teams[category.id]!.name }}
+            </h2>
+            <p v-if="!data.teams[category.id]!.looks.length" class="empty">
+              Tus compañeras aún no han subido su look.
+            </p>
+            <ul v-else class="gallery">
+              <li v-for="look in data.teams[category.id]!.looks" :key="look.id">
+                <article class="look-card">
+                  <LookCardPhoto
+                    :src="look.image_url"
+                    :alt="`Look de ${look.participant.drag_name ?? look.participant.name}`"
+                    :count="lookPhotos(look).length"
+                  />
+                  <span class="look-card__body">
+                    <span class="look-card__name">{{ look.participant.drag_name ?? look.participant.name }}</span>
+                    <span v-if="look.intro" class="look-card__intro">{{ look.intro }}</span>
+                  </span>
+                </article>
+              </li>
+            </ul>
+          </section>
+        </template>
       </template>
     </template>
 
@@ -139,6 +219,25 @@ const multipleCategories = computed(() => (data.value?.categories.length ?? 0) >
 </template>
 
 <style scoped lang="scss">
+.team {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.team__title {
+  font-size: 1.125rem;
+  color: var(--color-title);
+}
+
+.team__notice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  color: var(--color-text-muted);
+  list-style: none;
+}
+
 // Pink neon sign on a dark curtain, built from the theme's primary color
 .werk-sign {
   display: grid;

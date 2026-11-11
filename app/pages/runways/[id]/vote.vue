@@ -2,7 +2,7 @@
 import type { Tables } from '~/types/database.types'
 
 type Runway = Pick<Tables<'runways'>, 'id' | 'week_number' | 'runway_date' | 'status'> & {
-  categories: Pick<Tables<'categories'>, 'id' | 'title'>[]
+  categories: Pick<Tables<'categories'>, 'id' | 'title' | 'kind'>[]
 }
 type Ballot = Pick<Tables<'votes'>, 'id' | 'top_1_participant_id' | 'top_2_participant_id' | 'top_3_participant_id'>
 
@@ -50,7 +50,7 @@ const { data, error: loadError } = await useAsyncData(
     const [runway, looks, ballot] = await Promise.all([
       supabase
         .from('runways')
-        .select('id, week_number, runway_date, status, categories(id, title)')
+        .select('id, week_number, runway_date, status, categories(id, title, kind)')
         .eq('id', runwayId)
         .order('created_at', { referencedTable: 'categories', ascending: true })
         .maybeSingle(),
@@ -95,6 +95,7 @@ const queens = computed<Queen[]>(() => {
   return [...byId.values()]
 })
 
+const groupCategories = computed(() => runway.value?.categories.filter(category => category.kind === 'group') ?? [])
 const categoryTitles = computed(() => new Map(runway.value?.categories.map(category => [category.id, category.title])))
 const isOwnQueen = (queen: Queen): boolean => queen.id === participant.value?.id
 
@@ -261,6 +262,13 @@ async function saveBallot(): Promise<void> {
           </button>
         </div>
       </div>
+
+      <GroupCategoryVote
+        v-for="category in groupCategories"
+        :key="category.id"
+        :category="category"
+        :show-title="runway.categories.length > 1"
+      />
     </template>
 
     <p v-else class="empty">

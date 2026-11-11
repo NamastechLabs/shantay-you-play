@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import type { AdminCategory } from '~/composables/useAdminRunway'
+import type { Enums } from '~/types/database.types'
+
+type CategoryKind = Enums<'category_kind'>
 
 const supabase = useSupabaseClient()
 const { runway, categories, refresh } = useAdminRunway()
 const { listCategoryFiles, removeFiles } = useParticipantFiles()
 
 // --- Edit title / intro, delete ----------------------------------------------
-const categoryDrafts = reactive<Record<string, { title: string, intro: string }>>({})
+const categoryDrafts = reactive<Record<string, { title: string, intro: string, kind: CategoryKind }>>({})
 watch(categories, (list) => {
   for (const category of list) {
-    categoryDrafts[category.id] ??= { title: category.title, intro: category.intro_text ?? '' }
+    categoryDrafts[category.id] ??= { title: category.title, intro: category.intro_text ?? '', kind: category.kind }
   }
 }, { immediate: true })
 
@@ -18,7 +21,7 @@ const categoryErrors = reactive<Record<string, string>>({})
 
 const categoryChanged = (category: AdminCategory): boolean => {
   const draft = categoryDrafts[category.id]
-  return !!draft && (draft.title.trim() !== category.title || (draft.intro.trim() || null) !== category.intro_text)
+  return !!draft && (draft.title.trim() !== category.title || (draft.intro.trim() || null) !== category.intro_text || draft.kind !== category.kind)
 }
 
 async function saveCategory(category: AdminCategory): Promise<void> {
@@ -30,7 +33,7 @@ async function saveCategory(category: AdminCategory): Promise<void> {
   try {
     const { error } = await supabase
       .from('categories')
-      .update({ title: draft.title.trim(), intro_text: draft.intro.trim() || null })
+      .update({ title: draft.title.trim(), intro_text: draft.intro.trim() || null, kind: draft.kind })
       .eq('id', category.id)
     if (error) throw error
     await refresh()
@@ -69,12 +72,14 @@ async function deleteCategory(category: AdminCategory): Promise<void> {
 const newCategoryOpen = ref(false)
 const newTitle = ref('')
 const newIntro = ref('')
+const newKind = ref<CategoryKind>('individual')
 const newCategorySaving = ref(false)
 const newCategoryError = ref<string | null>(null)
 
 function openNewCategory(): void {
   newTitle.value = ''
   newIntro.value = ''
+  newKind.value = 'individual'
   newCategoryError.value = null
   newCategoryOpen.value = true
 }
@@ -87,7 +92,7 @@ async function createCategory(): Promise<void> {
   try {
     const { error } = await supabase
       .from('categories')
-      .insert({ runway_id: runway.value.id, title: newTitle.value.trim(), intro_text: newIntro.value.trim() || null })
+      .insert({ runway_id: runway.value.id, title: newTitle.value.trim(), intro_text: newIntro.value.trim() || null, kind: newKind.value })
     if (error) throw error
     newCategoryOpen.value = false
     await refresh()
@@ -116,9 +121,8 @@ async function createCategory(): Promise<void> {
       Añade al menos una categoría para poder subir los looks.
     </p>
 
+    <template v-for="category in categories" :key="category.id">
     <form
-      v-for="category in categories"
-      :key="category.id"
       class="card form"
       @submit.prevent="saveCategory(category)"
     >
@@ -142,6 +146,17 @@ async function createCategory(): Promise<void> {
           rows="3"
         />
       </div>
+      <div class="field">
+        <label :for="`category-kind-${category.id}`" class="field__label">Tipo</label>
+        <select :id="`category-kind-${category.id}`" v-model="categoryDrafts[category.id]!.kind" class="field__input">
+          <option value="individual">
+            Individual
+          </option>
+          <option value="group">
+            Grupal (dos grupos)
+          </option>
+        </select>
+      </div>
       <p v-if="categoryErrors[category.id]" class="form-error" role="alert">
         {{ categoryErrors[category.id] }}
       </p>
@@ -160,6 +175,8 @@ async function createCategory(): Promise<void> {
         </button>
       </div>
     </form>
+    <AdminCategoryGroups v-if="category.kind === 'group'" :category-id="category.id" />
+    </template>
   </section>
 
   <AppModal :open="newCategoryOpen" title="Nueva categoría" @close="newCategoryOpen = false">
@@ -185,6 +202,17 @@ async function createCategory(): Promise<void> {
           rows="3"
           placeholder="Describe el tema (opcional)"
         />
+      </div>
+      <div class="field">
+        <label for="new-category-kind" class="field__label">Tipo</label>
+        <select id="new-category-kind" v-model="newKind" class="field__input">
+          <option value="individual">
+            Individual
+          </option>
+          <option value="group">
+            Grupal (dos grupos)
+          </option>
+        </select>
       </div>
       <p v-if="newCategoryError" class="form-error" role="alert">
         {{ newCategoryError }}

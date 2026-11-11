@@ -25,14 +25,14 @@ export type Database = {
           Tables: {
             "categories": {
                   Row: {
-                    "created_at": string,"id": string,"intro_text": string | null,"runway_id": string,"title": string,"updated_at": string
+                    "created_at": string,"id": string,"intro_text": string | null,"kind": Database["public"]["Enums"]["category_kind"],"runway_id": string,"title": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"intro_text"?: string | null,"runway_id": string,"title": string,"updated_at"?: string
+                    "created_at"?: string,"id"?: string,"intro_text"?: string | null,"kind"?: Database["public"]["Enums"]["category_kind"],"runway_id": string,"title": string,"updated_at"?: string
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"intro_text"?: string | null,"runway_id"?: string,"title"?: string,"updated_at"?: string
+                    "created_at"?: string,"id"?: string,"intro_text"?: string | null,"kind"?: Database["public"]["Enums"]["category_kind"],"runway_id"?: string,"title"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -40,6 +40,114 @@ export type Database = {
       columns: ["runway_id"]
 isOneToOne: false
       referencedRelation: "runways"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"category_group_members": {
+                  Row: {
+                    "category_id": string,"created_at": string,"group_id": string,"id": string,"participant_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "category_id": string,"created_at"?: string,"group_id": string,"id"?: string,"participant_id": string
+                  }
+                  Update: {
+                    "category_id"?: string,"created_at"?: string,"group_id"?: string,"id"?: string,"participant_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "category_group_members_group_fkey"
+      columns: ["group_id", "category_id"]
+isOneToOne: false
+      referencedRelation: "category_groups"
+      referencedColumns: ["id", "category_id"]
+    },
+                    {
+      foreignKeyName: "category_group_members_participant_id_fkey"
+      columns: ["participant_id"]
+isOneToOne: false
+      referencedRelation: "participants"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"category_group_votes": {
+                  Row: {
+                    "category_id": string,"created_at": string,"group_id": string,"id": string,"updated_at": string,"voter_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "category_id": string,"created_at"?: string,"group_id": string,"id"?: string,"updated_at"?: string,"voter_id": string
+                  }
+                  Update: {
+                    "category_id"?: string,"created_at"?: string,"group_id"?: string,"id"?: string,"updated_at"?: string,"voter_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "category_group_votes_group_fkey"
+      columns: ["group_id", "category_id"]
+isOneToOne: false
+      referencedRelation: "category_groups"
+      referencedColumns: ["id", "category_id"]
+    },
+                    {
+      foreignKeyName: "category_group_votes_voter_id_fkey"
+      columns: ["voter_id"]
+isOneToOne: false
+      referencedRelation: "participants"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"category_groups": {
+                  Row: {
+                    "category_id": string,"created_at": string,"id": string,"name": string,"position": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "category_id": string,"created_at"?: string,"id"?: string,"name": string,"position": number,"updated_at"?: string
+                  }
+                  Update: {
+                    "category_id"?: string,"created_at"?: string,"id"?: string,"name"?: string,"position"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "category_groups_category_id_fkey"
+      columns: ["category_id"]
+isOneToOne: false
+      referencedRelation: "categories"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"category_queen_votes": {
+                  Row: {
+                    "category_id": string,"created_at": string,"id": string,"queen_id": string,"updated_at": string,"voter_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "category_id": string,"created_at"?: string,"id"?: string,"queen_id": string,"updated_at"?: string,"voter_id": string
+                  }
+                  Update: {
+                    "category_id"?: string,"created_at"?: string,"id"?: string,"queen_id"?: string,"updated_at"?: string,"voter_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "category_queen_votes_category_id_fkey"
+      columns: ["category_id"]
+isOneToOne: false
+      referencedRelation: "categories"
+      referencedColumns: ["id"]
+    },
+                    {
+      foreignKeyName: "category_queen_votes_queen_id_fkey"
+      columns: ["queen_id"]
+isOneToOne: false
+      referencedRelation: "participants"
+      referencedColumns: ["id"]
+    },
+                    {
+      foreignKeyName: "category_queen_votes_voter_id_fkey"
+      columns: ["voter_id"]
+isOneToOne: false
+      referencedRelation: "participants"
       referencedColumns: ["id"]
     }
                   ]
@@ -223,6 +331,18 @@ isOneToOne: false
 "can_access_runway":
 { Args: { "p_runway_id": string }; Returns: boolean
                            },
+"are_rivals":
+{ Args: { "p_a": string,"p_b": string,"p_category_id": string }; Returns: boolean
+                           },
+"are_teammates":
+{ Args: { "p_a": string,"p_b": string,"p_category_id": string }; Returns: boolean
+                           },
+"category_group_result":
+{ Args: { "p_category_id": string }; Returns: { group_id: string, total_votes: number, is_winner: boolean }[]
+                           },
+"category_queen_result":
+{ Args: { "p_category_id": string }; Returns: { participant_id: string, total_votes: number }[]
+                           },
 "category_has_status":
 { Args: { "p_category_id": string,"p_statuses": (Database["public"]['Enums']["runway_status"])[] }; Returns: boolean
                            },
@@ -244,6 +364,9 @@ isOneToOne: false
 "is_runway_contestant":
 { Args: { "p_participant_id": string,"p_runway_id": string }; Returns: boolean
                            },
+"participant_group_id":
+{ Args: { "p_category_id": string,"p_participant_id": string }; Returns: string
+                           },
 "participant_is_guest":
 { Args: { "p_participant_id": string }; Returns: boolean
                            },
@@ -262,7 +385,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "participant_role": "jurado"|"concursante"|"invitado","runway_status": "draft"|"werk_room"|"runway"|"voting"|"reveal"|"closed"
+            "category_kind": "individual"|"group","participant_role": "jurado"|"concursante"|"invitado","runway_status": "draft"|"werk_room"|"runway"|"voting"|"reveal"|"closed"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -382,7 +505,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "participant_role": ["jurado", "concursante", "invitado"],"runway_status": ["draft", "werk_room", "runway", "voting", "reveal", "closed"]
+            "category_kind": ["individual", "group"],"participant_role": ["jurado", "concursante", "invitado"],"runway_status": ["draft", "werk_room", "runway", "voting", "reveal", "closed"]
           }
         }
 } as const
