@@ -13,6 +13,7 @@ const props = defineProps<{
 }>()
 
 const supabase = useSupabaseClient()
+const { listGroupPhotoFiles, removeFiles } = useParticipantFiles()
 
 const open = ref(false)
 const loading = ref(false)
@@ -165,12 +166,15 @@ async function save(): Promise<void> {
 }
 
 async function deleteGroups(): Promise<void> {
-  if (saving.value || !window.confirm('¿Eliminar los dos grupos? También se borrarán sus integrantes y votos.')) return
+  if (saving.value || !window.confirm('¿Eliminar los dos grupos? También se borrarán sus integrantes, fotos y votos.')) return
   saving.value = true
   error.value = ''
   try {
+    // The photo rows cascade with the groups; list their files first so they can be removed from Storage
+    const files = await listGroupPhotoFiles(props.category.id)
     const { error: deleteError } = await supabase.from('category_groups').delete().eq('category_id', props.category.id)
     if (deleteError) throw deleteError
+    await removeFiles(files)
     open.value = false
   }
   catch (caught) {

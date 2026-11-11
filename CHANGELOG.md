@@ -9,7 +9,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- Group categories: a category can be individual (default) or group, with two groups of queens assigned by the jury from an "Editar grupos" side panel in the admin. Queens see a "Categoría grupal" badge and their teammates' looks in the Werk Room. In voting, only the jury votes for the winning group (a draw makes both win), and each queen votes a Top 1 among the rival group's queens, giving a group winner plus a Top 1 queen. Results appear from the reveal. Requires migration `20261111000000_group_categories.sql` (DRG-5)
+- Group categories: a category can be individual (default) or group, with two groups of queens assigned by the jury from an "Editar grupos" side panel in the admin. Queens see a "Categoría grupal" badge and their teammates' looks in the Werk Room. In voting, only the jury votes for the winning group (a draw makes both win), and each queen votes a Top 1 among the rival group's queens, giving a group winner plus a Top 1 queen. Results appear from the reveal. Each group also has up to 4 landscape photos (16:9 or 5:3) shown together as one picture: members upload them from "Ver grupo" in the Werk Room, judges manage them in a new "Grupos" tab of the admin looks, and they appear on the runway and voting pages. Requires migrations `20261111000000_group_categories.sql` and `20261111000100_group_photos.sql` (DRG-5)
 
 ## [0.1.2] - 2026-11-09
 

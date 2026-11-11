@@ -70,6 +70,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"category_group_photos": {
+                  Row: {
+                    "category_id": string,"created_at": string,"group_id": string,"image_url": string | null,"image2_url": string | null,"image3_url": string | null,"image4_url": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "category_id": string,"created_at"?: string,"group_id": string,"image_url"?: string | null,"image2_url"?: string | null,"image3_url"?: string | null,"image4_url"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "category_id"?: string,"created_at"?: string,"group_id"?: string,"image_url"?: string | null,"image2_url"?: string | null,"image3_url"?: string | null,"image4_url"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "category_group_photos_group_fkey"
+      columns: ["group_id", "category_id"]
+isOneToOne: true
+      referencedRelation: "category_groups"
+      referencedColumns: ["id", "category_id"]
+    }
+                  ]
                 },"category_group_votes": {
                   Row: {
                     "category_id": string,"created_at": string,"group_id": string,"id": string,"updated_at": string,"voter_id": string

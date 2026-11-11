@@ -192,6 +192,8 @@ function showAdjacentLook(step: 1 | -1): void {
         <!-- The jury walks first: its looks set the bar and are not voted on -->
         <JuryLooks :members="section.jury" title="El jurado" :level="hasSeveralCategories ? 3 : 2" />
 
+        <CategoryGroupPhotos v-if="section.category.kind === 'group'" :category-id="section.category.id" :level="hasSeveralCategories ? 4 : 3" />
+
         <component :is="hasSeveralCategories ? 'h3' : 'h2'" v-if="section.jury.length" class="queens-title">
           Las reinas
         </component>

@@ -3,6 +3,7 @@ import type { Tables } from '~/types/database.types'
 
 type Person = Pick<Tables<'participants'>, 'id' | 'name' | 'drag_name'>
 type QueenLook = Pick<Tables<'looks'>, 'id' | 'category_id' | 'participant_id' | 'intro'> & LookImages
+type GroupSummary = Pick<Tables<'category_groups'>, 'id' | 'category_id' | 'position' | 'name'>
 type JuryLookSummary = Pick<Tables<'jury_looks'>, 'id' | 'category_id' | 'participant_id' | 'intro'> & LookImages
 
 const supabase = useSupabaseClient()
@@ -10,7 +11,7 @@ const { runway, categories, refresh: refreshRunway } = useAdminRunway()
 
 const { data, error: loadError, refresh } = await useAsyncData(`admin-runway-${runway.value.id}-looks`, async () => {
   const categoryIds = categories.value.map(category => category.id)
-  const [contestants, looks, judges, juryLooks] = await Promise.all([
+  const [contestants, looks, judges, juryLooks, groups, groupPhotos] = await Promise.all([
     supabase.from('participants').select('id, name, drag_name').eq('role', 'concursante').order('name', { ascending: true }),
     supabase
       .from('looks')
@@ -21,17 +22,23 @@ const { data, error: loadError, refresh } = await useAsyncData(`admin-runway-${r
       .from('jury_looks')
       .select('id, category_id, participant_id, image_url, image2_url, image3_url, image4_url, intro')
       .in('category_id', categoryIds),
+    supabase.from('category_groups').select('id, category_id, position, name').in('category_id', categoryIds).order('position'),
+    supabase.from('category_group_photos').select('group_id, category_id, image_url, image2_url, image3_url, image4_url').in('category_id', categoryIds),
   ])
   if (contestants.error) throw contestants.error
   if (looks.error) throw looks.error
   if (judges.error) throw judges.error
   if (juryLooks.error) throw juryLooks.error
+  if (groups.error) throw groups.error
+  if (groupPhotos.error) throw groupPhotos.error
 
   return {
     contestants: contestants.data as Person[],
     looks: looks.data as QueenLook[],
     judges: judges.data as Person[],
     juryLooks: juryLooks.data as JuryLookSummary[],
+    groups: groups.data as GroupSummary[],
+    groupPhotos: groupPhotos.data as GroupPhotos[],
   }
 })
 
@@ -42,16 +49,21 @@ const lookKey = (categoryId: string, participantId: string): string => `${catego
 const looksByKey = computed(() => new Map(data.value?.looks.map(look => [lookKey(look.category_id, look.participant_id), look])))
 const juryLooksByKey = computed(() => new Map(data.value?.juryLooks.map(look => [lookKey(look.category_id, look.participant_id), look])))
 
-// --- Tabs (queens are voted, the jury is shown on the homepage) and category ----
-type LooksTab = 'queens' | 'jury'
+// --- Tabs (queens are voted, groups show their photos together, the jury is shown on the homepage) and category ----
+type LooksTab = 'queens' | 'groups' | 'jury'
 const looksTab = ref<LooksTab>('queens')
+const groupsWithPhotos = computed(() => data.value?.groupPhotos.filter(photos => groupPhotoUrls(photos).length > 0).length ?? 0)
 const looksTabs = computed<{ id: LooksTab, label: string, done: number, total: number }[]>(() => [
   { id: 'queens', label: 'Reinas', done: data.value?.looks.length ?? 0, total: (data.value?.contestants.length ?? 0) * categories.value.length },
+  { id: 'groups', label: 'Grupos', done: groupsWithPhotos.value, total: data.value?.groups.length ?? 0 },
   { id: 'jury', label: 'Jurados', done: data.value?.juryLooks.length ?? 0, total: (data.value?.judges.length ?? 0) * categories.value.length },
 ])
 
 const categoryId = ref(categories.value[0]?.id ?? '')
 const category = computed(() => categories.value.find(item => item.id === categoryId.value) ?? null)
+
+const categoryGroups = computed(() => data.value?.groups.filter(group => group.category_id === categoryId.value) ?? [])
+const groupPhotosById = computed(() => new Map(data.value?.groupPhotos.map(photos => [photos.group_id, photos])))
 
 async function refreshAll(): Promise<void> {
   await Promise.all([refresh(), refreshRunway()])
@@ -103,7 +115,7 @@ watch(pasteTargetId, () => {
 })
 
 function onPaste(event: ClipboardEvent): void {
-  if (!editable.value || !categories.value.length || pastedFile.value) return
+  if (looksTab.value === 'groups' || !editable.value || !categories.value.length || pastedFile.value) return
   const image = Array.from(event.clipboardData?.files ?? []).find(file => file.type.startsWith('image/'))
   if (!image) return
   event.preventDefault()
@@ -231,6 +243,40 @@ async function savePasted(): Promise<void> {
     </div>
 
     <div
+      v-show="looksTab === 'groups'"
+      id="looks-panel-groups"
+      role="tabpanel"
+      aria-labelledby="looks-tab-groups"
+    >
+      <p v-if="category?.kind !== 'group'" class="empty">
+        Esta categoría es individual: solo las categorías grupales tienen fotos de grupo.
+      </p>
+      <p v-else-if="categoryGroups.length < 2" class="empty">
+        Crea los grupos de esta categoría en
+        <NuxtLink :to="`/admin/runways/${runway.id}/categories`" class="link">Categorías</NuxtLink>
+        para subir sus fotos.
+      </p>
+      <template v-else>
+        <p v-if="editable" class="hint">
+          Cada grupo tiene hasta 4 fotos apaisadas (16:9 o 5:3) que se muestran juntas. Las integrantes también pueden subirlas desde la Werk Room.
+        </p>
+        <ul class="row-list">
+          <li v-for="group in categoryGroups" :key="group.id" class="card group-block">
+            <h3>{{ group.name }}</h3>
+            <GroupPhotosEditor
+              :category-id="group.category_id"
+              :group-id="group.id"
+              :group-name="group.name"
+              :photos="groupPhotosById.get(group.id) ?? null"
+              :editable="editable"
+              @changed="refreshAll()"
+            />
+          </li>
+        </ul>
+      </template>
+    </div>
+
+    <div
       v-show="looksTab === 'jury'"
       id="looks-panel-jury"
       role="tabpanel"
@@ -307,3 +353,10 @@ async function savePasted(): Promise<void> {
     </form>
   </AppModal>
 </template>
+
+<style scoped lang="scss">
+.group-block {
+  display: grid;
+  gap: var(--space-3);
+}
+</style>

@@ -16,7 +16,10 @@ interface TeamMember {
 
 /** The signed-in queen's group in a group category, with every member (herself included) */
 interface Team {
+  groupId: string
   name: string
+  /** The group's landscape photos, or null while none has been uploaded */
+  photos: GroupPhotos | null
   members: TeamMember[]
 }
 
@@ -38,7 +41,7 @@ const weekNumber = Number(route.params.week)
 async function loadTeams(participantId: string, groupCategoryIds: string[]): Promise<Record<string, Team>> {
   if (!groupCategoryIds.length) return {}
 
-  const [members, groups, looks] = await Promise.all([
+  const [members, groups, looks, groupPhotos] = await Promise.all([
     supabase
       .from('category_group_members')
       .select('category_id, group_id, participant_id, participant:participants!category_group_members_participant_id_fkey(name, drag_name, avatar_url)')
@@ -48,17 +51,21 @@ async function loadTeams(participantId: string, groupCategoryIds: string[]): Pro
       .from('looks')
       .select('id, category_id, participant_id, image_url, image2_url, image3_url, image4_url, intro')
       .in('category_id', groupCategoryIds),
+    supabase.from('category_group_photos').select('group_id, category_id, image_url, image2_url, image3_url, image4_url').in('category_id', groupCategoryIds),
   ])
   if (members.error) throw members.error
   if (groups.error) throw groups.error
   if (looks.error) throw looks.error
+  if (groupPhotos.error) throw groupPhotos.error
 
   const teams: Record<string, Team> = {}
   for (const mine of members.data.filter(member => member.participant_id === participantId)) {
     const group = groups.data.find(candidate => candidate.id === mine.group_id)
     if (!group) continue
     teams[mine.category_id] = {
+      groupId: group.id,
       name: group.name,
+      photos: groupPhotos.data.find(photos => photos.group_id === group.id) ?? null,
       members: members.data
         .filter(member => member.group_id === mine.group_id)
         .map(member => ({
@@ -124,8 +131,9 @@ useSeoMeta({ robots: 'noindex' })
 
 const viewingTeamId = ref<string | null>(null)
 const viewingTeam = computed(() => {
-  const team = viewingTeamId.value ? data.value?.teams[viewingTeamId.value] : undefined
-  return team ? { team } : null
+  const categoryId = viewingTeamId.value
+  const team = categoryId ? data.value?.teams[categoryId] : undefined
+  return categoryId && team ? { categoryId, team } : null
 })
 
 const isContestant = computed(() => participant.value?.role === 'concursante')
@@ -202,6 +210,20 @@ const multipleCategories = computed(() => (data.value?.categories.length ?? 0) >
         </ul>
 
         <AppModal wide :open="viewingTeam !== null" :title="viewingTeam ? `Grupo ${viewingTeam.team.name}` : ''" @close="viewingTeamId = null">
+          <section v-if="viewingTeam" class="team__photos" aria-labelledby="team-photos-title">
+            <h3 id="team-photos-title">
+              Fotos del grupo
+            </h3>
+            <GroupPhotosEditor
+              :category-id="viewingTeam.categoryId"
+              :group-id="viewingTeam.team.groupId"
+              :group-name="viewingTeam.team.name"
+              :photos="viewingTeam.team.photos"
+              editable
+              @changed="refresh()"
+            />
+          </section>
+
           <ul v-if="viewingTeam" class="team__members">
             <li v-for="member in viewingTeam.team.members" :key="member.id" class="team__member">
               <div class="team__who">
@@ -243,6 +265,11 @@ const multipleCategories = computed(() => (data.value?.categories.length ?? 0) >
 </template>
 
 <style scoped lang="scss">
+.team__photos {
+  display: grid;
+  gap: var(--space-2);
+}
+
 .team__text {
   flex: 1 1 12rem;
 }

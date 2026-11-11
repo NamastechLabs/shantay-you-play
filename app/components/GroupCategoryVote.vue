@@ -138,6 +138,8 @@ const saveQueenVote = () => {
     </p>
 
     <template v-else>
+      <CategoryGroupPhotos :category-id="category.id" :level="3" />
+
       <!-- Jury: the winning group -->
       <form v-if="isJury" class="group-vote__block" @submit.prevent="saveGroupVote">
         <p class="lead">
