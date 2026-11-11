@@ -204,17 +204,15 @@ async function deleteGroups(): Promise<void> {
             Grupo {{ SLOT_LABELS[slot] }}
           </legend>
 
-          <div class="field">
-            <label :for="`group-name-${category.id}-${slot}`" class="field__label">Nombre</label>
-            <input
-              :id="`group-name-${category.id}-${slot}`"
-              v-model="names[slot]"
-              class="field__input"
-              type="text"
-              maxlength="60"
-              required
-            >
-          </div>
+          <input
+            v-model="names[slot]"
+            class="field__input"
+            type="text"
+            maxlength="60"
+            required
+            placeholder="Nombre del grupo"
+            :aria-label="`Nombre del grupo ${SLOT_LABELS[slot]}`"
+          >
 
           <p v-if="!membersOf(slot).length" class="hint">
             Aún no hay integrantes.
@@ -241,10 +239,9 @@ async function deleteGroups(): Promise<void> {
           </ul>
 
           <div class="group__add">
-            <label :for="`group-add-${category.id}-${slot}`" class="field__label">Añadir reina</label>
-            <select :id="`group-add-${category.id}-${slot}`" v-model="toAdd[slot]" class="field__input" :disabled="!unassigned.length">
+            <select v-model="toAdd[slot]" class="field__input" :aria-label="`Añadir reina al grupo ${SLOT_LABELS[slot]}`" :disabled="!unassigned.length">
               <option value="">
-                {{ unassigned.length ? 'Elige una reina' : 'No quedan reinas sin grupo' }}
+                {{ unassigned.length ? 'Añadir reina…' : 'No quedan reinas sin grupo' }}
               </option>
               <option v-for="contestant in unassigned" :key="contestant.id" :value="contestant.id">
                 {{ contestantName(contestant) }}
@@ -315,8 +312,18 @@ async function deleteGroups(): Promise<void> {
 }
 
 .group__add {
-  display: grid;
+  display: flex;
   gap: var(--space-2);
+  align-items: center;
+
+  select {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .btn {
+    flex-shrink: 0;
+  }
 }
 
 .group__delete {
