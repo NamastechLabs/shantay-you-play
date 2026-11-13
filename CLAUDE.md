@@ -60,7 +60,13 @@
 - **Commits & PR titles:** start with the key, in English: `DRG-12 Filter runways by week`. Commits made directly on `main` without a ticket have no key.
 - **Tickets:** titles in English; description and acceptance criteria may be in English or Spanish. Exact UI copy is given in Spanish.
 - **Changelog:** `CHANGELOG.md` follows Keep a Changelog, in English, with an `Unreleased` section. Add an entry for every user-visible change, ending with the issue key.
-- **Releases:** merging to `main` deploys, so the version is decided in the PR, never in a later commit on `main`. Use semantic versioning (patch = fix, minor = feature, major = breaking). The PR's last commit renames `Unreleased` to `## [X.Y.Z] - date` in `CHANGELOG.md`, adds a fresh `Unreleased` and sets `version` in `package.json`. After merging, tag the merge commit `vX.Y.Z`.
+- **Releases:** merging to `main` deploys, so the version is decided in the PR, never in a later commit on `main`. Use semantic versioning (patch = fix, minor = feature, major = breaking). The PR's last commit does all of this together:
+  1. Renames `Unreleased` to `## [X.Y.Z] - date` in `CHANGELOG.md` (the date it goes live), adds a fresh `Unreleased` and sets `version` in `package.json`.
+  2. Adds the release to the in-app release notes (see below).
+  3. Names the Jira fix version after the version (see below).
+  After merging, tag the merge commit `vX.Y.Z`.
+- **Jira fix version:** every release has a Jira version named exactly like the semantic version (`0.2.0`, no `v`), and every ticket shipped in it gets that fix version, so the Jira Releases view mirrors the changelog. The Atlassian MCP cannot create versions: ask the user to create the version in Jira (project `DRG` → Releases) if it does not exist, then set `fixVersions` on each ticket with `editJiraIssue`. Marking the version as released in Jira happens after the merge is deployed and is the user's call, like any other status change.
+- **Release notes in the app:** users see what is new at `/novedades` (link "Novedades" in the user menu). The content lives in `app/utils/releaseNotes.ts`, newest first, one entry per release with the version, the date it went live (`YYYY-MM-DD`), a short title and one sentence per **functional** feature users will notice (what they can now do, in Spanish, no technical terms). Technical details stay in `CHANGELOG.md`. A release with no user-visible change gets no entry. Keep the date equal to the changelog date.
 - **Migrations:** a PR that adds a migration under `supabase/migrations/` must say so, and the migration is applied to Supabase before the PR is merged.
 - **When asked to work on a ticket** ("work on DRG-12"), use the `work-on-ticket` skill (`.claude/skills/work-on-ticket/`).
 - **Never** push, open a PR, comment on a ticket or change its status without being asked.

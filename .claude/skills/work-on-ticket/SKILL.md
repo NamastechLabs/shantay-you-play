@@ -56,11 +56,13 @@ Do this as the last commit of the branch, so the version is decided in the PR an
 - Pick the [semantic version](https://semver.org) bump: **patch** for fixes, **minor** for new features, **major** for breaking changes. Ask if unsure.
 - In `CHANGELOG.md`, rename `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD` (today's date) and add a new empty `## [Unreleased]` above it.
 - Set `"version": "X.Y.Z"` in `package.json` (add the field if it is missing; the first release is `0.1.0`).
+- Add the release to `app/utils/releaseNotes.ts` (newest first): version, date it goes live, a short title and one Spanish sentence per functional feature users will notice. Skip it if the change has nothing users can see.
 - Commit as `DRG-12 Release vX.Y.Z`.
+- Jira fix version: the version `X.Y.Z` must exist in Jira (the MCP cannot create it: ask the user to create it if needed), then set it as `fixVersions` on the ticket with `editJiraIssue`. Setting the fix version is part of the release; marking the Jira version as released is not (see step 8).
 - If the branch adds a migration under `supabase/migrations/`, say so explicitly: it must be applied to Supabase **before** merging, because the merge deploys.
 
 ## 8. Stop and report
 
 - Summarize what changed, how it was verified, the branch name and the release version.
-- **Do not push, open a PR, comment on the ticket or transition its status** unless the user asks. Offer these as next steps.
-- After the PR is merged, remind the user to tag the merge commit (`git tag vX.Y.Z && git push origin vX.Y.Z`). Only do it if asked.
+- **Do not push, open a PR, comment on the ticket or transition its status** unless the user asks (setting the fix version in step 7 is the only Jira write done by default). Offer these as next steps.
+- After the PR is merged, remind the user to tag the merge commit (`git tag vX.Y.Z && git push origin vX.Y.Z`) and to mark the version as released in Jira once it is deployed. Only do either if asked.
