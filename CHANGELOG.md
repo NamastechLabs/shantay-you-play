@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Groups have an intro text, edited by their members from the "Ver grupo" modal in the Werk Room. Requires migration `20261113000000_group_intro.sql`
+
 ### Changed
 
 - Help page, README and `docs/group-categories.md` describe group categories and group photos

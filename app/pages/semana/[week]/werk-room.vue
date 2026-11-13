@@ -18,6 +18,8 @@ interface TeamMember {
 interface Team {
   groupId: string
   name: string
+  /** Presentation text of the group, edited by its members */
+  intro: string | null
   /** The group's landscape photos, or null while none has been uploaded */
   photos: GroupPhotos | null
   members: TeamMember[]
@@ -46,7 +48,7 @@ async function loadTeams(participantId: string, groupCategoryIds: string[]): Pro
       .from('category_group_members')
       .select('category_id, group_id, participant_id, participant:participants!category_group_members_participant_id_fkey(name, drag_name, avatar_url)')
       .in('category_id', groupCategoryIds),
-    supabase.from('category_groups').select('id, name').in('category_id', groupCategoryIds),
+    supabase.from('category_groups').select('id, name, intro').in('category_id', groupCategoryIds),
     supabase
       .from('looks')
       .select('id, category_id, participant_id, image_url, image2_url, image3_url, image4_url, intro')
@@ -65,6 +67,7 @@ async function loadTeams(participantId: string, groupCategoryIds: string[]): Pro
     teams[mine.category_id] = {
       groupId: group.id,
       name: group.name,
+      intro: group.intro,
       photos: groupPhotos.data.find(photos => photos.group_id === group.id) ?? null,
       members: members.data
         .filter(member => member.group_id === mine.group_id)
@@ -256,6 +259,13 @@ const multipleCategories = computed(() => (data.value?.categories.length ?? 0) >
               @changed="refresh()"
             />
           </section>
+
+          <GroupIntroEditor
+            v-if="viewingTeam"
+            :group-id="viewingTeam.team.groupId"
+            :intro="viewingTeam.team.intro"
+            @changed="refresh()"
+          />
         </AppModal>
       </template>
     </template>

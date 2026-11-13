@@ -119,14 +119,14 @@ isOneToOne: false
                   ]
                 },"category_groups": {
                   Row: {
-                    "category_id": string,"created_at": string,"id": string,"name": string,"position": number,"updated_at": string
+                    "category_id": string,"created_at": string,"id": string,"intro": string | null,"name": string,"position": number,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "category_id": string,"created_at"?: string,"id"?: string,"name": string,"position": number,"updated_at"?: string
+                    "category_id": string,"created_at"?: string,"id"?: string,"intro"?: string | null,"name": string,"position": number,"updated_at"?: string
                   }
                   Update: {
-                    "category_id"?: string,"created_at"?: string,"id"?: string,"name"?: string,"position"?: number,"updated_at"?: string
+                    "category_id"?: string,"created_at"?: string,"id"?: string,"intro"?: string | null,"name"?: string,"position"?: number,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -383,6 +383,9 @@ isOneToOne: false
                            },
 "is_runway_contestant":
 { Args: { "p_participant_id": string,"p_runway_id": string }; Returns: boolean
+                           },
+"set_group_intro":
+{ Args: { "p_group_id": string,"p_intro": string }; Returns: undefined
                            },
 "participant_group_id":
 { Args: { "p_category_id": string,"p_participant_id": string }; Returns: string

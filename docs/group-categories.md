@@ -1,6 +1,6 @@
 # Group categories
 
-Status: **implemented** (DRG-5, released in 0.2.0). Migrations: `20261111000000_group_categories.sql` and `20261111000100_group_photos.sql`.
+Status: **implemented** (DRG-5, released in 0.2.0). Migrations: `20261111000000_group_categories.sql`, `20261111000100_group_photos.sql` and, later, `20261113000000_group_intro.sql`.
 
 ## Goal
 
@@ -32,7 +32,8 @@ Each group has up to 4 landscape photos (**16:9 or 5:3**, with a 3% tolerance) s
 ## Schema
 
 - `categories.kind` (`category_kind` enum).
-- `category_groups`: `category_id`, `position` (1 or 2), `name`. Only allowed on group categories (trigger `enforce_group_category`).
+- `category_groups`: `category_id`, `position` (1 or 2), `name`, `intro` (free text, up to 1000 characters). Only allowed on group categories (trigger `enforce_group_category`).
+- `set_group_intro(group_id, intro)` (`SECURITY DEFINER`): the only way members write the group `intro`, and only during `werk_room`. Members cannot update `category_groups` directly, so they cannot rename the group. The admin has no field for it.
 - `category_group_members`: `category_id`, `group_id`, `participant_id`, unique per category and participant. Only `concursante`s.
 - `category_group_votes` (jury) and `category_queen_votes` (queens): one ballot per voter and category, editable while `voting`.
 - `category_group_photos`: see above.
@@ -48,6 +49,7 @@ Each group has up to 4 landscape photos (**16:9 or 5:3**, with a 3% tolerance) s
 | Admin: groups side panel | `app/components/AdminCategoryGroups.vue`, `app/components/AppDrawer.vue` |
 | Admin: "Grupos" tab (photos) | `app/pages/admin/runways/[id]/looks.vue`, `app/components/GroupPhotosEditor.vue` |
 | Werk Room: badge, "Ver grupo", teammates' looks | `app/pages/semana/[week]/werk-room.vue` |
+| Group intro (inside the "Ver grupo" modal) | `app/components/GroupIntroEditor.vue` |
 | Voting | `app/components/GroupCategoryVote.vue`, used by `app/pages/runways/[id]/vote.vue` |
 | Results | `app/components/GroupCategoryResult.vue`, used by `app/pages/runways/[id]/index.vue` |
 | Photos on runway and voting pages | `app/components/CategoryGroupPhotos.vue`, `app/components/GroupPhotosCollage.vue` |
