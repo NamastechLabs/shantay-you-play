@@ -211,7 +211,7 @@ const multipleCategories = computed(() => (data.value?.categories.length ?? 0) >
             />
             <li v-if="category.kind === 'group' && data.teams[category.id]" class="team__looks">
               <h2 :id="`team-looks-${category.id}`" class="team__looks-title">
-                Looks individuales
+                El resto de reinas de la banda
               </h2>
               <p v-if="!teammates(category.id).length" class="hint">
                 Aún no hay más integrantes en tu grupo.
