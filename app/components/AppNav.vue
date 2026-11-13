@@ -92,6 +92,11 @@ async function signOut(): Promise<void> {
             </NuxtLink>
           </li>
           <li>
+            <NuxtLink to="/novedades" class="user-menu__item" @click="closeMenu()">
+              Novedades
+            </NuxtLink>
+          </li>
+          <li>
             <button type="button" class="user-menu__item" @click="signOut">
               Salir
             </button>
