@@ -2,7 +2,7 @@ import type { InjectionKey } from 'vue'
 import type { Tables } from '~/types/database.types'
 
 export type AdminRunway = Pick<Tables<'runways'>, 'id' | 'week_number' | 'runway_date' | 'status'>
-export type AdminCategory = Pick<Tables<'categories'>, 'id' | 'title' | 'intro_text'>
+export type AdminCategory = Pick<Tables<'categories'>, 'id' | 'title' | 'intro_text' | 'kind'>
 
 export interface AdminRunwayContext {
   runway: ComputedRef<AdminRunway>

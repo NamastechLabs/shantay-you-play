@@ -3,7 +3,7 @@ import type { Tables } from '~/types/database.types'
 import type { BreadcrumbItem } from '~/components/AppBreadcrumb.vue'
 import type { JuryMember } from '~/components/JuryLooks.vue'
 
-type Category = Pick<Tables<'categories'>, 'id' | 'title' | 'intro_text'>
+type Category = Pick<Tables<'categories'>, 'id' | 'title' | 'intro_text' | 'kind'>
 type Runway = Pick<Tables<'runways'>, 'id' | 'week_number' | 'runway_date' | 'status'> & { categories: Category[] }
 
 interface RunwayLook {
@@ -36,7 +36,7 @@ const { data, error: loadError, refresh } = await useAsyncData(
   async (): Promise<RunwayData | null> => {
     const runway = await supabase
       .from('runways')
-      .select('id, week_number, runway_date, status, categories(id, title, intro_text)')
+      .select('id, week_number, runway_date, status, categories(id, title, intro_text, kind)')
       .eq('id', runwayId)
       .order('created_at', { referencedTable: 'categories', ascending: true })
       .maybeSingle()
@@ -171,6 +171,15 @@ function showAdjacentLook(step: 1 | -1): void {
 
     <RunwayCategories v-if="!hasSeveralCategories" :categories="runway.categories" />
 
+    <template v-if="runway.status === 'reveal' || runway.status === 'closed'">
+      <GroupCategoryResult
+        v-for="category in runway.categories.filter(candidate => candidate.kind === 'group')"
+        :key="category.id"
+        :category="category"
+        :show-title="hasSeveralCategories"
+      />
+    </template>
+
     <template v-if="hasAnyLooks">
       <section v-for="section in sections" :key="section.category.id" class="section">
         <template v-if="hasSeveralCategories">
@@ -182,6 +191,8 @@ function showAdjacentLook(step: 1 | -1): void {
 
         <!-- The jury walks first: its looks set the bar and are not voted on -->
         <JuryLooks :members="section.jury" title="El jurado" :level="hasSeveralCategories ? 3 : 2" />
+
+        <CategoryGroupPhotos v-if="section.category.kind === 'group'" :category-id="section.category.id" :level="hasSeveralCategories ? 4 : 3" />
 
         <component :is="hasSeveralCategories ? 'h3' : 'h2'" v-if="section.jury.length" class="queens-title">
           Las reinas

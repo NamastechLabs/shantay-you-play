@@ -16,7 +16,7 @@ const { data, error: loadError, refresh } = await useAsyncData(`admin-runway-${r
 
   const categories = await supabase
     .from('categories')
-    .select('id, title, intro_text')
+    .select('id, title, intro_text, kind')
     .eq('runway_id', runwayId)
     .order('created_at', { ascending: true })
   if (categories.error) throw categories.error

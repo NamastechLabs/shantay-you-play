@@ -41,17 +41,29 @@ export function useParticipantFiles() {
     }
   }
 
-  /** Lists every look file of a category. Call it BEFORE deleting the category row. */
+  /** Lists the photo files of the groups of a category. Call it BEFORE deleting the groups or the category. */
+  async function listGroupPhotoFiles(categoryId: string) {
+    const { data, error } = await supabase
+      .from('category_group_photos')
+      .select('image_url, image2_url, image3_url, image4_url')
+      .eq('category_id', categoryId)
+    if (error) throw error
+
+    return { looks: toPaths(config.runwayLooksBucket, data.flatMap(row => groupPhotoUrls(row))), avatars: [] as string[] }
+  }
+
+  /** Lists every look and group photo file of a category. Call it BEFORE deleting the category row. */
   async function listCategoryFiles(categoryId: string) {
-    const [looks, juryLooks] = await Promise.all([
+    const [looks, juryLooks, groupFiles] = await Promise.all([
       supabase.from('looks').select(QUEEN_LOOK_IMAGES).eq('category_id', categoryId),
       supabase.from('jury_looks').select(QUEEN_LOOK_IMAGES).eq('category_id', categoryId),
+      listGroupPhotoFiles(categoryId),
     ])
     if (looks.error) throw looks.error
     if (juryLooks.error) throw juryLooks.error
 
     return {
-      looks: toPaths(config.runwayLooksBucket, [...looks.data, ...juryLooks.data].flatMap(lookImageUrls)),
+      looks: [...toPaths(config.runwayLooksBucket, [...looks.data, ...juryLooks.data].flatMap(lookImageUrls)), ...groupFiles.looks],
       avatars: [],
     }
   }
@@ -67,5 +79,5 @@ export function useParticipantFiles() {
     )
   }
 
-  return { listParticipantFiles, listCategoryFiles, removeFiles }
+  return { listParticipantFiles, listCategoryFiles, listGroupPhotoFiles, removeFiles }
 }
