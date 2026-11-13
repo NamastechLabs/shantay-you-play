@@ -28,7 +28,7 @@ export const HELP_COPY = {
   rolesTitle: 'Dos tipos de reina',
   roles: [
     { title: 'Concursante', text: 'Sube sus looks, desfila, vota y compite por la corona de la semana.' },
-    { title: 'Jurado', text: 'Gestiona semanas, categorías y participantes, y cambia la etapa de cada pasarela. También desfila, pero sus looks no se votan ni puntúan.' },
+    { title: 'Jurado', text: 'Gestiona semanas, categorías, grupos y participantes, y cambia la etapa de cada pasarela. También desfila, pero sus looks no se votan ni puntúan. En las categorías grupales vota qué grupo gana.' },
   ] satisfies HelpFact[],
 
   stagesTitle: 'Las etapas de cada semana',
@@ -44,7 +44,7 @@ export const HELP_COPY = {
       icon: '🧵',
       title: 'Werk Room',
       who: 'Concursantes',
-      text: 'Hora de coser, pegar y brillar. Sube hasta 4 fotos de tu look (frente, espalda, reveal y una extra) y escribe tu presentación. La foto de frente es obligatoria y puedes cambiarlo todo mientras el Werk Room siga abierto. Aquí solo ves tus propios looks: ¡el misterio es parte del show!',
+      text: 'Hora de coser, pegar y brillar. Sube hasta 4 fotos de tu look (frente, espalda, reveal y una extra) y escribe tu presentación. La foto de frente es obligatoria y puedes cambiarlo todo mientras el Werk Room siga abierto. Aquí solo ves tus propios looks (y, en una categoría grupal, los de tu grupo): ¡el misterio es parte del show!',
     },
     {
       icon: '👠',
@@ -56,7 +56,7 @@ export const HELP_COPY = {
       icon: '🗳️',
       title: 'Votación',
       who: 'Todas',
-      text: 'Eliges tu Top 3 de reinas (no de looks sueltos): la primera que toques será tu Top 1. No puedes votarte a ti misma, y puedes cambiar tu voto las veces que quieras mientras la votación siga abierta. Los votos de cada persona son secretos.',
+      text: 'Eliges tu Top 3 de reinas (no de looks sueltos): la primera que toques será tu Top 1. No puedes votarte a ti misma, y puedes cambiar tu voto las veces que quieras mientras la votación siga abierta. Los votos de cada persona son secretos. Si hay una categoría grupal, también se vota por grupos: lo cuenta la sección «Categorías grupales».',
     },
     {
       icon: '🎭',
@@ -71,6 +71,17 @@ export const HELP_COPY = {
       text: 'La semana pasa al archivo. Aparece el ranking completo con la ganadora coronada, y tus puntos y tu puesto se guardan en «Mis looks».',
     },
   ] satisfies HelpStage[],
+
+  groupTitle: 'Categorías grupales',
+  groupIntro: 'A veces una categoría se juega por equipos: las reinas se reparten en dos grupos que compiten entre sí. Esto es lo que cambia:',
+  group: [
+    { title: 'Tu grupo', text: 'El jurado te asigna a uno de los dos grupos. En el Werk Room verás la insignia «Categoría grupal» y el nombre de tu grupo, y con «Ver grupo» abres su ficha.' },
+    { title: 'Las fotos del grupo', text: 'Entre todas las integrantes pueden subir hasta 4 fotos apaisadas (16:9 o 5:3) del grupo. Se muestran juntas para ver el conjunto y cualquiera de tu grupo puede cambiarlas mientras el Werk Room siga abierto.' },
+    { title: 'Tus compañeras', text: 'Debajo de tu look, en «El resto de reinas de la banda», ves los looks de tus compañeras de grupo. Los del otro grupo no los verás hasta que empiece la votación.' },
+    { title: 'El voto del jurado', text: 'Solo el jurado vota qué grupo gana la categoría. Si hay empate, ganan los dos grupos.' },
+    { title: 'Tu voto de reina', text: 'Además eliges tu Top 1 entre las reinas del grupo rival. No puedes votar a tu propio grupo, y puedes cambiar tu voto mientras la votación siga abierta.' },
+    { title: 'Los resultados', text: 'Desde la revelación se ven el grupo ganador y la reina Top 1 de la categoría, la más votada por el grupo rival. Si hay empate, comparten la victoria. Estos votos van aparte del Top 3 de la semana.' },
+  ] satisfies HelpFact[],
 
   scoringTitle: 'Cómo se cuentan los puntos',
   scoringIntro: 'Cada voto reparte puntos según el lugar en que pongas a cada reina:',
@@ -118,6 +129,7 @@ export const HELP_COPY = {
     { title: 'Entré con otro correo y me rechazó. ¿Qué hago?', text: 'Inicia sesión con el mismo correo con el que te registró el jurado. Si quieres usar otro, pídele que cambie tu correo en Participantes.' },
     { title: 'Mi sesión se queda en «Confirmando sesión…»', text: 'Suele pasar en el navegador interno de apps como Instagram o WhatsApp. Abre el enlace en Safari o Chrome e inténtalo de nuevo.' },
     { title: '¿Cómo comparto mi look en el grupo de WhatsApp?', text: 'Cuando la semana esté en la pasarela, pulsa «A desfilar» en la página de inicio desde tu móvil. Se abre el menú de compartir con todas las fotos de tu look y tu presentación: elige WhatsApp y el grupo. En el ordenador solo se copia el texto, así que usa el móvil para enviar las fotos. Si hay varias fotos, WhatsApp puede mostrar la presentación solo en la primera, o no mostrarla.' },
+    { title: 'Mi foto de grupo no se sube', text: 'Las fotos de grupo deben ser apaisadas, en formato 16:9 o 5:3. Recórtala con el editor de tu móvil y vuelve a subirla.' },
     { title: '¿Puedo cambiar mi nombre drag?', text: 'Claro, en «Mi perfil». Es el nombre que verán todas en la pasarela y en el Top 3.' },
     { title: '¿Por qué no veo la semana nueva?', text: 'Porque sigue en borrador. Cuando el jurado la pase al Werk Room, aparecerá.' },
   ] satisfies HelpFact[],

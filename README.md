@@ -170,6 +170,8 @@ update public.participants set role = 'jurado' where email = 'someone@gmail.com'
 
 A **runway** is one week (date and time + status) with one or more **categories**; each queen uploads one look per category and voters rank a Top 3 of queens for the whole runway. Runway lifecycle: `draft` → `werk_room` → `runway` → `voting` → `reveal` → `closed`. During `reveal` the homepage animates the Top 3 (via the `runway_top_three` function); individual votes are visible to everyone once a runway is `closed`.
 
+**Group categories:** a category can be `individual` (default) or `group`. A group category has exactly two groups, and the judges assign `concursante`s to them from **Editar grupos** in the admin (a queen is in one group per category). Voting is separate from the runway Top 3: only judges vote the winning group (a draw makes both win), and each queen votes one Top 1 among the queens of the rival group (the most voted share the win on a tie). Each group also has up to 4 landscape photos (16:9 or 5:3) shown together; members upload them during `werk_room` and judges until voting opens. Results come from `category_group_result` and `category_queen_result`, public from `reveal`. Details in [docs/group-categories.md](docs/group-categories.md).
+
 **Sharing your look ("A desfilar"):** while a runway is in `runway` (pasarela), each `concursante` sees an **A desfilar** button in the homepage hero card. It shares her own look for the week (all its photos, front/back/reveal/extra, plus the intro) through the native share sheet so she can post it in the WhatsApp group where everyone comments. If the week has several categories, each intro is prefixed with its category title. Implemented in [`useShareLooks`](app/composables/useShareLooks.ts) with the Web Share API (level 2, files):
 
 - Needs **HTTPS** (or `localhost`) and a user tap. Supported in Chrome on Android and Safari on iOS.
@@ -269,8 +271,8 @@ The route reads with the service-role key, which bypasses RLS: keep the token se
 app/
   pages/          login, confirm (OAuth callback), onboarding (drag name), index
   middleware/     drag-name.global.ts: forces onboarding until drag_name is set
-  composables/    useCurrentParticipant, useLookUpload, useShareLooks (native share of a queen's look)
-  utils/          compressImage (client-side resize → WebP), toErrorMessage
+  composables/    useCurrentParticipant, useLookUpload, useShareLooks (native share of a queen's look), useGroupPhotos (group photo upload)
+  utils/          compressImage (client-side resize → WebP), toErrorMessage, groupPhotos (landscape ratio check)
   types/          database.types.ts (generated Supabase types)
 supabase/
   migrations/     SQL migrations (source of truth for the schema)
@@ -278,7 +280,7 @@ supabase/
 nuxt.config.ts    @nuxtjs/supabase config (auth redirects, types path)
 ```
 
-Runway photos are resized to max 1600px and re-encoded as WebP in the browser before upload, then stored at `runway-looks/{category_id}/{participant_id}/{uuid}.webp`.
+Runway photos are resized to max 1600px and re-encoded as WebP in the browser before upload, then stored at `runway-looks/{category_id}/{participant_id}/{uuid}.webp`. Group photos use the same bucket under `runway-looks/{category_id}/{group_id}/{uuid}.webp`.
 
 ---
 

@@ -68,6 +68,19 @@ useSeoMeta({ robots: 'noindex' })
       </ol>
     </section>
 
+    <section class="help__section" aria-labelledby="help-group">
+      <h2 id="help-group">
+        {{ copy.groupTitle }}
+      </h2>
+      <p>{{ copy.groupIntro }}</p>
+      <ul class="help__grid">
+        <li v-for="item in copy.group" :key="item.title" class="card">
+          <h3>{{ item.title }}</h3>
+          <p>{{ item.text }}</p>
+        </li>
+      </ul>
+    </section>
+
     <section class="help__section" aria-labelledby="help-scoring">
       <h2 id="help-scoring">
         {{ copy.scoringTitle }}

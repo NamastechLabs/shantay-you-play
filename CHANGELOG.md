@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Help page, README and `docs/group-categories.md` describe group categories and group photos
+
 ## [0.2.0] - 2026-11-11
 
 ### Added
