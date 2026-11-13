@@ -23,8 +23,8 @@ useSeoMeta({ robots: 'noindex' })
       {{ copy.lead }}
     </p>
 
-    <section class="help__section" aria-labelledby="help-game">
-      <h2 id="help-game">
+    <section class="help__section" aria-labelledby="juego">
+      <h2 id="juego">
         {{ copy.gameTitle }}
       </h2>
       <p>{{ copy.gameIntro }}</p>
@@ -37,8 +37,8 @@ useSeoMeta({ robots: 'noindex' })
       </ol>
     </section>
 
-    <section class="help__section" aria-labelledby="help-roles">
-      <h2 id="help-roles">
+    <section class="help__section" aria-labelledby="roles">
+      <h2 id="roles">
         {{ copy.rolesTitle }}
       </h2>
       <ul class="help__grid">
@@ -49,8 +49,8 @@ useSeoMeta({ robots: 'noindex' })
       </ul>
     </section>
 
-    <section class="help__section" aria-labelledby="help-stages">
-      <h2 id="help-stages">
+    <section class="help__section" aria-labelledby="etapas">
+      <h2 id="etapas">
         {{ copy.stagesTitle }}
       </h2>
       <p>{{ copy.stagesIntro }}</p>
@@ -68,8 +68,8 @@ useSeoMeta({ robots: 'noindex' })
       </ol>
     </section>
 
-    <section class="help__section" aria-labelledby="help-group">
-      <h2 id="help-group">
+    <section class="help__section" aria-labelledby="categorias-grupales">
+      <h2 id="categorias-grupales">
         {{ copy.groupTitle }}
       </h2>
       <p>{{ copy.groupIntro }}</p>
@@ -81,8 +81,8 @@ useSeoMeta({ robots: 'noindex' })
       </ul>
     </section>
 
-    <section class="help__section" aria-labelledby="help-scoring">
-      <h2 id="help-scoring">
+    <section class="help__section" aria-labelledby="puntos">
+      <h2 id="puntos">
         {{ copy.scoringTitle }}
       </h2>
       <p>{{ copy.scoringIntro }}</p>
@@ -97,8 +97,8 @@ useSeoMeta({ robots: 'noindex' })
       </p>
     </section>
 
-    <section class="help__section" aria-labelledby="help-security">
-      <h2 id="help-security">
+    <section class="help__section" aria-labelledby="seguridad">
+      <h2 id="seguridad">
         {{ copy.securityTitle }}
       </h2>
       <p>{{ copy.securityIntro }}</p>
@@ -115,8 +115,8 @@ useSeoMeta({ robots: 'noindex' })
       </div>
     </section>
 
-    <section class="help__section" aria-labelledby="help-faq">
-      <h2 id="help-faq">
+    <section class="help__section" aria-labelledby="dudas">
+      <h2 id="dudas">
         {{ copy.faqTitle }}
       </h2>
       <div class="help__faq">
@@ -137,6 +137,11 @@ useSeoMeta({ robots: 'noindex' })
 .help {
   display: grid;
   gap: var(--space-6);
+}
+
+.help__section h2 {
+  // Keeps the title off the screen edge when a link jumps to it (e.g. /help#categorias-grupales)
+  scroll-margin-top: var(--space-5);
 }
 
 .help__section {
