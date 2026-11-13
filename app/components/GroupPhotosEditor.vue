@@ -191,11 +191,16 @@ async function save(): Promise<void> {
 
 .group-photos__slots {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
+  // Two columns on phones, so the big photo stays in view while choosing
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
   padding: 0;
   margin: 0;
   list-style: none;
+
+  @media (min-width: 40rem) {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
+  }
 }
 
 .group-photos__slot {
@@ -243,6 +248,7 @@ async function save(): Promise<void> {
 
 .group-photos__actions {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-1);
   align-items: center;
 }
