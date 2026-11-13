@@ -225,27 +225,32 @@ const multipleCategories = computed(() => (data.value?.categories.length ?? 0) >
             />
           </section>
 
-          <ul v-if="viewingTeam" class="team__members">
-            <li v-for="member in viewingTeam.team.members" :key="member.id" class="team__member">
-              <div class="team__who">
-                <span class="avatar team__avatar">
-                  <img v-if="member.avatar" :src="member.avatar" alt="" class="avatar__img">
-                  <span v-else class="avatar__initial" aria-hidden="true">{{ member.name.charAt(0).toUpperCase() }}</span>
-                </span>
-                <span class="team__name">{{ member.name }}<template v-if="member.isMe"> (tú)</template></span>
-              </div>
-              <LookGallery
-                v-if="member.look"
-                class="team__gallery"
-                :title="member.name"
-                :photos="lookPhotos(member.look)"
-                :intro="member.look.intro"
-              />
-              <p v-else class="hint">
-                {{ member.isMe ? 'Aún no has subido tu look.' : 'Aún no ha subido su look.' }}
-              </p>
-            </li>
-          </ul>
+          <section v-if="viewingTeam" class="team__photos" aria-labelledby="team-looks-title">
+            <h3 id="team-looks-title">
+              Looks individuales
+            </h3>
+            <ul class="team__members">
+              <li v-for="member in viewingTeam.team.members" :key="member.id" class="team__member">
+                <div class="team__who">
+                  <span class="avatar team__avatar">
+                    <img v-if="member.avatar" :src="member.avatar" alt="" class="avatar__img">
+                    <span v-else class="avatar__initial" aria-hidden="true">{{ member.name.charAt(0).toUpperCase() }}</span>
+                  </span>
+                  <span class="team__name">{{ member.name }}<template v-if="member.isMe"> (tú)</template></span>
+                </div>
+                <LookGallery
+                  v-if="member.look"
+                  class="team__gallery"
+                  :title="member.name"
+                  :photos="lookPhotos(member.look)"
+                  :intro="member.look.intro"
+                />
+                <p v-else class="hint">
+                  {{ member.isMe ? 'Aún no has subido tu look.' : 'Aún no ha subido su look.' }}
+                </p>
+              </li>
+            </ul>
+          </section>
         </AppModal>
       </template>
     </template>
