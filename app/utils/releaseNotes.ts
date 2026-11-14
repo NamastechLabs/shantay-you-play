@@ -18,6 +18,15 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.4.0',
+    date: '2026-11-14',
+    title: 'Vídeo de intro de la pasarela',
+    features: [
+      'Las juezas pueden subir el vídeo de intro de la semana desde el área de administración, y reemplazarlo cuando quieran.',
+      'El área de administración estrena pestañas «Semanas» y «Vídeo de intro», con una tabla de semanas en la que puedes pulsar cualquier fila.',
+    ],
+  },
+  {
     version: '0.3.2',
     date: '2026-11-14',
     title: 'Ayuda con índice y nuevo logo',

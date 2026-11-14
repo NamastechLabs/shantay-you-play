@@ -5,6 +5,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-14
+
+### Added
+
+- Admin area to upload the weekly runway intro video: always stored as `intro.mp4` in the `runway-intro` bucket, overwriting the previous one; MP4, 9:16, max 50 MB. Requires migration `20261114000200_runway_intro_select_policy.sql` (DRG-6)
+
+### Changed
+
+- Admin home redesign: "Semanas" and "Vídeo de intro" tabs, a weeks table with clickable rows, and a two-column intro video card. Tabs everywhere now use an underline style instead of pills (DRG-6)
+
 ## [0.3.2] - 2026-11-14
 
 ### Changed
