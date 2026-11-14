@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-14
+
 ### Added
 
 - Group categories are decided by ranking votes: each queen ranks all the queens of the rival band and each judge ranks all the contestants, with complete ballots submitted through `submit_ranking_ballot`. The final ranking from `category_ranking_result` averages both votes (50/50, normalized so bands of different sizes are comparable) and adds a 0.2 bonus for the band that won the judges' band vote, shown with 3 decimals on the results screen. In the reveal, a runway with a group category first reveals the winning band (same roulette and confetti effect as the Top 3; a draw shows both) and a judge-only button then reveals the Top 3 of the week for everyone, while the winning band slides down below it and takes the full width. The Top 3 and the group ranking stay hidden in the database until then (new `runways.top_three_revealed`, `reveal_runway_top_three`, `runway_results_visible`; requires migration `20261114000100_runway_reveal_stage.sql`). The vote page guides voters through a stepper with free navigation (jury: best band, order of the queens, Top 3 pre-filled from that order; contestants: order of the rival band, Top 3). New help page `/votacion-bandas` explains it with a worked example, linked from the voting and results screens and from the help page. Requires migration `20261114000000_group_ranking_votes.sql` (DRG-8)
