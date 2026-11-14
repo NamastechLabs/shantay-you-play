@@ -29,7 +29,7 @@ export const HELP_COPY = {
   rolesTitle: 'Dos tipos de reina',
   roles: [
     { title: 'Concursante', text: 'Sube sus looks, desfila, vota y compite por la corona de la semana.' },
-    { title: 'Jurado', text: 'Gestiona semanas, categorías, grupos y participantes, y cambia la etapa de cada pasarela. También desfila, pero sus looks no se votan ni puntúan. En las categorías grupales vota qué grupo gana.' },
+    { title: 'Jurado', text: 'Gestiona semanas, categorías, grupos y participantes, sube el vídeo de introducción de la pasarela (vertical 9:16, MP4, máximo 50 MB; reemplaza al anterior) y cambia la etapa de cada pasarela. También desfila, pero sus looks no se votan ni puntúan. En las categorías grupales vota qué grupo gana.' },
   ] satisfies HelpFact[],
 
   stagesTitle: 'Las etapas de cada semana',

@@ -12,6 +12,12 @@ const UNIQUE_VIOLATION = '23505'
 
 const supabase = useSupabaseClient()
 
+const TABS = [
+  { id: 'weeks', label: 'Semanas' },
+  { id: 'intro', label: 'Vídeo de intro' },
+] as const
+const tab = ref<(typeof TABS)[number]['id']>('weeks')
+
 const { data: runways, error: loadError, refresh } = await useAsyncData(
   'admin-runways',
   async (): Promise<RunwaySummary[]> => {
@@ -77,10 +83,40 @@ async function createRunway(): Promise<void> {
     <AppBreadcrumb :items="[{ label: 'Inicio', to: '/' }, { label: 'Panel del jurado' }]" />
 
     <header class="page-header">
-      <h1>Panel del jurado</h1>
+      <div class="page-header__titles">
+        <h1>Panel del jurado</h1>
+        <p class="hint">
+          Gestiona las semanas y el vídeo de introducción de tu pasarela.
+        </p>
+      </div>
     </header>
 
-    <section class="section" aria-labelledby="runways-title">
+    <div class="tabs" role="tablist" aria-label="Secciones del panel">
+      <button
+        v-for="item in TABS"
+        :id="`admin-tab-${item.id}`"
+        :key="item.id"
+        type="button"
+        role="tab"
+        class="tabs__tab"
+        :class="{ 'tabs__tab--active': tab === item.id }"
+        :aria-selected="tab === item.id"
+        :aria-controls="`admin-panel-${item.id}`"
+        :tabindex="tab === item.id ? 0 : -1"
+        @click="tab = item.id"
+      >
+        {{ item.label }}
+        <span v-if="item.id === 'weeks' && runways" class="tabs__count">{{ runways.length }}</span>
+      </button>
+    </div>
+
+    <section
+      v-show="tab === 'weeks'"
+      id="admin-panel-weeks"
+      class="section"
+      role="tabpanel"
+      aria-labelledby="admin-tab-weeks"
+    >
       <div class="section-header">
         <h2 id="runways-title">
           Semanas
@@ -96,21 +132,58 @@ async function createRunway(): Promise<void> {
           Reintentar
         </button>
       </p>
-      <ul v-else-if="runways?.length" class="row-list">
-        <li v-for="runway in runways" :key="runway.id">
-          <NuxtLink :to="`/admin/runways/${runway.id}`" class="row row--link">
-            <span class="row__main">
-              <span class="row__title">Semana {{ runway.week_number }} · {{ runway.categories.length ? runwayTitle(runway.categories) : 'Sin categorías' }}</span>
-              <span class="muted">{{ formatRunwayDate(runway.runway_date) }}</span>
-            </span>
-            <StatusBadge :status="runway.status" />
-          </NuxtLink>
-        </li>
-      </ul>
+      <div v-else-if="runways?.length" class="table-card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">
+                Semana
+              </th>
+              <th scope="col">
+                Temática
+              </th>
+              <th scope="col">
+                Fecha
+              </th>
+              <th scope="col">
+                Estado
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="runway in runways" :key="runway.id">
+              <td>
+                <NuxtLink :to="`/admin/runways/${runway.id}`" class="table__link">
+                  Semana {{ runway.week_number }}
+                </NuxtLink>
+              </td>
+              <td>{{ runway.categories.length ? runwayTitle(runway.categories) : 'Sin categorías' }}</td>
+              <td>
+                <span class="table__stack">
+                  <span>{{ formatRunwayDay(runway.runway_date) }}</span>
+                  <span class="muted">{{ formatRunwayTime(runway.runway_date) }}</span>
+                </span>
+              </td>
+              <td>
+                <StatusBadge :status="runway.status" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       <p v-else class="empty">
         Aún no hay pasarelas.
       </p>
     </section>
+
+    <div
+      v-if="tab === 'intro'"
+      id="admin-panel-intro"
+      role="tabpanel"
+      aria-labelledby="admin-tab-intro"
+    >
+      <AdminIntroVideo />
+    </div>
 
     <AppModal :open="modalOpen" title="Nueva pasarela" @close="modalOpen = false">
       <form class="form" @submit.prevent="createRunway">
