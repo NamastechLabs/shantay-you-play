@@ -78,10 +78,14 @@ export const HELP_COPY = {
     { title: 'Tu grupo', text: 'El jurado te asigna a uno de los dos grupos. En el Werk Room verás la insignia «Categoría grupal» y el nombre de tu grupo, y con «Ver grupo» abres su ficha.' },
     { title: 'Las fotos del grupo', text: 'Entre todas las integrantes pueden subir hasta 4 fotos apaisadas (16:9 o 5:3) del grupo. Se muestran juntas para ver el conjunto y cualquiera de tu grupo puede cambiarlas mientras el Werk Room siga abierto.' },
     { title: 'Tus compañeras', text: 'Debajo de tu look, en «El resto de reinas de la banda», ves los looks de tus compañeras de grupo. Los del otro grupo no los verás hasta que empiece la votación.' },
-    { title: 'El voto del jurado', text: 'Solo el jurado vota qué grupo gana la categoría. Si hay empate, ganan los dos grupos.' },
-    { title: 'Tu voto de reina', text: 'Además eliges tu Top 1 entre las reinas del grupo rival. No puedes votar a tu propio grupo, y puedes cambiar tu voto mientras la votación siga abierta.' },
-    { title: 'Los resultados', text: 'Desde la revelación se ven el grupo ganador y la reina Top 1 de la categoría, la más votada por el grupo rival. Si hay empate, comparten la victoria. Estos votos van aparte del Top 3 de la semana.' },
+    { title: 'Tu votación, paso a paso', text: 'En la página de votación un indicador de pasos te guía: el jurado vota la mejor banda, ordena a las reinas y elige su Top 3 (que se propone con las tres primeras de su orden); las concursantes ordenan a la banda rival y eligen su Top 3. Puedes ir a cualquier paso en cualquier orden: una marca ✓ indica los que ya has guardado.' },
+    { title: 'Fase 1: el voto del jurado', text: 'El jurado vota qué banda ha trabajado mejor. Si hay empate, las dos bandas ganan. Cada integrante de la banda ganadora recibe un regalo en su nota final.' },
+    { title: 'Fase 2: tu voto cruzado', text: 'Ordenas a todas las reinas de la banda rival, de mejor a peor. El voto debe estar completo y puedes cambiarlo mientras la votación siga abierta. No puedes votar a tu propia banda.' },
+    { title: 'Fase 3: la pasarela del jurado', text: 'Cada juez ordena a todas las concursantes según su look individual. Se hace la media de sus notas.' },
+    { title: 'Los resultados', text: 'Desde la revelación se ve la clasificación final con la nota de cada fase, el regalo y la nota final de cada reina. Estos votos van aparte del Top 3 de la semana.' },
   ] satisfies HelpFact[],
+
+  groupHelpLink: 'Ver cómo funciona la votación de las bandas',
 
   scoringTitle: 'Cómo se cuentan los puntos',
   scoringIntro: 'Cada voto reparte puntos según el lugar en que pongas a cada reina:',

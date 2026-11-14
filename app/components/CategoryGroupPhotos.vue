@@ -7,6 +7,12 @@ const props = defineProps<{
 
 const supabase = useSupabaseClient()
 
+interface GroupWithPhotos {
+  id: string
+  name: string
+  urls: string[]
+}
+
 // RLS only returns the photos the signed-in person may see (from 'voting' on for everyone but the group itself)
 const { data } = await useAsyncData(`category-group-photos-${props.categoryId}`, async () => {
   const [groups, photos] = await Promise.all([
@@ -18,20 +24,37 @@ const { data } = await useAsyncData(`category-group-photos-${props.categoryId}`,
 
   return groups.data
     .map(group => ({ ...group, urls: groupPhotoUrls(photos.data.find(row => row.group_id === group.id)) }))
-    .filter(group => group.urls.length > 0)
+    .filter(group => group.urls.length > 0) as GroupWithPhotos[]
 })
+
+// Same pattern as the looks: the card shows the first photo with a counter, the dialog shows all of them
+const fullGroup = ref<GroupWithPhotos | null>(null)
+const dialogPhotos = computed(() => (fullGroup.value?.urls ?? []).map((url, index) => ({ url, label: `Foto ${index + 1}` })))
 </script>
 
 <template>
   <div v-if="data?.length" class="group-photos-view">
-    <figure v-for="group in data" :key="group.id" class="group-photos-view__group">
-      <GroupPhotosCollage :urls="group.urls" :name="group.name" />
-      <figcaption>
-        <component :is="`h${level ?? 3}`" class="group-photos-view__name">
-          {{ group.name }}
-        </component>
-      </figcaption>
-    </figure>
+    <article v-for="group in data" :key="group.id" class="look-card">
+      <button type="button" class="look-card__open" :aria-label="`Ver las fotos del grupo ${group.name}`" @click="fullGroup = group">
+        <LookCardPhoto
+          :src="group.urls[0]!"
+          :alt="`Foto del grupo ${group.name}`"
+          :count="group.urls.length"
+          landscape
+        />
+      </button>
+      <!-- A heading cannot live inside a button, so the name sits under the photo -->
+      <component :is="`h${level ?? 3}`" class="look-card__body group-photos-view__name">
+        {{ group.name }}
+      </component>
+    </article>
+
+    <LookGalleryDialog
+      :open="fullGroup !== null"
+      :title="fullGroup?.name ?? ''"
+      :photos="dialogPhotos"
+      @close="fullGroup = null"
+    />
   </div>
 </template>
 
@@ -43,12 +66,6 @@ const { data } = await useAsyncData(`category-group-photos-${props.categoryId}`,
   @media (min-width: 64rem) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-}
-
-.group-photos-view__group {
-  display: grid;
-  gap: var(--space-2);
-  margin: 0;
 }
 
 .group-photos-view__name {

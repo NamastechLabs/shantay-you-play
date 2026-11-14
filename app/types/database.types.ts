@@ -171,6 +171,40 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"category_ranking_votes": {
+                  Row: {
+                    "category_id": string,"created_at": string,"id": string,"participant_id": string,"rank": number,"stage": Database["public"]["Enums"]["ranking_stage"],"updated_at": string,"voter_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "category_id": string,"created_at"?: string,"id"?: string,"participant_id": string,"rank": number,"stage": Database["public"]["Enums"]["ranking_stage"],"updated_at"?: string,"voter_id": string
+                  }
+                  Update: {
+                    "category_id"?: string,"created_at"?: string,"id"?: string,"participant_id"?: string,"rank"?: number,"stage"?: Database["public"]["Enums"]["ranking_stage"],"updated_at"?: string,"voter_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "category_ranking_votes_category_id_fkey"
+      columns: ["category_id"]
+isOneToOne: false
+      referencedRelation: "categories"
+      referencedColumns: ["id"]
+    },
+                    {
+      foreignKeyName: "category_ranking_votes_participant_id_fkey"
+      columns: ["participant_id"]
+isOneToOne: false
+      referencedRelation: "participants"
+      referencedColumns: ["id"]
+    },
+                    {
+      foreignKeyName: "category_ranking_votes_voter_id_fkey"
+      columns: ["voter_id"]
+isOneToOne: false
+      referencedRelation: "participants"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"jury_looks": {
                   Row: {
                     "category_id": string,"created_at": string,"id": string,"image_url": string,"image2_url": string | null,"image3_url": string | null,"image4_url": string | null,"intro": string,"participant_id": string,"updated_at": string,"uploaded_by": string | null
@@ -363,6 +397,12 @@ isOneToOne: false
 "category_queen_result":
 { Args: { "p_category_id": string }; Returns: { participant_id: string, total_votes: number }[]
                            },
+"category_ranking_result":
+{ Args: { "p_category_id": string }; Returns: { participant_id: string, group_id: string, cross_score: number, jury_score: number, band_bonus: number, total: number, position: number }[]
+                           },
+"submit_ranking_ballot":
+{ Args: { "p_category_id": string,"p_stage": Database["public"]["Enums"]["ranking_stage"],"p_participant_ids": string[] }; Returns: undefined
+                           },
 "category_has_status":
 { Args: { "p_category_id": string,"p_statuses": (Database["public"]['Enums']["runway_status"])[] }; Returns: boolean
                            },
@@ -408,7 +448,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "category_kind": "individual"|"group","participant_role": "jurado"|"concursante"|"invitado","runway_status": "draft"|"werk_room"|"runway"|"voting"|"reveal"|"closed"
+            "category_kind": "individual"|"group","participant_role": "jurado"|"concursante"|"invitado","ranking_stage": "cross"|"jury","runway_status": "draft"|"werk_room"|"runway"|"voting"|"reveal"|"closed"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -528,7 +568,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "category_kind": ["individual", "group"],"participant_role": ["jurado", "concursante", "invitado"],"runway_status": ["draft", "werk_room", "runway", "voting", "reveal", "closed"]
+            "category_kind": ["individual", "group"],"participant_role": ["jurado", "concursante", "invitado"],"ranking_stage": ["cross", "jury"],"runway_status": ["draft", "werk_room", "runway", "voting", "reveal", "closed"]
           }
         }
 } as const
