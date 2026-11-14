@@ -18,6 +18,15 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.3.1',
+    date: '2026-11-14',
+    title: 'Votación más simple en semanas de bandas',
+    features: [
+      'Si la categoría grupal es la única de la semana, el jurado ya no tiene que elegir un Top 3: le basta con votar la banda y ordenar a las reinas.',
+      'En la clasificación de las bandas, la columna «Regalo» aparece antes de la Fase 2 y un icono explica de dónde viene.',
+    ],
+  },
+  {
     version: '0.3.0',
     date: '2026-11-14',
     title: 'Votación por bandas y revelación en dos tiempos',
