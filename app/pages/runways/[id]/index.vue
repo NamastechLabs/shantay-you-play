@@ -150,7 +150,7 @@ function showAdjacentLook(step: 1 | -1): void {
 </script>
 
 <template>
-  <main v-if="runway" class="page page--wide">
+  <main v-if="runway" class="page">
     <AppNav />
     <AppBreadcrumb :items="breadcrumb" />
 

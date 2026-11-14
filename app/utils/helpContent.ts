@@ -15,6 +15,7 @@ export const HELP_COPY = {
   title: 'Ayuda: cómo se juega',
   lead: '¡Bienvenida al taller, reina! Aquí tienes todo lo que necesitas saber para desfilar, votar y no quedar en el lip sync.',
   breadcrumb: 'Ayuda',
+  outlineTitle: 'En esta página',
 
   gameTitle: 'La lógica del juego',
   gameIntro: `${APP_NAME} es una competencia semanal de looks entre amigas. Cada semana es una pasarela con una o varias categorías, y todo funciona en cuatro pasos:`,

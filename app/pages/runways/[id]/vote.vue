@@ -235,7 +235,7 @@ async function saveBallot(): Promise<void> {
 </script>
 
 <template>
-  <main v-if="runway" class="page page--wide vote-page">
+  <main v-if="runway" class="page vote-page">
     <AppNav />
     <AppBreadcrumb
       :items="[
