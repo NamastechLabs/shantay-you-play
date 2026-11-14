@@ -62,7 +62,7 @@ export const HELP_COPY = {
       icon: '🎭',
       title: 'Revelación',
       who: 'Todas',
-      text: 'Se cierran las urnas y se revela el Top 3 de la semana con todo el dramatismo que merece. Los votos individuales siguen siendo privados.',
+      text: 'Se cierran las urnas y se revela el Top 3 de la semana con todo el dramatismo que merece. Si hay una categoría grupal, primero se revela la banda ganadora y, cuando el jurado lo decide, el Top 3. Los votos individuales siguen siendo privados.',
     },
     {
       icon: '👑',
@@ -82,7 +82,8 @@ export const HELP_COPY = {
     { title: 'Fase 1: el voto del jurado', text: 'El jurado vota qué banda ha trabajado mejor. Si hay empate, las dos bandas ganan. Cada integrante de la banda ganadora recibe un regalo en su nota final.' },
     { title: 'Fase 2: tu voto cruzado', text: 'Ordenas a todas las reinas de la banda rival, de mejor a peor. El voto debe estar completo y puedes cambiarlo mientras la votación siga abierta. No puedes votar a tu propia banda.' },
     { title: 'Fase 3: la pasarela del jurado', text: 'Cada juez ordena a todas las concursantes según su look individual. Se hace la media de sus notas.' },
-    { title: 'Los resultados', text: 'Desde la revelación se ve la clasificación final con la nota de cada fase, el regalo y la nota final de cada reina. Estos votos van aparte del Top 3 de la semana.' },
+    { title: 'La revelación', text: 'En la revelación primero aparece la banda ganadora, con su efecto de ruleta y confeti. Después una persona del jurado pulsa «Revelar el Top 3 de la semana» y se revela a la ganadora para todas a la vez. Hasta ese momento nadie puede ver el Top 3, ni siquiera mirando otras páginas.' },
+    { title: 'Los resultados', text: 'Cuando el jurado revela el Top 3, el botón «Ver resultados» de la página de la semana abre la clasificación final con la nota de cada fase, el regalo y la nota final de cada reina. Estos votos van aparte del Top 3 de la semana.' },
   ] satisfies HelpFact[],
 
   groupHelpLink: 'Ver cómo funciona la votación de las bandas',

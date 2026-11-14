@@ -1,9 +1,8 @@
 /**
  * Scoring constants of the group categories (DRG-8).
  *
- * They MUST match the constants at the top of `category_ranking_result` in
- * `supabase/migrations/20261114000000_group_ranking_votes.sql` (or the migration
- * that last changed them). The help page `/votacion-bandas` reads them from here,
+ * They MUST match the constants at the top of `category_ranking_result`, as last defined in
+ * `supabase/migrations/20261114000100_runway_reveal_stage.sql` (or a later migration that replaces it). The help page `/votacion-bandas` reads them from here,
  * so changing a value means: new migration for the function + this file. The worked
  * example of the help page is recomputed from these values.
  */

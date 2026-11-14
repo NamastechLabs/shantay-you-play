@@ -317,14 +317,14 @@ isOneToOne: false
                   ]
                 },"runways": {
                   Row: {
-                    "created_at": string,"id": string,"runway_date": string,"status": Database["public"]['Enums']["runway_status"],"updated_at": string,"week_number": number
+                    "created_at": string,"id": string,"runway_date": string,"status": Database["public"]['Enums']["runway_status"],"top_three_revealed": boolean,"updated_at": string,"week_number": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"runway_date"?: string,"status"?: Database["public"]['Enums']["runway_status"],"updated_at"?: string,"week_number": number
+                    "created_at"?: string,"id"?: string,"runway_date"?: string,"status"?: Database["public"]['Enums']["runway_status"],"top_three_revealed"?: boolean,"updated_at"?: string,"week_number": number
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"runway_date"?: string,"status"?: Database["public"]['Enums']["runway_status"],"updated_at"?: string,"week_number"?: number
+                    "created_at"?: string,"id"?: string,"runway_date"?: string,"status"?: Database["public"]['Enums']["runway_status"],"top_three_revealed"?: boolean,"updated_at"?: string,"week_number"?: number
                   }
                   Relationships: [
                     
@@ -440,6 +440,12 @@ isOneToOne: false
 { Args: { "p_runway_id": string }; Returns: {
               "participant_id": string,"place": number,"total_points": number
             }[]
+                           },
+"reveal_runway_top_three":
+{ Args: { "p_runway_id": string }; Returns: undefined
+                           },
+"runway_results_visible":
+{ Args: { "p_runway_id": string }; Returns: boolean
                            },
 "runway_top_three":
 { Args: { "p_runway_id": string }; Returns: {

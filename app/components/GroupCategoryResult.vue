@@ -40,109 +40,104 @@ const { data, error } = await useAsyncData(`group-result-${props.category.id}`, 
 })
 
 const hasRanking = computed(() => !!data.value?.rows.some(row => row.total > row.band_bonus))
+
+// The results live in a modal, opened from the button at the top of the page
+const open = ref(false)
+const modalTitle = computed(() => `Resultados${props.showTitle ? ` · ${props.category.title}` : ''}`)
 </script>
 
 <template>
-  <section v-if="data && (data.winningGroups.length || data.rows.length)" class="group-result" :aria-labelledby="`group-result-${category.id}`">
-    <header class="group-result__header">
-      <h2 :id="`group-result-${category.id}`" class="group-result__title">
-        Resultados{{ showTitle ? ` · ${category.title}` : '' }}
-      </h2>
-      <NuxtLink :to="GROUP_VOTING_HELP_PATH" class="group-result__help">
-        {{ GROUP_VOTING_COPY.helpLink }}
-      </NuxtLink>
-    </header>
+  <div v-if="data && (data.winningGroups.length || data.rows.length)" class="group-result">
+    <button type="button" class="btn btn--primary" @click="open = true">
+      Ver resultados
+    </button>
 
-    <dl v-if="data.winningGroups.length" class="group-result__list">
-      <div class="group-result__item">
-        <dt>{{ data.winningGroups.length > 1 ? copy.winningBands : copy.winningBand }}</dt>
-        <dd>{{ data.winningGroups.join(' y ') }}</dd>
-      </div>
-    </dl>
+    <AppModal wide :open="open" :title="modalTitle" @close="open = false">
+      <div class="group-result__content">
+        <NuxtLink :to="GROUP_VOTING_HELP_PATH" class="group-result__help">
+          {{ GROUP_VOTING_COPY.helpLink }}
+        </NuxtLink>
 
-    <template v-if="data.rows.length">
-      <h3 class="group-result__subtitle">
-        {{ copy.title }}
-      </h3>
-      <p v-if="!hasRanking" class="hint">
-        {{ copy.empty }}
-      </p>
-      <div class="group-result__table-wrap" tabindex="0" role="region" :aria-label="copy.title">
-        <table class="group-result__table">
-          <thead>
-            <tr>
-              <th scope="col">
-                {{ copy.headers.position }}
-              </th>
-              <th scope="col">
-                {{ copy.headers.name }}
-              </th>
-              <th scope="col">
-                {{ copy.headers.cross }}
-              </th>
-              <th scope="col">
-                {{ copy.headers.jury }}
-              </th>
-              <th scope="col">
-                {{ copy.headers.bonus }}
-              </th>
-              <th scope="col">
-                {{ copy.headers.total }}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="row in data.rows" :key="row.participant_id" :class="{ 'group-result__first': row.position === 1 }">
-              <td class="group-result__position">
-                {{ row.position }}.º
-              </td>
-              <th scope="row">
-                {{ row.name }}
-                <span class="group-result__band">{{ row.band }}</span>
-              </th>
-              <td>{{ formatScore(row.cross_score) }}</td>
-              <td>{{ formatScore(row.jury_score) }}</td>
-              <td>{{ row.band_bonus ? formatScore(row.band_bonus, 1) : '0' }}</td>
-              <td class="group-result__total">
-                {{ formatScore(row.total) }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <dl v-if="data.winningGroups.length" class="group-result__list">
+          <div class="group-result__item">
+            <dt>{{ data.winningGroups.length > 1 ? copy.winningBands : copy.winningBand }}</dt>
+            <dd>{{ data.winningGroups.join(' y ') }}</dd>
+          </div>
+        </dl>
+
+        <template v-if="data.rows.length">
+          <h3 class="group-result__subtitle">
+            {{ copy.title }}
+          </h3>
+          <p v-if="!hasRanking" class="hint">
+            {{ copy.empty }}
+          </p>
+          <div class="group-result__table-wrap" tabindex="0" role="region" :aria-label="copy.title">
+            <table class="group-result__table">
+              <thead>
+                <tr>
+                  <th scope="col">
+                    {{ copy.headers.position }}
+                  </th>
+                  <th scope="col">
+                    {{ copy.headers.name }}
+                  </th>
+                  <th scope="col">
+                    {{ copy.headers.cross }}
+                  </th>
+                  <th scope="col">
+                    {{ copy.headers.jury }}
+                  </th>
+                  <th scope="col">
+                    {{ copy.headers.bonus }}
+                  </th>
+                  <th scope="col">
+                    {{ copy.headers.total }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="row in data.rows" :key="row.participant_id" :class="{ 'group-result__first': row.position === 1 }">
+                  <td class="group-result__position">
+                    {{ row.position }}.º
+                  </td>
+                  <th scope="row">
+                    {{ row.name }}
+                    <span class="group-result__band">{{ row.band }}</span>
+                  </th>
+                  <td>{{ formatScore(row.cross_score) }}</td>
+                  <td>{{ formatScore(row.jury_score) }}</td>
+                  <td>{{ row.band_bonus ? formatScore(row.band_bonus, 1) : '0' }}</td>
+                  <td class="group-result__total">
+                    {{ formatScore(row.total) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
       </div>
-    </template>
-  </section>
+    </AppModal>
+  </div>
   <p v-else-if="error" class="form-error" role="alert">
     {{ toErrorMessage(error) }}
   </p>
 </template>
 
 <style scoped lang="scss">
+// The button sits at the top left of the page, above the group photos
 .group-result {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.group-result__content {
   display: grid;
   gap: var(--space-3);
-  max-width: 40rem;
-  padding: var(--space-3);
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-}
-
-.group-result__header {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: baseline;
-  justify-content: space-between;
-}
-
-.group-result__title {
-  font-size: 1.125rem;
-  color: var(--color-title);
 }
 
 .group-result__help {
+  justify-self: start;
   font-size: 0.875rem;
   color: var(--color-title);
 }
@@ -167,7 +162,7 @@ const hasRanking = computed(() => !!data.value?.rows.some(row => row.total > row
   font-weight: 600;
 }
 
-// The table scrolls on its own so the page never scrolls sideways on phones
+// The table scrolls on its own so the modal never scrolls sideways on phones
 .group-result__table-wrap {
   overflow-x: auto;
   border: 1px solid var(--color-border);

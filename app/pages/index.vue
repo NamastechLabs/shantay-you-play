@@ -2,9 +2,10 @@
 import type { Tables } from '~/types/database.types'
 import type { JuryMember } from '~/components/JuryLooks.vue'
 import type { SharePhoto } from '~/composables/useShareLooks'
+import type { RevealBand } from '~/composables/useRunwayResults'
 
-interface OpenRunway extends Pick<Tables<'runways'>, 'id' | 'week_number' | 'runway_date' | 'status'> {
-  categories: Pick<Tables<'categories'>, 'id' | 'title' | 'intro_text'>[]
+interface OpenRunway extends Pick<Tables<'runways'>, 'id' | 'week_number' | 'runway_date' | 'status' | 'top_three_revealed'> {
+  categories: Pick<Tables<'categories'>, 'id' | 'title' | 'intro_text' | 'kind'>[]
 }
 
 interface MyLook {
@@ -17,8 +18,10 @@ interface HomeData {
   runways: OpenRunway[]
   /** Voting runways where the current participant already cast a ballot */
   votedRunwayIds: string[]
-  /** Top 3 queens of the runway being revealed (empty when there is none) */
+  /** Top 3 queens of the runway being revealed (empty when there is none or the jury has not revealed it yet) */
   topThree: RunwayQueen[]
+  /** Bands of the group category of the runway being revealed, with the winner (empty when there is none) */
+  bands: RevealBand[]
   /** Judges' looks of the week's runway while it is on the runway (empty otherwise) */
   jury: JuryMember[]
   /** The signed-in queen's or jury member's own look(s) of the week's runway while it is on the runway (empty otherwise) */
@@ -32,10 +35,10 @@ interface RunwayAction {
   label: string
 }
 
-const RUNWAY_COLUMNS = 'id, week_number, runway_date, status, categories(id, title, intro_text)'
+const RUNWAY_COLUMNS = 'id, week_number, runway_date, status, top_three_revealed, categories(id, title, intro_text, kind)'
 
 const supabase = useSupabaseClient()
-const { loadTopThree, loadWinners } = useRunwayResults()
+const { loadTopThree, loadWinners, loadBandResult } = useRunwayResults()
 const { participant } = useCurrentParticipant()
 
 // RLS already hides drafts from contestants
@@ -50,16 +53,19 @@ const { data, error, refresh } = await useAsyncData('home', async (): Promise<Ho
   if (error) throw error
 
   const revealRunway = runways.find(runway => runway.status === 'reveal')
+  const revealGroup = revealRunway?.categories.find(category => category.kind === 'group')
   const featured = pickWeekRunway(runways)
-  const [topThree, votedRunwayIds, jury, myLooks, previousWeek] = await Promise.all([
+  const [topThree, bands, votedRunwayIds, jury, myLooks, previousWeek] = await Promise.all([
+    // The database returns nothing until the jury reveals the Top 3 of a runway with a group category
     revealRunway ? loadTopThree(revealRunway.id) : [],
+    revealGroup ? loadBandResult(revealGroup.id) : [],
     loadVotedRunwayIds(runways),
     featured?.status === 'runway' ? loadJury(featured) : [],
     featured?.status === 'runway' ? loadMyLooks(featured) : [],
     loadPreviousWeek(),
   ])
 
-  return { runways, votedRunwayIds, topThree, jury, myLooks, previousWeek }
+  return { runways, votedRunwayIds, topThree, bands, jury, myLooks, previousWeek }
 })
 
 async function loadMyLooks(runway: OpenRunway): Promise<MyLook[]> {
@@ -148,6 +154,52 @@ const otherOpenRunways = computed(() =>
   data.value?.runways.filter(runway => runway.id !== weekRunway.value?.id) ?? [],
 )
 const revealedTopThree = computed(() => (weekRunway.value?.status === 'reveal' ? data.value?.topThree ?? [] : []))
+
+// --- Staged reveal of a runway with a group category: first the winning band, then (when a judge says so) the Top 3
+const hasGroupReveal = computed(() => weekRunway.value?.status === 'reveal' && weekRunway.value.categories.some(category => category.kind === 'group'))
+const revealBands = computed(() => (hasGroupReveal.value ? data.value?.bands ?? [] : []))
+const inBandStage = computed(() => hasGroupReveal.value && !weekRunway.value?.top_three_revealed)
+const bandRevealDone = ref(false)
+/** The Top 3 reveal has finished playing: the "Ver la pasarela" button appears */
+const topThreeRevealDone = ref(false)
+const revealingTopThree = ref(false)
+const revealError = ref('')
+
+// A new band stage (another runway, or a reopened reveal) plays its animation again
+watch(() => [weekRunway.value?.id, inBandStage.value], () => { bandRevealDone.value = false })
+watch(() => [weekRunway.value?.id, weekRunway.value?.status, revealedTopThree.value.length], () => { topThreeRevealDone.value = false })
+
+// Soft move: when the Top 3 appears above the band, the band slides down to its new place instead of
+// jumping there (FLIP: note where it was, then animate from there to where it ended up)
+const SLIDE_MS = 800
+const bandSection = ref<HTMLElement | null>(null)
+let bandTopBefore: number | null = null
+
+watch(inBandStage, (stage, wasStage) => {
+  bandTopBefore = wasStage && !stage ? bandSection.value?.getBoundingClientRect().top ?? null : null
+}, { flush: 'pre' })
+
+watch(inBandStage, () => {
+  const element = bandSection.value
+  if (bandTopBefore === null || !element) return
+  const distance = bandTopBefore - element.getBoundingClientRect().top
+  bandTopBefore = null
+  if (!distance || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  element.animate([{ transform: `translateY(${distance}px)` }, { transform: 'none' }], { duration: SLIDE_MS, easing: 'ease-in-out' })
+}, { flush: 'post' })
+
+async function revealTopThree(): Promise<void> {
+  if (!weekRunway.value) return
+  revealingTopThree.value = true
+  revealError.value = ''
+  const { error: revealFailure } = await supabase.rpc('reveal_runway_top_three', { p_runway_id: weekRunway.value.id })
+  revealingTopThree.value = false
+  if (revealFailure) {
+    revealError.value = toErrorMessage(revealFailure)
+    return
+  }
+  await refresh()
+}
 const runwayJury = computed(() => (weekRunway.value?.status === 'runway' ? data.value?.jury ?? [] : []))
 
 // The queen's own look, ready to paste into the WhatsApp group where everyone comments
@@ -272,7 +324,9 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
         {{ weekRunway.status === 'voting'
           ? '¡La votación está abierta! Elige tu Top 3 de reinas de la semana.'
           : weekRunway.status === 'reveal'
-            ? '¡La votación terminó! Estas son las tres mejores reinas de la semana.'
+            ? inBandStage
+              ? '¡La votación terminó! Primero, la banda ganadora de la semana.'
+              : '¡La votación terminó! Estas son las tres mejores reinas de la semana.'
             : weekRunway.status === 'werk_room'
               ? 'Las reinas se están preparando en el Werk Room. ¡La pasarela abrirá pronto!'
               : 'Las reinas ya están en la pasarela. La votación abrirá pronto.' }}
@@ -305,12 +359,57 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
         </p>
       </div>
 
+      <!-- Top 3 of the week. With a group category it only exists after the jury reveals it, and fades in while the band slides down -->
       <TopThreeReveal
         v-if="revealedTopThree.length"
         :key="weekRunway.id"
         class="week-hero__reveal"
+        :class="{ 'week-hero__reveal--after-band': hasGroupReveal }"
         :queens="revealedTopThree"
+        @done="topThreeRevealDone = true"
       />
+
+      <!-- Winning band: revealed first, then it keeps the full width under the Top 3 -->
+      <section
+        v-if="hasGroupReveal && revealBands.length"
+        ref="bandSection"
+        class="week-hero__band"
+        :aria-labelledby="inBandStage ? undefined : 'band-winner-title'"
+      >
+        <h2 v-if="!inBandStage" id="band-winner-title" class="week-hero__band-title">
+          {{ revealBands.filter(band => band.place === 1).length > 1 ? 'Bandas ganadoras' : 'Banda ganadora' }}
+        </h2>
+        <BandReveal
+          :key="weekRunway.id"
+          class="week-hero__band-reveal"
+          :bands="revealBands"
+          :animate="inBandStage"
+          :compact="!inBandStage"
+          @done="bandRevealDone = true"
+        />
+      </section>
+
+      <!-- Only the jury moves on from the band to the Top 3 -->
+      <template v-if="inBandStage">
+        <div v-if="participant?.role === 'jurado' && (bandRevealDone || !revealBands.length)" class="actions">
+          <button type="button" class="btn btn--primary" :disabled="revealingTopThree" @click="revealTopThree">
+            {{ revealingTopThree ? 'Revelando…' : 'Revelar el Top 3 de la semana' }}
+          </button>
+        </div>
+        <p v-else-if="participant?.role !== 'jurado' && (bandRevealDone || !revealBands.length)" class="muted" role="status">
+          El jurado revelará enseguida el Top 3 de la semana.
+        </p>
+        <p v-if="revealError" class="form-error" role="alert">
+          {{ revealError }}
+        </p>
+      </template>
+
+      <!-- Once the reveal has finished, everyone can go and see the runway (as while voting) -->
+      <div v-if="weekRunway.status === 'reveal' && topThreeRevealDone" class="actions">
+        <NuxtLink :to="`/runways/${weekRunway.id}`" class="btn btn--primary">
+          Ver la pasarela
+        </NuxtLink>
+      </div>
 
       <!-- Queens upload their own look while the week is in the Werk Room -->
       <div v-if="weekRunway.status === 'werk_room' && participant?.role === 'concursante'" class="actions">
@@ -451,6 +550,46 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
 
 .week-hero__reveal {
   justify-self: stretch;
+}
+
+.week-hero__band {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  // The space under the title is its margin, not a gap
+  gap: 0;
+  justify-items: center;
+  width: 100%;
+}
+
+.week-hero__band-reveal {
+  justify-self: stretch;
+}
+
+// The Top 3 fades in while the band slides down (the band stays on top of it while it moves)
+.week-hero__reveal--after-band {
+  animation: reveal-fade-in 0.8s ease-out;
+}
+
+@keyframes reveal-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .week-hero__reveal--after-band {
+    animation: none;
+  }
+}
+
+.week-hero__band-title {
+  margin-block: var(--space-6) var(--space-5);
+  font-size: 1.25rem;
 }
 
 .week-hero .actions {
