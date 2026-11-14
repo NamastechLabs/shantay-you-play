@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- The vote page no longer asks the jury for a Top 3 when the group category is the only category of the runway: voting the band and ordering the queens is enough. Contestants still vote their Top 3 (DRG-8)
+
 ## [0.3.0] - 2026-11-14
 
 ### Added

@@ -69,7 +69,9 @@ export const GROUP_VOTING_COPY = {
 
 export const GROUP_RESULT_COPY = {
   title: 'Clasificación final',
-  headers: { position: 'Puesto', name: 'Reina', cross: 'Fase 2', jury: 'Fase 3', bonus: 'Regalo', total: 'Nota final' },
+  headers: { position: 'Puesto', name: 'Reina', bonus: 'Regalo', cross: 'Fase 2', jury: 'Fase 3', total: 'Nota final' },
+  bonusInfo: 'Fase 1 - Votación del jurado a la mejor banda: las reinas de la banda ganadora reciben este regalo.',
+  bonusInfoLabel: 'Qué es el regalo',
   winningBand: 'Banda ganadora',
   winningBands: 'Bandas ganadoras (empate)',
   empty: 'Todavía no hay votos para calcular la clasificación.',

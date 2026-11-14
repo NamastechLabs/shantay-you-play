@@ -65,6 +65,7 @@ The vote page (`/runways/[id]/vote`) guides voters through the ballots of a grou
 | Jury | 1. Best band (phase 1) · 2. Order all the queens (phase 3) · 3. Top 3 of the week |
 | Contestant in a band | 1. Order the rival band (phase 2) · 2. Top 3 of the week |
 | Contestant without a band, or a runway without group categories | Only the Top 3, no stepper |
+| Jury, in a runway whose **only** category is the group one (`groupOnly` in `vote.vue`) | Band vote and ranking only, no Top 3 step. Contestants keep their Top 3 |
 
 The jury's Top 3 step is **pre-filled** with the first three queens of their saved ranking (only queens with a look in the runway), unless they already saved a Top 3 or changed the proposal; they can edit it, and "Usar mi orden otra vez" re-applies it. The Top 3 itself is the regular `votes` ballot, unchanged: it is the vote of the week across **all** the categories of the runway, which is why it stays even for the jury (a runway can mix a group category with individual ones, and a judge may want to differ from their band ranking). Only **one group category per runway** is supported by the stepper.
 

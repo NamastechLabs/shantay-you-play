@@ -112,6 +112,8 @@ interface GroupProgress {
 }
 
 const groupCategory = computed(() => groupCategories.value[0] ?? null)
+/** The group category is the only one: the jury's ranking is their whole vote, so they cast no individual Top 3. Contestants still do. */
+const groupOnly = computed(() => isJury.value && !!groupCategory.value && runway.value?.categories.length === 1)
 const isJury = computed(() => participant.value?.role === 'jurado')
 const groupProgress = ref<GroupProgress | null>(null)
 
@@ -123,7 +125,7 @@ const steps = computed<{ id: VoteStep, label: string, done: boolean }[]>(() => {
     if (isJury.value) list.push({ id: 'band', label: 'Mejor banda', done: progress.band })
     list.push({ id: 'ranking', label: isJury.value ? 'Ordena a las reinas' : 'Ordena a la banda rival', done: progress.ranking })
   }
-  list.push({ id: 'top3', label: 'Tu Top 3', done: !!ballotId.value })
+  if (!groupOnly.value) list.push({ id: 'top3', label: 'Tu Top 3', done: !!ballotId.value })
   return list
 })
 
@@ -134,7 +136,7 @@ const stepIndex = computed(() => {
   return Number.isInteger(requested) && requested >= 1 && requested <= steps.value.length ? requested - 1 : 0
 })
 const currentStep = computed<VoteStep>(() => steps.value[stepIndex.value]?.id ?? 'top3')
-const showTop3 = computed(() => !hasSteps.value || currentStep.value === 'top3')
+const showTop3 = computed(() => !groupOnly.value && (!hasSteps.value || currentStep.value === 'top3'))
 const pendingSteps = computed(() => steps.value.filter(step => step.id !== 'top3' && !step.done).map(step => step.label))
 
 async function goToStep(index: number): Promise<void> {

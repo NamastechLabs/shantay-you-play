@@ -8,6 +8,7 @@ const props = defineProps<{
 
 const supabase = useSupabaseClient()
 const copy = GROUP_RESULT_COPY
+const showBonusInfo = ref(false)
 
 // Both functions return nothing until the runway reaches 'reveal'
 const { data, error } = await useAsyncData(`group-result-${props.category.id}`, async () => {
@@ -83,13 +84,23 @@ const modalTitle = computed(() => `Resultados${props.showTitle ? ` · ${props.ca
                     {{ copy.headers.name }}
                   </th>
                   <th scope="col">
+                    {{ copy.headers.bonus }}
+                    <button
+                      type="button"
+                      class="group-result__info"
+                      :title="copy.bonusInfo"
+                      :aria-label="copy.bonusInfoLabel"
+                      :aria-expanded="showBonusInfo"
+                      @click="showBonusInfo = !showBonusInfo"
+                    >
+                      i
+                    </button>
+                  </th>
+                  <th scope="col">
                     {{ copy.headers.cross }}
                   </th>
                   <th scope="col">
                     {{ copy.headers.jury }}
-                  </th>
-                  <th scope="col">
-                    {{ copy.headers.bonus }}
                   </th>
                   <th scope="col">
                     {{ copy.headers.total }}
@@ -105,9 +116,9 @@ const modalTitle = computed(() => `Resultados${props.showTitle ? ` · ${props.ca
                     {{ row.name }}
                     <span class="group-result__band">{{ row.band }}</span>
                   </th>
+                  <td>{{ row.band_bonus ? formatScore(row.band_bonus, 1) : '0' }}</td>
                   <td>{{ formatScore(row.cross_score) }}</td>
                   <td>{{ formatScore(row.jury_score) }}</td>
-                  <td>{{ row.band_bonus ? formatScore(row.band_bonus, 1) : '0' }}</td>
                   <td class="group-result__total">
                     {{ formatScore(row.total) }}
                   </td>
@@ -115,6 +126,9 @@ const modalTitle = computed(() => `Resultados${props.showTitle ? ` · ${props.ca
               </tbody>
             </table>
           </div>
+          <p v-if="showBonusInfo" class="hint" role="status">
+            {{ copy.bonusInfo }}
+          </p>
         </template>
       </div>
     </AppModal>
@@ -181,6 +195,7 @@ const modalTitle = computed(() => `Resultados${props.showTitle ? ` · ${props.ca
     text-align: right;
   }
 
+  th:first-child,
   td:first-child,
   th:nth-child(2) {
     text-align: left;
@@ -205,6 +220,26 @@ const modalTitle = computed(() => `Resultados${props.showTitle ? ` · ${props.ca
 .group-result__position {
   font-weight: 800;
   color: var(--color-title);
+}
+
+.group-result__info {
+  display: inline-grid;
+  place-items: center;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-left: var(--space-1);
+  padding: 0;
+  border: 1px solid currentcolor;
+  border-radius: 50%;
+  background: none;
+  font: inherit;
+  font-size: 0.6875rem;
+  font-style: italic;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: none;
+  color: inherit;
+  cursor: help;
 }
 
 .group-result__band {
