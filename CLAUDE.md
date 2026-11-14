@@ -57,6 +57,7 @@
 
 - **Jira project key:** `DRG` (issue keys look like `DRG-12`). The repo is linked to Jira, so the key must appear in branch names, commits and PR titles for the Development panel to pick them up (case-sensitive).
 - **Branches:** only create a branch when working on a Jira ticket: `feature/DRG-12-short-slug` (also `fix/`), from an up-to-date `main`. Everything else (docs, skills, CLAUDE.md, chores, small tweaks) is done directly on `main`, with no branch. Never create a branch without a ticket key.
+- **Review before committing:** never commit on your own, on a branch or on `main`. Leave the changes in the working tree, summarize them (`git status --short`, `git diff --stat`) and wait for the user to review and say to commit; they may want to change something first. This applies to every change, including docs, skills and CLAUDE.md, and to the release commit. Once they approve, commit following the rule below.
 - **Commits & PR titles:** start with the key, in English: `DRG-12 Filter runways by week`. Commits made directly on `main` without a ticket have no key.
 - **Tickets:** titles in English; description and acceptance criteria may be in English or Spanish. Exact UI copy is given in Spanish.
 - **Changelog:** `CHANGELOG.md` follows Keep a Changelog, in English, with an `Unreleased` section. Add an entry for every user-visible change, ending with the issue key.
@@ -79,4 +80,4 @@
 - **Release notes in the app:** users see what is new at `/novedades` (link "Novedades" in the user menu). The content lives in `app/utils/releaseNotes.ts`, newest first, and **contains every version**: one entry per release with the version, the date it went live (`YYYY-MM-DD`, equal to the changelog date), a short title and one sentence per **functional** feature users will notice (what they can now do, in Spanish, no technical terms). A release with nothing users can see still gets an entry, with the single feature `Mejoras y correcciones internas.`. Technical details stay in `CHANGELOG.md`.
 - **Migrations:** a PR that adds a migration under `supabase/migrations/` must say so, and the migration is applied to Supabase before the PR is merged.
 - **When asked to work on a ticket** ("work on DRG-12"), use the `work-on-ticket` skill (`.claude/skills/work-on-ticket/`).
-- **Never** push, open a PR, comment on a ticket or change its status without being asked.
+- **Never** commit, push, open a PR, comment on a ticket or change its status without being asked.
