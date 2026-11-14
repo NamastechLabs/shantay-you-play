@@ -12,6 +12,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Release process: definition of done (docs and help in the same PR), a `release` skill, a pull request template, release notes for every version and the date of the planned merge for the release (CLAUDE.md, `.claude/skills`, `.github`)
 - Help page, README and `docs/group-categories.md` describe group categories and group photos
 
 ## [0.2.0] - 2026-11-13

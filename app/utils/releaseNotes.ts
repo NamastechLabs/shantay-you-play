@@ -10,9 +10,11 @@ export interface ReleaseNote {
 }
 
 /**
- * Release notes shown to users at /novedades, newest first. Add an entry in the
- * last commit of every release PR (see CLAUDE.md), describing the functional
- * changes users will notice, not the technical ones (those go in CHANGELOG.md).
+ * Release notes shown to users at /novedades, newest first. Every version has an
+ * entry, added in the release commit (see CLAUDE.md and the `release` skill),
+ * describing the functional changes users will notice, not the technical ones
+ * (those go in CHANGELOG.md). A release with nothing users can see gets the
+ * single feature "Mejoras y correcciones internas.".
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {

@@ -1,6 +1,6 @@
 ---
 name: work-on-ticket
-description: Work on a Jira ticket (project key DRG) end to end. Use when the user says "work on DRG-12", "implement ticket DRG-12" or invokes /work-on-ticket DRG-12. Reads the ticket, creates the branch, plans if the ticket is complex, implements, updates CHANGELOG.md, bumps the version and commits. Never pushes or opens a PR.
+description: Work on a Jira ticket (project key DRG) end to end. Use when the user says "work on DRG-12", "implement ticket DRG-12" or invokes /work-on-ticket DRG-12. Reads the ticket, creates the branch, plans if the ticket is complex, implements, updates docs, help and CHANGELOG.md, prepares the release with the release skill and commits. Never pushes or opens a PR.
 ---
 
 # Work on a Jira ticket
@@ -36,6 +36,7 @@ Otherwise, implement directly. Say in one line which path you chose and why.
 
 - Follow CLAUDE.md (Spanish UI copy, theming tokens, Postgres rules, etc.).
 - Keep the change scoped to the ticket; note unrelated issues instead of fixing them.
+- Update docs and help **in the same branch** (Definition of done in CLAUDE.md): technical docs (`docs/<feature>.md` or README) and the in-app help (`app/utils/helpContent.ts`, `app/pages/help.vue`) for any new or changed feature or flow, and fix the help text the change makes wrong. If a row does not apply, note `N/A: reason` for the PR.
 - Verify it works (typecheck, build, or run the app) before committing.
 
 ## 5. Update CHANGELOG.md
@@ -51,15 +52,11 @@ Otherwise, implement directly. Say in one line which path you chose and why.
 
 ## 7. Prepare the release (merging to `main` deploys)
 
-Do this as the last commit of the branch, so the version is decided in the PR and never edited on `main` afterwards. Skip it only if the user says the change should not be released yet.
+Do this as the last commit of the branch, with the **`release` skill** (`.claude/skills/release/`), so the version is decided in the PR and never edited on `main` afterwards. Skip it only if the user says the change should not be released yet.
 
-- Pick the [semantic version](https://semver.org) bump: **patch** for fixes, **minor** for new features, **major** for breaking changes. Ask if unsure.
-- In `CHANGELOG.md`, rename `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD` (today's date) and add a new empty `## [Unreleased]` above it.
-- Set `"version": "X.Y.Z"` in `package.json` (add the field if it is missing; the first release is `0.1.0`).
-- Add the release to `app/utils/releaseNotes.ts` (newest first): version, date it goes live, a short title and one Spanish sentence per functional feature users will notice. Skip it if the change has nothing users can see.
-- Commit as `DRG-12 Release vX.Y.Z`.
-- Jira fix version: the version `X.Y.Z` must exist in Jira (the MCP cannot create it: ask the user to create it if needed), then set it as `fixVersions` on the ticket with `editJiraIssue`. Setting the fix version is part of the release; marking the Jira version as released is not (see step 8).
-- If the branch adds a migration under `supabase/migrations/`, say so explicitly: it must be applied to Supabase **before** merging, because the merge deploys.
+In short, the skill picks the semantic version, dates and closes the changelog, sets `package.json`, adds the entry to `app/utils/releaseNotes.ts` (every version gets one) and sets the Jira fix version on the ticket. Commit as `DRG-12 Release vX.Y.Z`.
+
+If the branch adds a migration under `supabase/migrations/`, say so explicitly: it must be applied to Supabase **before** merging, because the merge deploys.
 
 ## 8. Stop and report
 
