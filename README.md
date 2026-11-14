@@ -196,8 +196,8 @@ Friends use the live Supabase project, so test status changes (Werk Room → Run
    ```
 
 3. `pnpm dev:local` runs the app against the local DB. Plain `pnpm dev` keeps using `.env` (live).
-4. Sign in with email and password, or use the "Dev: entrar como…" widget. Every seeded account uses the password `password123`: jurados `ana@local.test`, `bea@local.test`; concursantes `carla@`, `dani@`, `eva@`, `fran@`, `gina@`, `hugo@` (all `@local.test`); special guests `gus@local.test` (invited to week 2) and `ivy@local.test` (invited to nothing).
-5. The seed has week 1 (closed, with votes) and week 2 (`runway`, with jury and queen looks). Sign in as a jurado and use `/admin` to move a runway to any status.
+4. Sign in with email and password, or use the "Dev: entrar como…" widget. Every seeded account uses the password `password123` and a fake `@local.test` email (the first name of the real participant): jurados `fran@` and `carlos@`; concursantes `participante@`, `daniel@`, `toni@`, `victor@`, `luis@`, `matthew@` and `paula@`; special guest `carol@`.
+5. The seed is a snapshot of the live data (same participants, runways, looks, groups and votes; only emails and logins are faked). Sign in as a jurado and use `/admin` to move a runway to any status.
 6. `pnpm db:reset` restores the seed data. `pnpm db:stop` shuts it down. Studio is disabled by default; remove `studio` from the `-x` list in `db:start` to get it on http://127.0.0.1:54323.
 
 ### Debugging the local database on a phone
