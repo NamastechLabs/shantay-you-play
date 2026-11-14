@@ -5,6 +5,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-14
+
+### Added
+
+- "Descargar ZIP de la semana" button in the week summary (`/admin/runways/[id]`): downloads `pasarela-semana-N.zip` with `runway.json` (same content as `GET /api/commentary/runway`, with the path of each photo inside the ZIP) and all the photos, one folder per category (`jury/` for the jury's looks). Built in the browser with the judge's session (new dependency `fflate`), for AI chats that cannot call the endpoint or download the images
+
 ## [0.4.0] - 2026-11-14
 
 ### Added

@@ -18,6 +18,14 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.5.0',
+    date: '2026-11-14',
+    title: 'Descarga de la semana para los comentarios',
+    features: [
+      'El jurado puede descargar desde la página de la semana un ZIP con los datos y todas las fotos de los looks, listo para pedir los comentarios a una IA.',
+    ],
+  },
+  {
     version: '0.4.0',
     date: '2026-11-14',
     title: 'Vídeo de intro de la pasarela',

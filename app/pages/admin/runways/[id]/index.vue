@@ -20,6 +20,21 @@ const { data: lookCounts, refresh: refreshLookCounts } = await useAsyncData(`adm
 })
 const missingQueenLooks = computed(() => (lookCounts.value ? lookCounts.value.expected - lookCounts.value.done : 0))
 
+// --- Download for the commentary ----------------------------------------------
+const { exporting, download: downloadRunway } = useRunwayExport()
+const exportError = ref<string | null>(null)
+
+async function exportRunway(): Promise<void> {
+  if (exporting.value) return
+  exportError.value = null
+  try {
+    await downloadRunway(runway.value.id)
+  }
+  catch (error) {
+    exportError.value = toErrorMessage(error)
+  }
+}
+
 const previousStatus = computed(() => adjacentStatus(runway.value.status, -1))
 const nextStatus = computed(() => adjacentStatus(runway.value.status, 1))
 const currentStatusIndex = computed(() => RUNWAY_STATUSES.indexOf(runway.value.status))
@@ -176,5 +191,22 @@ async function changeStatus(status: RunwayStatus): Promise<void> {
         </NuxtLink>
       </li>
     </ul>
+  </section>
+
+  <section class="section" aria-labelledby="export-title">
+    <h2 id="export-title">
+      Comentarios con IA
+    </h2>
+    <div class="card form">
+      <p class="muted">
+        Descarga un ZIP con los datos de la semana (categorías, intros y looks de las reinas y del jurado) en <code>runway.json</code> y todas las fotos, listo para subirlo a la IA que escribe los comentarios.
+      </p>
+      <p v-if="exportError" class="form-error" role="alert">
+        {{ exportError }}
+      </p>
+      <button type="button" class="btn btn--secondary" :disabled="exporting" @click="exportRunway">
+        {{ exporting ? 'Preparando ZIP…' : 'Descargar ZIP de la semana' }}
+      </button>
+    </div>
   </section>
 </template>

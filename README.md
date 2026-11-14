@@ -258,7 +258,7 @@ The share sheet only works over HTTPS, so a plain LAN IP (`http://192.168.x.x:30
 
 ## Commentary endpoint (AI)
 
-`GET /api/commentary/runway` returns the runway in the **Pasarela** stage with its categories, each queen's intro and photo URLs (plus the jury's looks), so an AI can write the commentary without pasting photos by hand. `?week=N` selects another week. The project skill [`runway-commentary`](.claude/skills/runway-commentary/SKILL.md) calls it and downloads the photos.
+`GET /api/commentary/runway` returns the runway in the **Pasarela** stage with its categories, each queen's intro and photo URLs (plus the jury's looks), so an AI can write the commentary without pasting photos by hand. `?week=N` selects another week. Judges can also download the same content as a ZIP (`runway.json` + photos) from the "Comentarios con IA" section of the week summary, built in the browser with their own session (`app/composables/useRunwayExport.ts`). The project skill [`runway-commentary`](.claude/skills/runway-commentary/SKILL.md) calls it and downloads the photos.
 
 1. Apply the migration `20261108000000_service_role_read_runway_looks.sql` (read grants for `service_role`).
 2. Set `NUXT_COMMENTARY_API_TOKEN` (and `NUXT_SUPABASE_SECRET_KEY`) on the server that runs the app. With no token the route answers 404.
