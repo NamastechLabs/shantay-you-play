@@ -5,6 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-11-14
+
+### Changed
+
+- All pages share the same content width (82rem, formerly 60rem with a `page--wide` modifier on three pages).
+- The help page has a two-column layout with a sticky outline of its sections in a left aside (a wrapped list of chips above the content on small screens) that highlights the section being read.
+- New "Shantay You Play" logo (pink 3D lettering, transparent background) in the navigation bar, and a matching "S" favicon and app icons.
+
 ## [0.3.1] - 2026-11-14
 
 ### Changed

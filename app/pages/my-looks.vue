@@ -83,7 +83,7 @@ function pendingLabel(look: MyLook): string {
 </script>
 
 <template>
-  <main class="page page--wide">
+  <main class="page">
     <AppNav />
     <AppBreadcrumb :items="[{ label: 'Inicio', to: '/' }, { label: 'Mis looks' }]" />
 

@@ -18,6 +18,16 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.3.2',
+    date: '2026-11-14',
+    title: 'Ayuda con índice y nuevo logo',
+    features: [
+      'La página de ayuda tiene un índice a un lado para saltar directamente a cada sección y ver en cuál estás.',
+      'Todas las páginas tienen ahora el mismo ancho, así que el contenido ya no «salta» al cambiar de una a otra.',
+      'Estrenamos logo de Shantay You Play en la barra superior, con su favicon y sus iconos de app.',
+    ],
+  },
+  {
     version: '0.3.1',
     date: '2026-11-14',
     title: 'Votación más simple en semanas de bandas',
