@@ -78,6 +78,7 @@ All schema changes live in [`supabase/migrations/`](supabase/migrations) and are
 | `20261102001400_runways.sql` | `runways` (week, date, status) group 1..N categories; status and week move off `categories`; ballots become a Top 3 of **queens** per runway (existing ballots are converted); `runway_top_three` / `runway_ranking` |
 | `20261102001500_runway_datetime.sql` | `runways.runway_date` becomes `timestamptz` (date and time of the runway) |
 | `20261102001600_look_intro_1000.sql` | Jury look intro limit raised from 500 to 1000 characters |
+| `20261114000200_runway_intro_select_policy.sql` | Select policy on `runway-intro` so judges can overwrite `intro.mp4` (upsert) |
 
 ### Apply them with the Supabase CLI (recommended)
 
@@ -171,6 +172,8 @@ update public.participants set role = 'jurado' where email = 'someone@gmail.com'
 A **runway** is one week (date and time + status) with one or more **categories**; each queen uploads one look per category and voters rank a Top 3 of queens for the whole runway. Runway lifecycle: `draft` → `werk_room` → `runway` → `voting` → `reveal` → `closed`. During `reveal` the homepage animates the Top 3 (via the `runway_top_three` function); individual votes are visible to everyone once a runway is `closed`.
 
 **Group categories:** a category can be `individual` (default) or `group`. A group category has exactly two groups, and the judges assign `concursante`s to them from **Editar grupos** in the admin (a queen is in one group per category). Voting is separate from the runway Top 3 and has three phases: judges vote the winning band (a draw makes both win), each queen ranks **all** the queens of the rival band, and each judge ranks **all** the contestants. Ballots go through `submit_ranking_ballot`; the final ranking adds both normalized averages (50/50) plus a 0.2 bonus for the winning band. Each group also has up to 4 landscape photos (16:9 or 5:3) shown together; members upload them during `werk_room` and judges until voting opens. Results come from `category_group_result` and `category_ranking_result`, public from `reveal`. A plain-language explanation lives at `/votacion-bandas`. Details in [docs/group-categories.md](docs/group-categories.md). The help page sections can be linked directly: `/help#categorias-grupales` (also `#juego`, `#roles`, `#etapas`, `#puntos`, `#seguridad`, `#dudas`).
+
+**Runway intro video:** judges upload the weekly 9:16 MP4 (max 50 MB) from the admin home; it always overwrites `intro.mp4` in the `runway-intro` bucket. See [docs/runway-intro-video.md](docs/runway-intro-video.md).
 
 **Sharing your look ("A desfilar"):** while a runway is in `runway` (pasarela), each `concursante` sees an **A desfilar** button in the homepage hero card. It shares her own look for the week (all its photos, front/back/reveal/extra, plus the intro) through the native share sheet so she can post it in the WhatsApp group where everyone comments. If the week has several categories, each intro is prefixed with its category title. A `concursante` in a group category also gets **A desfilar con mi banda**, which shares her own band's name, intro and photos the same way (not shown to the jury). Implemented in [`useShareLooks`](app/composables/useShareLooks.ts) with the Web Share API (level 2, files):
 

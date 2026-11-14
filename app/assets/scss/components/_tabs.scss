@@ -1,44 +1,60 @@
-// Segmented tabs (role="tablist"): one pill per panel, the active one filled.
+// Underline tabs (role="tablist", or a nav of links): a row of labels over a divider,
+// the active one in the title color with a thick underline.
 .tabs {
-  display: grid;
-  grid-auto-columns: minmax(0, 1fr);
-  grid-auto-flow: column;
-  gap: var(--space-2);
+  display: flex;
+  gap: var(--space-5);
+  // Scrolls sideways on narrow screens, but never shows a scrollbar
+  overflow: auto hidden;
+  scrollbar-width: none;
+  // The divider is an inset shadow (not a border) so the active underline can sit over it without overflowing
+  box-shadow: inset 0 -1px 0 var(--color-border);
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 
   &__tab {
-    // Also used on links (section navigation), which need centering and no underline
-    display: grid;
-    place-items: center;
-    text-align: center;
-    text-decoration: none;
+    // Also used on links (section navigation), so reset the anchor look
+    display: inline-flex;
+    flex: none;
+    gap: var(--space-2);
+    align-items: center;
     min-height: 2.75rem;
-    padding: var(--space-2) var(--space-4);
+    padding: var(--space-2) 0;
     font-size: 0.875rem;
     font-weight: 600;
     color: var(--color-text-muted);
+    text-decoration: none;
+    white-space: nowrap;
     cursor: pointer;
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-pill);
-    transition: box-shadow 0.15s, background-color 0.15s;
+    background: none;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
 
     @media (min-width: 40rem) {
       font-size: 1rem;
     }
 
     &:hover {
-      background-color: var(--color-surface-raised);
+      color: var(--color-text);
     }
 
-    &--active {
-      color: var(--color-on-primary);
-      background-color: var(--color-primary);
-      border-color: var(--color-primary);
-      box-shadow: var(--glow-primary);
-
-      &:hover {
-        background-color: var(--color-primary);
-      }
+    &--active,
+    &--active:hover {
+      color: var(--color-title);
+      border-bottom-color: var(--color-title);
     }
+  }
+
+  // Small count next to a label
+  &__count {
+    padding: 0 var(--space-2);
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.5rem;
+    color: var(--color-text-muted);
+    background-color: var(--color-surface-raised);
+    border-radius: var(--radius-pill);
   }
 }

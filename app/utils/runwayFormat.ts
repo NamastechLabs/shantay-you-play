@@ -52,3 +52,13 @@ export function fromDatetimeLocal(value: string): string {
 export function runwayTitle(categories: readonly { title: string }[]): string {
   return categories.map(category => category.title).join(' · ') || 'Pasarela'
 }
+
+/** "2026-11-05T20:00:00+00:00" -> "5 nov" (in the runway time zone) */
+export function formatRunwayDay(timestamp: string): string {
+  return new Date(timestamp).toLocaleDateString('es', { day: 'numeric', month: 'short', timeZone: RUNWAY_TIME_ZONE }).replace('.', '')
+}
+
+/** "2026-11-05T20:00:00+00:00" -> "21:00" (in the runway time zone) */
+export function formatRunwayTime(timestamp: string): string {
+  return new Date(timestamp).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', timeZone: RUNWAY_TIME_ZONE })
+}
