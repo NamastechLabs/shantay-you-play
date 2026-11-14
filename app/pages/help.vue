@@ -79,6 +79,9 @@ useSeoMeta({ robots: 'noindex' })
           <p>{{ item.text }}</p>
         </li>
       </ul>
+      <NuxtLink :to="GROUP_VOTING_HELP_PATH" class="btn btn--secondary help__back">
+        {{ copy.groupHelpLink }}
+      </NuxtLink>
     </section>
 
     <section class="help__section" aria-labelledby="puntos">

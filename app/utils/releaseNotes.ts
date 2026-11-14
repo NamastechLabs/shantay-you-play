@@ -18,6 +18,21 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.3.0',
+    date: '2026-11-14',
+    title: 'Votación por bandas y revelación en dos tiempos',
+    features: [
+      'En las categorías grupales, cada reina ordena a todas las reinas de la banda rival y cada jueza ordena a todas las concursantes, paso a paso y pudiendo volver atrás.',
+      'La jueza también elige qué banda gana, y su Top 3 se rellena a partir del orden que ha dado.',
+      'En la revelación, primero se descubre la banda ganadora con ruleta y confeti, y después el jurado revela el Top 3 de la semana para todas.',
+      'El ranking final de las categorías grupales mezcla el voto de las reinas y el del jurado, con un punto extra para la banda ganadora.',
+      'Nueva página «Votación por bandas» con un ejemplo paso a paso de cómo se calculan los puntos.',
+      'Las fotos de los grupos se ven con contador y se abren todas juntas, y los resultados de la categoría grupal se abren desde «Ver resultados».',
+      'Los grupos pueden tener un texto de presentación, que sus integrantes editan desde «Ver grupo».',
+      'Nueva página «Novedades» en el menú de usuario con lo que trae cada versión.',
+    ],
+  },
+  {
     version: '0.2.0',
     date: '2026-11-13',
     title: 'Categorías grupales',

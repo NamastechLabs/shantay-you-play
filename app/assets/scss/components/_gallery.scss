@@ -129,6 +129,11 @@
   &__media {
     position: relative;
     display: block;
+
+    // Group photos are landscape (16:9), not portrait like a look
+    &--landscape .look-card__photo {
+      aspect-ratio: 16 / 9;
+    }
   }
 
   // "This look has several photos" badge, bottom right of the photo (not clickable)

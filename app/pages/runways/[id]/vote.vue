@@ -99,6 +99,49 @@ const groupCategories = computed(() => runway.value?.categories.filter(category 
 const categoryTitles = computed(() => new Map(runway.value?.categories.map(category => [category.id, category.title])))
 const isOwnQueen = (queen: Queen): boolean => queen.id === participant.value?.id
 
+// --- Steps (runways with a group category) -----------------------------------------
+// Jury: best band, order of the queens, Top 3. Contestant: order of the rival band, Top 3.
+// Only one group category per runway is supported. Navigation is free; steps show a check once saved.
+type VoteStep = 'band' | 'ranking' | 'top3'
+
+interface GroupProgress {
+  eligible: boolean
+  band: boolean
+  ranking: boolean
+  rankingIds: string[]
+}
+
+const groupCategory = computed(() => groupCategories.value[0] ?? null)
+const isJury = computed(() => participant.value?.role === 'jurado')
+const groupProgress = ref<GroupProgress | null>(null)
+
+const steps = computed<{ id: VoteStep, label: string, done: boolean }[]>(() => {
+  if (!groupCategory.value) return []
+  const progress = groupProgress.value
+  const list: { id: VoteStep, label: string, done: boolean }[] = []
+  if (progress?.eligible) {
+    if (isJury.value) list.push({ id: 'band', label: 'Mejor banda', done: progress.band })
+    list.push({ id: 'ranking', label: isJury.value ? 'Ordena a las reinas' : 'Ordena a la banda rival', done: progress.ranking })
+  }
+  list.push({ id: 'top3', label: 'Tu Top 3', done: !!ballotId.value })
+  return list
+})
+
+const hasSteps = computed(() => steps.value.length > 1)
+/** The step lives in the URL (?paso=2) so a refresh keeps it */
+const stepIndex = computed(() => {
+  const requested = Number(route.query.paso)
+  return Number.isInteger(requested) && requested >= 1 && requested <= steps.value.length ? requested - 1 : 0
+})
+const currentStep = computed<VoteStep>(() => steps.value[stepIndex.value]?.id ?? 'top3')
+const showTop3 = computed(() => !hasSteps.value || currentStep.value === 'top3')
+const pendingSteps = computed(() => steps.value.filter(step => step.id !== 'top3' && !step.done).map(step => step.label))
+
+async function goToStep(index: number): Promise<void> {
+  await navigateTo({ query: { ...route.query, paso: String(index + 1) } }, { replace: true })
+  if (import.meta.client) document.getElementById('vote-steps')?.scrollIntoView({ block: 'start' })
+}
+
 // --- Ballot ----------------------------------------------------------------
 const ballotId = ref(data.value?.ballot?.id ?? null)
 /** Picked queen ids in rank order (index 0 = Top 1) */
@@ -110,6 +153,26 @@ const picks = ref<string[]>(
 const saving = ref(false)
 const saveError = ref('')
 const saved = ref(false)
+
+// The jury's Top 3 is proposed from the first three queens of their ranking (they can change it)
+const prefillCandidates = computed(() => (groupProgress.value?.rankingIds ?? [])
+  .filter(id => queens.value.some(queen => queen.id === id && !isOwnQueen(queen)))
+  .slice(0, BALLOT_SIZE))
+const lastPrefill = ref<string[]>([])
+
+function prefillFromRanking(): void {
+  picks.value = [...prefillCandidates.value]
+  lastPrefill.value = [...prefillCandidates.value]
+  saved.value = false
+  saveError.value = ''
+}
+
+// On the Top 3 step, propose the ranking unless the jury already saved or changed their picks
+watch([currentStep, prefillCandidates], () => {
+  if (!isJury.value || currentStep.value !== 'top3' || ballotId.value || !prefillCandidates.value.length) return
+  const untouched = picks.value.length === 0 || picks.value.join() === lastPrefill.value.join()
+  if (untouched) prefillFromRanking()
+}, { immediate: true })
 
 const isComplete = computed(() => picks.value.length === BALLOT_SIZE)
 const votableCount = computed(() => queens.value.filter(queen => !isOwnQueen(queen)).length)
@@ -176,7 +239,7 @@ async function saveBallot(): Promise<void> {
       :items="[
         { label: 'Inicio', to: '/' },
         { label: `Semana ${runway.week_number}`, to: `/runways/${runway.id}` },
-        { label: 'Tu Top 3' },
+        { label: groupCategory ? 'Tu votación' : 'Tu Top 3' },
       ]"
     />
 
@@ -185,7 +248,7 @@ async function saveBallot(): Promise<void> {
         <p class="kicker">
           Semana {{ runway.week_number }} · {{ runwayTitle(runway.categories) }}
         </p>
-        <h1>Tu Top 3</h1>
+        <h1>{{ groupCategory ? 'Tu votación' : 'Tu Top 3' }}</h1>
       </div>
       <nav class="page-header__actions">
         <NuxtLink :to="`/runways/${runway.id}`" class="btn btn--secondary">
@@ -195,82 +258,117 @@ async function saveBallot(): Promise<void> {
     </header>
 
     <template v-if="isVotingOpen">
-      <p class="lead">
-        Vota a las reinas por el conjunto de sus looks de la semana. Toca las reinas en orden: la primera será tu Top 1. Tócala otra vez para quitarla.
-        {{ ballotId ? 'Puedes cambiar tu voto mientras la votación siga abierta.' : '' }}
-      </p>
+      <VoteStepper
+        v-if="hasSteps"
+        id="vote-steps"
+        :steps="steps"
+        :current="stepIndex"
+        label="Pasos de la votación"
+        @select="goToStep"
+      />
 
-      <p v-if="votableCount < BALLOT_SIZE" class="empty">
-        Hacen falta al menos {{ BALLOT_SIZE }} reinas con looks para votar.
-      </p>
+      <GroupCategoryVote
+        v-if="groupCategory"
+        :category="groupCategory"
+        :show-title="runway.categories.length > 1"
+        :step="currentStep"
+        @progress="groupProgress = $event"
+      />
 
-      <ul v-else class="gallery">
-        <li v-for="queen in queens" :key="queen.id">
-          <button
-            type="button"
-            class="look-card"
-            :class="{ 'look-card--picked': rankOf(queen) }"
-            :aria-pressed="rankOf(queen) !== null"
-            :disabled="isOwnQueen(queen) || (isComplete && rankOf(queen) === null)"
-            @click="togglePick(queen)"
-          >
-            <span v-if="rankOf(queen)" class="look-card__rank">{{ rankOf(queen) }}</span>
-            <span class="queen-photos" :style="{ gridTemplateColumns: `repeat(${queen.looks.length}, minmax(0, 1fr))` }">
-              <img
-                v-for="look in queen.looks"
-                :key="look.id"
-                class="queen-photos__photo"
-                :src="look.image_url"
-                :alt="`Look de ${queen.name}: ${categoryTitles.get(look.category_id) ?? ''}`"
-                loading="lazy"
-              >
-            </span>
-            <span class="look-card__body">
-              <span class="look-card__name">{{ queen.name }}</span>
-              <span v-if="isOwnQueen(queen)" class="look-card__intro">Eres tú: no puedes votarte.</span>
-            </span>
+      <div v-show="showTop3" class="vote-top3">
+        <h2 v-if="hasSteps" class="vote-top3__title">
+          Tu Top 3 de la semana
+        </h2>
+        <p class="lead">
+          Vota a las reinas por el conjunto de sus looks de la semana. Toca las reinas en orden: la primera será tu Top 1. Tócala otra vez para quitarla.
+          {{ ballotId ? 'Puedes cambiar tu voto mientras la votación siga abierta.' : '' }}
+        </p>
+
+
+        <p v-if="hasSteps && isJury && lastPrefill.length" class="hint">
+          Hemos propuesto tus tres primeras del orden anterior. Puedes cambiarlas.
+          <button type="button" class="btn btn--secondary" @click="prefillFromRanking">
+            Usar mi orden otra vez
           </button>
-        </li>
-      </ul>
+        </p>
+        <p v-if="hasSteps && pendingSteps.length" class="hint">
+          Todavía no has votado: {{ pendingSteps.join(' y ') }}.
+        </p>
 
-      <div v-if="votableCount >= BALLOT_SIZE" class="ballot-bar">
-        <ol class="ballot-bar__picks" aria-label="Tu Top 3">
-          <li
-            v-for="(label, index) in RANK_LABELS"
-            :key="label"
-            class="ballot-bar__pick"
-            :class="{ 'ballot-bar__pick--filled': picks[index] }"
-          >
-            <span class="ballot-bar__rank">{{ label }}</span>
-            <span class="ballot-bar__name">{{ pickName(index) }}</span>
+        <p v-if="votableCount < BALLOT_SIZE" class="empty">
+          Hacen falta al menos {{ BALLOT_SIZE }} reinas con looks para votar.
+        </p>
+
+        <ul v-else class="gallery">
+          <li v-for="queen in queens" :key="queen.id">
+            <button
+              type="button"
+              class="look-card"
+              :class="{ 'look-card--picked': rankOf(queen) }"
+              :aria-pressed="rankOf(queen) !== null"
+              :disabled="isOwnQueen(queen) || (isComplete && rankOf(queen) === null)"
+              @click="togglePick(queen)"
+            >
+              <span v-if="rankOf(queen)" class="look-card__rank">{{ rankOf(queen) }}</span>
+              <span class="queen-photos" :style="{ gridTemplateColumns: `repeat(${queen.looks.length}, minmax(0, 1fr))` }">
+                <img
+                  v-for="look in queen.looks"
+                  :key="look.id"
+                  class="queen-photos__photo"
+                  :src="look.image_url"
+                  :alt="`Look de ${queen.name}: ${categoryTitles.get(look.category_id) ?? ''}`"
+                  loading="lazy"
+                >
+              </span>
+              <span class="look-card__body">
+                <span class="look-card__name">{{ queen.name }}</span>
+                <span v-if="isOwnQueen(queen)" class="look-card__intro">Eres tú: no puedes votarte.</span>
+              </span>
+            </button>
           </li>
-        </ol>
-        <div class="ballot-bar__actions">
-          <p v-if="saveError" class="form-error" role="alert">
-            {{ saveError }}
-          </p>
-          <p v-else-if="saved" class="ballot-bar__saved" role="status">
-            ¡Voto guardado!
-          </p>
-          <button
-            type="button"
-            class="btn btn--primary"
-            :disabled="!isComplete || saving"
-            @click="saveBallot"
-          >
-            {{ saving ? 'Guardando…' : ballotId ? 'Actualizar mi voto' : 'Enviar mi voto' }}
-          </button>
+        </ul>
+
+        <div v-if="votableCount >= BALLOT_SIZE" class="ballot-bar">
+          <ol class="ballot-bar__picks" aria-label="Tu Top 3">
+            <li
+              v-for="(label, index) in RANK_LABELS"
+              :key="label"
+              class="ballot-bar__pick"
+              :class="{ 'ballot-bar__pick--filled': picks[index] }"
+            >
+              <span class="ballot-bar__rank">{{ label }}</span>
+              <span class="ballot-bar__name">{{ pickName(index) }}</span>
+            </li>
+          </ol>
+          <div class="ballot-bar__actions">
+            <p v-if="saveError" class="form-error" role="alert">
+              {{ saveError }}
+            </p>
+            <p v-else-if="saved" class="ballot-bar__saved" role="status">
+              ¡Voto guardado!
+            </p>
+            <button
+              type="button"
+              class="btn btn--primary"
+              :disabled="!isComplete || saving"
+              @click="saveBallot"
+            >
+              {{ saving ? 'Guardando…' : ballotId ? 'Actualizar mi voto' : 'Enviar mi voto' }}
+            </button>
+          </div>
         </div>
       </div>
 
-      <GroupCategoryVote
-        v-for="category in groupCategories"
-        :key="category.id"
-        :category="category"
-        :show-title="runway.categories.length > 1"
+      <!-- Phones only: the same stepper again below the step, so you do not scroll back up to change step -->
+      <VoteStepper
+        v-if="hasSteps"
+        class="vote-steps__bottom"
+        :steps="steps"
+        :current="stepIndex"
+        label="Pasos de la votación (abajo)"
+        @select="goToStep"
       />
     </template>
-
     <p v-else class="empty">
       {{ runway.status === 'closed' || runway.status === 'reveal'
         ? 'La votación de esta semana ya cerró.'
@@ -288,6 +386,21 @@ async function saveBallot(): Promise<void> {
 </template>
 
 <style scoped lang="scss">
+.vote-top3 {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.vote-top3__title {
+  font-size: 1.25rem;
+}
+
+.vote-steps__bottom {
+  @media (min-width: 48rem) {
+    display: none;
+  }
+}
+
 // All the looks of a queen side by side, one per category
 .queen-photos {
   display: grid;

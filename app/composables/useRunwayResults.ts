@@ -8,6 +8,16 @@ export interface RunwayQueen {
   name: string
 }
 
+export interface RevealBand {
+  /** The group id */
+  id: string
+  name: string
+  /** First photo of the band */
+  image_url: string
+  /** 1 = winner (both bands are 1 on a draw) */
+  place: 1 | 2
+}
+
 /**
  * Results are per queen, not per look: a queen walks one look per category, so
  * her photo here is the first look she uploaded in the runway.
@@ -58,5 +68,28 @@ export function useRunwayResults() {
     return winners
   }
 
-  return { loadTopThree, loadWinners }
+  /**
+   * The two bands of a group category with who won the jury's band vote (public from 'reveal').
+   * Empty when nobody has voted yet or a band has no photo.
+   */
+  async function loadBandResult(categoryId: string): Promise<RevealBand[]> {
+    const [result, groups, photos] = await Promise.all([
+      supabase.rpc('category_group_result', { p_category_id: categoryId }),
+      supabase.from('category_groups').select('id, name').eq('category_id', categoryId).order('position'),
+      supabase.from('category_group_photos').select('group_id, image_url').eq('category_id', categoryId),
+    ])
+    if (result.error) throw result.error
+    if (groups.error) throw groups.error
+    if (photos.error) throw photos.error
+    if (!result.data.some(row => row.is_winner)) return []
+
+    return groups.data.flatMap((group) => {
+      const row = result.data.find(candidate => candidate.group_id === group.id)
+      const photo = photos.data.find(candidate => candidate.group_id === group.id)
+      if (!row || !photo?.image_url) return []
+      return [{ id: group.id, name: group.name, image_url: photo.image_url, place: row.is_winner ? 1 : 2 } as RevealBand]
+    })
+  }
+
+  return { loadTopThree, loadWinners, loadBandResult }
 }

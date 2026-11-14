@@ -106,6 +106,33 @@
   }
 }
 
+// Free navigation (e.g. voting steps): every step is a button, any order.
+// Dashed = still to do, solid + check = done, filled = where you are.
+.stepper--free {
+  .stepper__step {
+    font-family: inherit;
+    cursor: pointer;
+    transition: box-shadow 0.15s, background-color 0.15s;
+
+    &:hover:not(.stepper__step--current) {
+      background-color: var(--color-surface-raised);
+      box-shadow: var(--glow-accent);
+    }
+
+    &--done:not(.stepper__step--current) {
+      color: var(--color-text);
+      border-color: var(--color-success);
+    }
+  }
+
+  // Labels can be longer than the admin steps, so let them wrap
+  .stepper__step {
+    min-width: 0;
+    white-space: normal;
+    text-align: center;
+  }
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;

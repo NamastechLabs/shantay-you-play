@@ -4,11 +4,13 @@ defineProps<{
   alt: string
   /** Number of photos of the look; a badge shows when there are several */
   count: number
+  /** Landscape photo (group photos) instead of the portrait look ratio */
+  landscape?: boolean
 }>()
 </script>
 
 <template>
-  <span class="look-card__media">
+  <span class="look-card__media" :class="{ 'look-card__media--landscape': landscape }">
     <img class="look-card__photo" :src="src" :alt="alt" loading="lazy">
     <!-- Passive cue only: pagination lives in the look dialog -->
     <span v-if="count > 1" class="look-card__count" role="img" :aria-label="`${count} fotos`">
