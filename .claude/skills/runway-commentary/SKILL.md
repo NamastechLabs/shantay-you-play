@@ -38,11 +38,12 @@ If either is missing, ask the user for it once and stop.
 {
   "runway": { "week_number": 3, "date": "2026-11-08", "status": "runway" },
   "categories": [{
-    "title": "…", "intro": "…",
-    "looks": [{ "queen": "…", "intro": "…", "photos": [{ "label": "Foto 1", "url": "https://…" }] }],
+    "title": "…", "type": "individual | group", "intro": "…",
+    "groups": [{ "name": "…", "intro": "…", "photos": [{ "label": "Foto 1", "url": "https://…" }], "members": ["…"] }],
+    "looks": [{ "queen": "…", "group": "… | null", "intro": "…", "photos": [{ "label": "Foto 1", "url": "https://…" }] }],
     "jury_looks": [ /* same shape */ ]
   }]
 }
 ```
 
-`intro` may be null when the queen wrote none. Jury looks are not voted on; comment on them only if the user asks.
+`groups` is empty unless `type` is `group`: then comment on each band as a whole (its intro and photos, download them to a `grupos` subfolder) as well as on each queen's look. `intro` may be null when the queen wrote none. Jury looks are not voted on; comment on them only if the user asks.
