@@ -18,6 +18,15 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.6.0',
+    date: '2026-11-15',
+    title: 'Bandas en los comentarios y logo con corona',
+    features: [
+      'El ZIP de la semana para los comentarios con IA incluye ahora las bandas: su nombre, presentación, integrantes y fotos.',
+      'Estrenamos logo con corona en la barra de navegación, además de un nuevo icono de la app.',
+    ],
+  },
+  {
     version: '0.5.1',
     date: '2026-11-15',
     title: 'Fotos de los looks más claras',

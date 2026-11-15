@@ -13,7 +13,7 @@ runway.json
 <category-slug>/jury/<queen>-foto-1.webp
 ```
 
-`runway.json` has the same shape as the endpoint (`runway`, `categories[].{title, intro, looks, jury_looks}`), except each photo has `file` (path inside the ZIP) instead of `url`.
+Each category has `type` (`individual` or `group`). For group categories it also has `groups[]` (`name`, `intro`, `photos`, `members` as drag names) and every queen's look has `group` (her group's name; `null` in individual categories and for jury looks). `runway.json` has the same shape as the endpoint (`runway`, `categories[].{title, intro, looks, jury_looks}`), except each photo has `file` (path inside the ZIP) instead of `url`.
 
 ## How it works
 
