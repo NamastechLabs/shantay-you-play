@@ -2,10 +2,10 @@ import { serverSupabaseServiceRole } from '#supabase/server'
 
 /** Photo slots of a look, in order (mirrors app/utils/lookSlots.ts). */
 const SLOTS = [
-  { column: 'image_url', label: 'Frente' },
-  { column: 'image2_url', label: 'Espalda' },
-  { column: 'image3_url', label: 'Reveal' },
-  { column: 'image4_url', label: 'Extra' },
+  { column: 'image_url', label: 'Foto 1' },
+  { column: 'image2_url', label: 'Foto 2' },
+  { column: 'image3_url', label: 'Foto 3' },
+  { column: 'image4_url', label: 'Foto 4' },
 ] as const
 
 type LookRow = {

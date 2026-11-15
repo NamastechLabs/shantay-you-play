@@ -187,8 +187,8 @@ const multipleCategories = computed(() => (data.value?.categories.length ?? 0) >
       </p>
       <template v-else>
         <p class="hint">
-          Sube hasta 4 fotos de tu look (frente, espalda, reveal y una extra) y cuéntanos de qué va.
-          La foto de frente es obligatoria. Puedes cambiarlo todo mientras el Werk Room siga abierto.
+          Sube hasta 4 fotos de tu look y cuéntanos de qué va.
+          La Foto 1 es obligatoria. Puedes cambiarlo todo mientras el Werk Room siga abierto.
         </p>
         <ul class="row-list">
           <template v-for="category in data.categories" :key="category.id">

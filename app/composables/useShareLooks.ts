@@ -1,6 +1,6 @@
 export interface SharePhoto {
   url: string
-  /** What the photo shows (Frente, Espalda…); it goes into the file name */
+  /** What the photo shows (Foto 1, Foto 2…); it goes into the file name */
   label: string
 }
 
@@ -40,7 +40,7 @@ function slugify(text: string, separator: string): string {
 }
 
 /**
- * Sortable file name ("01-frente-ana_conda.webp", "02-espalda-ana_conda.webp"…):
+ * Sortable file name ("01-foto-1-ana_conda.webp", "02-foto-2-ana_conda.webp"…):
  * apps that order the attachments by name, and people who save them, get the
  * photos in the right order, and know whose look they are.
  */

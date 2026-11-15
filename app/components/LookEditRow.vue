@@ -185,7 +185,7 @@ async function save(): Promise<void> {
         <label class="look-slot__add">
           <span class="look-slot__add-title">{{ filledSlots.length ? '+ Añadir' : 'Añadir fotos' }}</span>
           <span class="look-slot__add-hint">
-            {{ filledSlots.length ? `Caben ${freeSlots.length} más` : `Hasta ${LOOK_SLOTS.length} · la primera es el frente` }}
+            {{ filledSlots.length ? `Caben ${freeSlots.length} más` : `Hasta ${LOOK_SLOTS.length} · la primera es obligatoria` }}
           </span>
           <input
             :key="`add-${inputKey}`"

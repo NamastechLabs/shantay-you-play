@@ -1,16 +1,16 @@
-/** A queen's look has up to 4 photos, one column each; the first (front) is required. */
+/** A queen's look has up to 4 photos, one column each; the first is required. */
 export const LOOK_SLOTS = [
-  { key: 'image_url', label: 'Frente' },
-  { key: 'image2_url', label: 'Espalda' },
-  { key: 'image3_url', label: 'Reveal' },
-  { key: 'image4_url', label: 'Extra' },
+  { key: 'image_url', label: 'Foto 1' },
+  { key: 'image2_url', label: 'Foto 2' },
+  { key: 'image3_url', label: 'Foto 3' },
+  { key: 'image4_url', label: 'Foto 4' },
 ] as const
 
 export type LookSlot = typeof LOOK_SLOTS[number]['key']
 
 export type LookImages = { image_url: string } & Partial<Record<Exclude<LookSlot, 'image_url'>, string | null>>
 
-/** Photos of a look in slot order with their slot label (Frente, Espalda…), skipping the empty slots. */
+/** Photos of a look in slot order with their slot label (Foto 1, Foto 2…), skipping the empty slots. */
 export function lookPhotos(look: LookImages): { url: string, label: string }[] {
   return LOOK_SLOTS.flatMap(slot => (look[slot.key] ? [{ url: look[slot.key] as string, label: slot.label }] : []))
 }

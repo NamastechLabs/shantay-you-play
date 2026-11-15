@@ -8,9 +8,9 @@ The week summary (`/admin/runways/[id]`, judges only) has a "Comentarios con IA"
 
 ```
 runway.json
-<category-slug>/<queen>-frente.webp
-<category-slug>/<queen>-espalda.webp
-<category-slug>/jury/<queen>-frente.webp
+<category-slug>/<queen>-foto-1.webp
+<category-slug>/<queen>-foto-2.webp
+<category-slug>/jury/<queen>-foto-1.webp
 ```
 
 `runway.json` has the same shape as the endpoint (`runway`, `categories[].{title, intro, looks, jury_looks}`), except each photo has `file` (path inside the ZIP) instead of `url`.

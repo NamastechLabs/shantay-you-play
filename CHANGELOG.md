@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Look photo slots are now labelled "Foto 1" to "Foto 4" (formerly Frente, Espalda, Reveal and Extra), like the group photos, in the app, the shared file names (`01-foto-1-…`), the ZIP export and the commentary endpoint; the copy that mentioned "frente" now says the first photo is required
+
 ### Fixed
 
 - Photos uploaded from browsers that cannot encode WebP natively (Safari) were stored as JPEG; they are now encoded to WebP with a WASM encoder (new dependency `@jsquash/webp`), keeping JPEG only as a last resort

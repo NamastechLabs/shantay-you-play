@@ -93,8 +93,8 @@ const multipleCategories = computed(() => (data.value?.categories.length ?? 0) >
       </p>
       <template v-else>
         <p class="hint">
-          Sube hasta 4 fotos de tu look (frente, espalda, reveal y una extra) y escribe una presentación.
-          La foto de frente y la presentación son obligatorias. Podrás cambiarlo mientras la semana siga en Werk Room o Pasarela.
+          Sube hasta 4 fotos de tu look y escribe una presentación.
+          La Foto 1 y la presentación son obligatorias. Podrás cambiarlo mientras la semana siga en Werk Room o Pasarela.
         </p>
         <ul class="row-list">
           <AdminJuryLookRow

@@ -26,7 +26,7 @@ If either is missing, ask the user for it once and stop.
 
    - `401`: wrong token. `404`: no runway is in the Pasarela stage (tell the user, offer `?week=N`) or the endpoint is disabled on that server.
 
-2. Download every photo into a scratchpad folder, one subfolder per category, named `<queen>-<label>.<ext>` (`Frente`, `Espalda`, `Reveal`, `Extra`). Photo URLs are public, no auth needed. Keep jury photos in a `jury` subfolder.
+2. Download every photo into a scratchpad folder, one subfolder per category, named `<queen>-<label>.<ext>` (`Foto 1` to `Foto 4`). Photo URLs are public, no auth needed. Keep jury photos in a `jury` subfolder.
 
 3. Read the images (view each file) together with the queen's `intro`.
 
@@ -39,7 +39,7 @@ If either is missing, ask the user for it once and stop.
   "runway": { "week_number": 3, "date": "2026-11-08", "status": "runway" },
   "categories": [{
     "title": "…", "intro": "…",
-    "looks": [{ "queen": "…", "intro": "…", "photos": [{ "label": "Frente", "url": "https://…" }] }],
+    "looks": [{ "queen": "…", "intro": "…", "photos": [{ "label": "Foto 1", "url": "https://…" }] }],
     "jury_looks": [ /* same shape */ ]
   }]
 }

@@ -340,7 +340,7 @@ async function savePasted(): Promise<void> {
         Los jurados necesitan una presentación: sube su primera foto desde su fila.
       </p>
       <p v-else-if="pasteSlotLocked && pasteTargetId" class="hint">
-        Un look nuevo empieza con la foto de frente.
+        Un look nuevo empieza con la Foto 1.
       </p>
       <p v-if="pasteError" class="form-error" role="alert">
         {{ pasteError }}
