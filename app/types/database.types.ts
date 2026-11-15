@@ -398,7 +398,7 @@ isOneToOne: false
 { Args: { "p_category_id": string }; Returns: { participant_id: string, total_votes: number }[]
                            },
 "category_ranking_result":
-{ Args: { "p_category_id": string }; Returns: { participant_id: string, group_id: string, cross_score: number, jury_score: number, band_bonus: number, total: number, position: number }[]
+{ Args: { "p_category_id": string }; Returns: { participant_id: string, group_id: string, cross_score: number, jury_score: number, band_bonus: number, top3_score: number, total: number, position: number }[]
                            },
 "submit_ranking_ballot":
 { Args: { "p_category_id": string,"p_stage": Database["public"]["Enums"]["ranking_stage"],"p_participant_ids": string[] }; Returns: undefined

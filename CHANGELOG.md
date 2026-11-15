@@ -5,6 +5,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-15
+
+### Changed
+
+- In a runway with a group category the Top 3 of the week now counts in the final ranking and there is a single absolute winner: `total = 0.5 × group score + 0.5 × Top 3 score`, where the Top 3 score is the queen's points ÷ (3 × ballots actually cast). The podium of the reveal and the closed ranking come from that same ranking, and the results table and the `/votacion-bandas` help gain a "Top 3" column. Runways without a group category are unchanged. Requires migration `20261115000100_group_ranking_includes_top3.sql`
+
 ## [0.6.0] - 2026-11-15
 
 ### Added

@@ -18,6 +18,16 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.7.0',
+    date: '2026-11-15',
+    title: 'Una sola ganadora en las semanas de bandas',
+    features: [
+      'En las semanas con bandas, el Top 3 de la semana suma a la clasificación: el podio que se revela es el mismo que el de la tabla de resultados.',
+      'La tabla de resultados tiene una columna nueva con la nota del Top 3.',
+      'La página «Cómo funciona esta votación» explica la nueva nota final con un ejemplo.',
+    ],
+  },
+  {
     version: '0.6.0',
     date: '2026-11-15',
     title: 'Bandas en los comentarios y logo con corona',

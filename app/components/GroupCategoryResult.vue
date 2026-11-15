@@ -40,7 +40,7 @@ const { data, error } = await useAsyncData(`group-result-${props.category.id}`, 
   }
 })
 
-const hasRanking = computed(() => !!data.value?.rows.some(row => row.total > row.band_bonus))
+const hasRanking = computed(() => !!data.value?.rows.some(row => row.cross_score > 0 || row.jury_score > 0 || row.top3_score > 0))
 
 // The results live in a modal, opened from the button at the top of the page
 const open = ref(false)
@@ -103,6 +103,9 @@ const modalTitle = computed(() => `Resultados${props.showTitle ? ` · ${props.ca
                     {{ copy.headers.jury }}
                   </th>
                   <th scope="col">
+                    {{ copy.headers.top3 }}
+                  </th>
+                  <th scope="col">
                     {{ copy.headers.total }}
                   </th>
                 </tr>
@@ -119,6 +122,7 @@ const modalTitle = computed(() => `Resultados${props.showTitle ? ` · ${props.ca
                   <td>{{ row.band_bonus ? formatScore(row.band_bonus, 1) : '0' }}</td>
                   <td>{{ formatScore(row.cross_score) }}</td>
                   <td>{{ formatScore(row.jury_score) }}</td>
+                  <td>{{ formatScore(row.top3_score) }}</td>
                   <td class="group-result__total">
                     {{ formatScore(row.total) }}
                   </td>
@@ -185,7 +189,7 @@ const modalTitle = computed(() => `Resultados${props.showTitle ? ` · ${props.ca
 
 .group-result__table {
   width: 100%;
-  min-width: 30rem;
+  min-width: 34rem;
   border-collapse: collapse;
   font-variant-numeric: tabular-nums;
 

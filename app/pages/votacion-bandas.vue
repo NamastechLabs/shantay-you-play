@@ -99,6 +99,16 @@ const mentionsAlternative = GROUP_RANKING.bandBonus < copy.compareBonusOriginal
           </template>
           <span class="group-help__term group-help__term--result">{{ copy.formulaResult }}</span>
         </p>
+        <h3 class="group-help__subtitle">
+          {{ copy.formulaGroupTitle }}
+        </h3>
+        <p class="group-help__equation">
+          <template v-for="(term, index) in copy.formulaGroupTerms" :key="term">
+            <span class="group-help__term">{{ term }}</span>
+            <span class="group-help__operator" aria-hidden="true">{{ index < copy.formulaGroupTerms.length - 1 ? '+' : '=' }}</span>
+          </template>
+          <span class="group-help__term group-help__term--result">{{ copy.formulaGroupResult }}</span>
+        </p>
         <p class="hint">
           {{ copy.formulaNote }}
         </p>
@@ -135,6 +145,7 @@ const mentionsAlternative = GROUP_RANKING.bandBonus < copy.compareBonusOriginal
               <td>{{ formatScore(row.crossScore) }}</td>
               <td>{{ formatScore(row.juryScore) }}</td>
               <td>{{ row.bandBonus ? formatScore(row.bandBonus, 1) : '0' }}</td>
+              <td>{{ formatScore(row.top3Score) }}</td>
               <td class="group-help__total">
                 {{ formatScore(row.total) }}
               </td>
@@ -155,9 +166,10 @@ const mentionsAlternative = GROUP_RANKING.bandBonus < copy.compareBonusOriginal
         </p>
         <p class="card">
           <strong>Cuenta de {{ winner.id }}:</strong>
-          {{ formatScore(GROUP_RANKING.weightCross) }} × {{ formatScore(winner.crossScore) }}
+          {{ formatScore(GROUP_RANKING.weightGroup) }} × ({{ formatScore(GROUP_RANKING.weightCross) }} × {{ formatScore(winner.crossScore) }}
           + {{ formatScore(GROUP_RANKING.weightJury) }} × {{ formatScore(winner.juryScore) }}
-          + {{ formatScore(winner.bandBonus, 1) }}
+          + {{ formatScore(winner.bandBonus, 1) }})
+          + {{ formatScore(GROUP_RANKING.weightTop3) }} × {{ formatScore(winner.top3Score) }}
           = {{ formatScore(winner.total) }}.
         </p>
       </div>
@@ -203,7 +215,11 @@ const mentionsAlternative = GROUP_RANKING.bandBonus < copy.compareBonusOriginal
   gap: var(--space-3);
 
   @media (min-width: 48rem) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (min-width: 64rem) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   > li {
@@ -227,6 +243,15 @@ const mentionsAlternative = GROUP_RANKING.bandBonus < copy.compareBonusOriginal
 
 .group-help__tag--3 {
   background-color: var(--color-highlight);
+}
+
+.group-help__tag--4 {
+  background-color: var(--color-success);
+}
+
+.group-help__subtitle {
+  margin-top: var(--space-3);
+  font-size: 1rem;
 }
 
 .group-help__chips {

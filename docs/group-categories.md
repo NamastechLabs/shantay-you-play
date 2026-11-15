@@ -1,6 +1,6 @@
 # Group categories
 
-Status: **implemented** (DRG-5, released in 0.2.0; ranking votes in DRG-8). Migrations: `20261111000000_group_categories.sql`, `20261111000100_group_photos.sql`, `20261113000000_group_intro.sql`, `20261114000000_group_ranking_votes.sql` and `20261114000100_runway_reveal_stage.sql`.
+Status: **implemented** (DRG-5, released in 0.2.0; ranking votes in DRG-8). Migrations: `20261111000000_group_categories.sql`, `20261111000100_group_photos.sql`, `20261113000000_group_intro.sql`, `20261114000000_group_ranking_votes.sql`, `20261114000100_runway_reveal_stage.sql` and `20261115000100_group_ranking_includes_top3.sql` (the Top 3 of the week counts in the ranking).
 
 ## Goal
 
@@ -15,8 +15,9 @@ Some weeks have a category that is played by teams ("bands" in the UI). The quee
 | Phase 1: band vote | Only judges vote, one band each. The band(s) with the most votes win; **on a draw both bands win**. |
 | Phase 2: cross vote | Each contestant ranks **all** the members of the **rival** band, best to worst. The ballot must be complete. |
 | Phase 3: jury runway | Each judge ranks **all** the contestants in bands, best to worst. The ballot must be complete. |
-| Final ranking | `weight_cross * cross_score + weight_jury * jury_score + band_bonus` (see below). Public from `reveal`; ballots stay private until `closed`. |
-| Runway Top 3 | Unchanged. Group votes are separate tables and do not add points to it. |
+| Top 3 of the week | The regular `votes` ballot (3/2/1 points). In a runway with a group category it is **part of the final ranking** (see below). |
+| Final ranking | `weight_group * (weight_cross * cross_score + weight_jury * jury_score + band_bonus) + weight_top3 * top3_score` (see below). Public from `reveal`; ballots stay private until `closed`. |
+| Podium of the reveal | One absolute winner: in a runway with a group category the Top 3 revealed (`runway_top_three`) and the closed ranking (`runway_ranking`) come from this same ranking. Runways without one are unchanged (plain Top 3). |
 
 A group category cannot go back to `individual` while it has groups (trigger `protect_category_kind`).
 
@@ -27,10 +28,12 @@ Bands may have a different number of members: nothing assumes 3 per band. Only `
 - Value of one vote = `(N - rank + 1) / N`, with `N` = candidates on that ballot (the favourite always weighs 1). `cross`: `N` is the rival band size; `jury`: `N` is the number of contestants.
 - `cross_score` = **average** of that value over the voters of the rival band who voted. `jury_score` = average over the judges who voted.
 - `band_bonus` = `band_bonus_value` for every member of a band that won phase 1 (`category_group_result.is_winner`), otherwise 0. If both bands win on a draw, both get it.
-- `total = weight_cross * cross_score + weight_jury * jury_score + band_bonus`. Maximum with the current values: 1.2.
-- **Constants** (now `0.5`, `0.5` and `0.2`) are at the top of `category_ranking_result` (last defined in `20261114000100_runway_reveal_stage.sql`) and mirrored in `app/utils/groupRanking.ts`, which feeds the help page `/votacion-bandas`. To change them: a new migration that replaces the function **and** an edit of `groupRanking.ts`, then review the worked example of the help page (it is recomputed from the constants). 40/60 is `0.4`/`0.6`; a `0.4` bonus is roughly the +6 points of the original simulation; `0` leaves phase 1 as a tie-break only.
+- `top3_score` = Top 3 points of the queen (3, 2, 1 per ballot) `/ (3 * ballots cast)`. **Only the ballots that exist count** (`count(*)` of `votes` of the runway), so a queen who did not vote, or could not, does not lower anybody's score; `0` when nobody voted. Whoever is not in a band has no group score and is not part of this ranking.
+- `group_score = weight_cross * cross_score + weight_jury * jury_score + band_bonus` (max 1.2 with the current values).
+- `total = weight_group * group_score + weight_top3 * top3_score`. Maximum with the current values: 1.1.
+- **Constants** (now `0.5` cross, `0.5` jury, `0.2` bonus, `0.5` group and `0.5` top 3) are at the top of `category_ranking_core` (last defined in `20261115000100_group_ranking_includes_top3.sql`) and mirrored in `app/utils/groupRanking.ts`, which feeds the help page `/votacion-bandas`. To change them: a new migration that replaces the function **and** an edit of `groupRanking.ts`, then review the worked example of the help page (it is recomputed from the constants). For example, `weight_group` `0.6` / `weight_top3` `0.4` gives bands more weight; a `0.4` bonus is roughly the +6 points of the original simulation; `0` leaves phase 1 as a tie-break only.
 - **Order of `position`**: `total` descending; then the contestant of the winning band; then higher `jury_score`; if still tied they share the position (`rank()`). Scores are rounded to 6 decimals so equal fractions compare as equal.
-- **Display**: the UI shows `cross_score`, `jury_score`, `band_bonus` and `total` as the database returns them, with 3 decimals (`0,667`), never rounded to whole numbers. The order always comes from `position`.
+- **Display**: the UI shows `cross_score`, `jury_score`, `band_bonus`, `top3_score` and `total` as the database returns them, with 3 decimals (`0,667`), never rounded to whole numbers. The order always comes from `position`.
 
 ### Database
 
@@ -38,7 +41,8 @@ Bands may have a different number of members: nothing assumes 3 per band. Only `
 - `category_ranking_votes`: one row per ranked candidate (`category_id`, `stage`, `voter_id`, `participant_id`, `rank`). Unique per `(category, stage, voter, rank)` and `(category, stage, voter, participant)`; a voter cannot rank herself. Only group categories accept rows (trigger `enforce_group_category`).
 - RLS: `select` only. You always see your own ballot; everyone's once the category is `closed`. There are **no insert/update/delete grants**.
 - `submit_ranking_ballot(category_id, stage, participant_ids[])` (`SECURITY DEFINER`, `authenticated` only): validates and replaces the caller's ballot in one transaction; `rank` is the position in the array. It requires a group category in `voting`; `cross` needs a `concursante` in a band and exactly the rival band; `jury` needs a `jurado` and exactly all the contestants in bands. Anything incomplete, duplicated or foreign raises (`42501` not allowed or voting closed, `22023` invalid ballot).
-- `category_ranking_result(category_id)` (`SECURITY DEFINER`, `stable`): `participant_id`, `group_id`, `cross_score`, `jury_score`, `band_bonus`, `total`, `position`. Empty before `reveal`.
+- `category_ranking_core(category_id)` (`SECURITY DEFINER`, internal, not granted to any API role): the computation, with no visibility rules. `category_ranking_result(category_id)` (`SECURITY DEFINER`, `stable`) wraps it: `participant_id`, `group_id`, `cross_score`, `jury_score`, `band_bonus`, `top3_score`, `total`, `position`. Empty before `reveal`.
+- `runway_standings(runway_id)` (`SECURITY DEFINER`, internal): the ranking of the queens of a runway. With a group category that has any vote: band members by `position`, then the other queens by their Top 3 points; otherwise the plain Top 3 ranking. `runway_top_three` (first 3, from `reveal`) and `runway_ranking` (all, when `closed`) read it and keep their visibility rules. Its `total_points` is always the queen's raw Top 3 points, so "Mis looks" can show "N pts" next to a place decided by the combined ranking. Only one group category per runway is supported.
 - `category_queen_votes` and `category_queen_result` (the old Top 1) stay as legacy and are no longer used by the app. Old votes are not migrated: they only hold a Top 1, so they cannot be a complete ballot.
 
 ### Staged reveal
@@ -67,7 +71,7 @@ The vote page (`/runways/[id]/vote`) guides voters through the ballots of a grou
 | Contestant without a band, or a runway without group categories | Only the Top 3, no stepper |
 | Jury, in a runway whose **only** category is the group one (`groupOnly` in `vote.vue`) | Band vote and ranking only, no Top 3 step. Contestants keep their Top 3 |
 
-The jury's Top 3 step is **pre-filled** with the first three queens of their saved ranking (only queens with a look in the runway), unless they already saved a Top 3 or changed the proposal; they can edit it, and "Usar mi orden otra vez" re-applies it. The Top 3 itself is the regular `votes` ballot, unchanged: it is the vote of the week across **all** the categories of the runway, which is why it stays even for the jury (a runway can mix a group category with individual ones, and a judge may want to differ from their band ranking). Only **one group category per runway** is supported by the stepper.
+The jury's Top 3 step is **pre-filled** with the first three queens of their saved ranking (only queens with a look in the runway), unless they already saved a Top 3 or changed the proposal; they can edit it, and "Usar mi orden otra vez" re-applies it. The Top 3 itself is the regular `votes` ballot (it now also feeds the group ranking): it is the vote of the week across **all** the categories of the runway, which is why it stays even for the jury (a runway can mix a group category with individual ones, and a judge may want to differ from their band ranking). Only **one group category per runway** is supported by the stepper.
 
 ### Help page
 

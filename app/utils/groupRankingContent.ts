@@ -19,7 +19,7 @@ export const GROUP_VOTING_COPY = {
   helpLink: '¿Cómo funciona esta votación?',
   kicker: `${APP_NAME} · Categorías de grupo`,
   title: 'Cómo funciona la votación de las bandas',
-  lead: `Tres votaciones, una nota entre 0 y 1 para cada concursante, y un regalo para la banda que gane la primera fase.`,
+  lead: `Tres votaciones de bandas más el Top 3 de la semana, una sola clasificación y una única ganadora absoluta. La banda que gane la primera fase se lleva un regalo.`,
 
   phases: [
     {
@@ -37,6 +37,11 @@ export const GROUP_VOTING_COPY = {
       title: 'Pasarela de los Javis',
       text: 'Cada Javi ordena a **todas** las concursantes según su look individual. Con varios Javis se hace la media de sus notas.',
     },
+    {
+      tag: 'Top 3',
+      title: 'El Top 3 de la semana',
+      text: 'Cada concursante elige sus tres reinas favoritas: 3, 2 y 1 puntos. La nota es los puntos de la reina entre el máximo posible, contando **solo las papeletas que se han entregado**: quien no vota no resta a nadie.',
+    },
   ],
 
   valuesTitle: 'Cuánto vale cada puesto',
@@ -46,17 +51,23 @@ export const GROUP_VOTING_COPY = {
 
   formulaTitle: 'La nota final',
   formulaTerms: [
+    `${share(GROUP_RANKING.weightGroup)} de la nota de bandas`,
+    `${share(GROUP_RANKING.weightTop3)} de la nota del Top 3`,
+  ],
+  formulaResult: 'Nota final',
+  formulaGroupTitle: 'La nota de bandas',
+  formulaGroupTerms: [
     `${share(GROUP_RANKING.weightCross)} de la fase 2`,
     `${share(GROUP_RANKING.weightJury)} de la fase 3`,
     `${plain(GROUP_RANKING.bandBonus)} si tu banda ganó la fase 1`,
   ],
-  formulaResult: 'Nota final',
-  formulaNote: `La nota máxima posible es ${plain(GROUP_RANKING_MAX_TOTAL)}. Si dos concursantes empatan, pasa delante la de la banda ganadora y, si siguen empatadas, la que tenga mejor nota de la fase 3.`,
+  formulaGroupResult: 'Nota de bandas',
+  formulaNote: `La nota máxima posible es ${plain(GROUP_RANKING_MAX_TOTAL)}. Esta misma clasificación decide el podio que se revela: la ganadora es la primera de la tabla. Si dos concursantes empatan, pasa delante la de la banda ganadora y, si siguen empatadas, la que tenga mejor nota de la fase 3.`,
 
   exampleTitle: 'Ejemplo completo',
   exampleWon: 'ganó la fase 1',
   exampleLost: 'perdió la fase 1',
-  exampleHeaders: ['Concursante', 'Fase 2', 'Fase 3', 'Regalo', 'Nota final'],
+  exampleHeaders: ['Concursante', 'Fase 2', 'Fase 3', 'Regalo', 'Top 3', 'Nota final'],
 
   compareTitle: 'Diferencia con la simulación original',
   /** Bonus roughly equivalent to the +6 points of the original simulation */
@@ -69,7 +80,7 @@ export const GROUP_VOTING_COPY = {
 
 export const GROUP_RESULT_COPY = {
   title: 'Clasificación final',
-  headers: { position: 'Puesto', name: 'Reina', bonus: 'Regalo', cross: 'Fase 2', jury: 'Fase 3', total: 'Nota final' },
+  headers: { position: 'Puesto', name: 'Reina', bonus: 'Regalo', cross: 'Fase 2', jury: 'Fase 3', top3: 'Top 3', total: 'Nota final' },
   bonusInfo: 'Fase 1 - Votación del jurado a la mejor banda: las reinas de la banda ganadora reciben este regalo.',
   bonusInfoLabel: 'Qué es el regalo',
   winningBand: 'Banda ganadora',

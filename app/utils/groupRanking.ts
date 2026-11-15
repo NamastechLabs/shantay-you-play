@@ -1,22 +1,35 @@
 /**
  * Scoring constants of the group categories (DRG-8).
  *
- * They MUST match the constants at the top of `category_ranking_result`, as last defined in
- * `supabase/migrations/20261114000100_runway_reveal_stage.sql` (or a later migration that replaces it). The help page `/votacion-bandas` reads them from here,
+ * They MUST match the constants at the top of `category_ranking_core`, as last defined in
+ * `supabase/migrations/20261115000100_group_ranking_includes_top3.sql` (or a later migration that replaces it). The help page `/votacion-bandas` reads them from here,
  * so changing a value means: new migration for the function + this file. The worked
  * example of the help page is recomputed from these values.
+ *
+ * group score = weightCross * cross + weightJury * jury + bandBonus
+ * total       = weightGroup * group score + weightTop3 * Top 3 score
  */
 export const GROUP_RANKING = {
-  /** Weight of the cross vote (contestants rank the rival band) */
+  /** Weight of the cross vote (contestants rank the rival band), inside the group score */
   weightCross: 0.5,
-  /** Weight of the jury runway vote */
+  /** Weight of the jury runway vote, inside the group score */
   weightJury: 0.5,
-  /** Fixed bonus for every member of the band that won the bands vote */
+  /** Fixed bonus for every member of the band that won the bands vote, inside the group score */
   bandBonus: 0.2,
+  /** Weight of the group score (cross + jury + bonus) in the total */
+  weightGroup: 0.5,
+  /** Weight of the Top 3 of the week in the total */
+  weightTop3: 0.5,
 } as const
 
-/** Highest possible total: both scores at 1 plus the bonus */
-export const GROUP_RANKING_MAX_TOTAL = GROUP_RANKING.weightCross + GROUP_RANKING.weightJury + GROUP_RANKING.bandBonus
+/** Points of a Top 3 ballot: first, second and third pick */
+export const TOP3_POINTS = [3, 2, 1] as const
+
+/** Highest group score: both scores at 1 plus the bonus */
+export const GROUP_SCORE_MAX = GROUP_RANKING.weightCross + GROUP_RANKING.weightJury + GROUP_RANKING.bandBonus
+
+/** Highest possible total: group score and Top 3 score both at their maximum */
+export const GROUP_RANKING_MAX_TOTAL = GROUP_RANKING.weightGroup * GROUP_SCORE_MAX + GROUP_RANKING.weightTop3
 
 /** Value of one vote: (N - rank + 1) / N, where N is the number of candidates on the ballot. The favourite always weighs 1. */
 export function rankValue(rank: number, candidates: number): number {
@@ -53,6 +66,8 @@ export interface RankingInput {
   /** Each ballot lists contestant ids from favourite to last */
   crossBallots: string[][]
   juryBallots: string[][]
+  /** Top 3 of the week: each ballot lists the first, second and third pick. Only ballots actually cast. */
+  top3Ballots: string[][]
 }
 
 export interface RankingRow {
@@ -61,6 +76,7 @@ export interface RankingRow {
   crossScore: number
   juryScore: number
   bandBonus: number
+  top3Score: number
   total: number
   position: number
 }
@@ -73,8 +89,21 @@ function averageValues(ballots: string[][], id: string): number {
   return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0
 }
 
+/** Top 3 points of a queen / (3 * ballots cast): only the ballots that exist count */
+function top3Score(ballots: string[][], id: string): number {
+  if (!ballots.length) return 0
+  const points = ballots.reduce((sum, ballot) => sum + (TOP3_POINTS[ballot.indexOf(id)] ?? 0), 0)
+  return round6(points / (TOP3_POINTS[0] * ballots.length))
+}
+
+/** Group score and total of one queen, as `category_ranking_core` computes them */
+export function groupTotal(crossScore: number, juryScore: number, bandBonus: number, top3: number): number {
+  const groupScore = GROUP_RANKING.weightCross * crossScore + GROUP_RANKING.weightJury * juryScore + bandBonus
+  return round6(GROUP_RANKING.weightGroup * groupScore + GROUP_RANKING.weightTop3 * top3)
+}
+
 /**
- * Mirror of `category_ranking_result`, used only for the worked example of the help page.
+ * Mirror of `category_ranking_core`, used only for the worked example of the help page.
  * The real results always come from the database.
  */
 export function computeRanking(input: RankingInput): RankingRow[] {
@@ -82,8 +111,9 @@ export function computeRanking(input: RankingInput): RankingRow[] {
     const crossScore = round6(averageValues(input.crossBallots, contestant.id))
     const juryScore = round6(averageValues(input.juryBallots, contestant.id))
     const bandBonus = contestant.band === input.winningBand ? GROUP_RANKING.bandBonus : 0
-    const total = round6(GROUP_RANKING.weightCross * crossScore + GROUP_RANKING.weightJury * juryScore + bandBonus)
-    return { id: contestant.id, band: contestant.band, crossScore, juryScore, bandBonus, total, position: 0 }
+    const top3 = top3Score(input.top3Ballots, contestant.id)
+    const total = groupTotal(crossScore, juryScore, bandBonus, top3)
+    return { id: contestant.id, band: contestant.band, crossScore, juryScore, bandBonus, top3Score: top3, total, position: 0 }
   })
 
   const isWinner = (row: RankingRow): number => row.band === input.winningBand ? 1 : 0
@@ -121,4 +151,9 @@ export const GROUP_RANKING_EXAMPLE: RankingInput = {
   ],
   // One judge ranks the six looks
   juryBallots: [['D', 'E', 'B', 'F', 'A', 'C']],
+  // Top 3 of the week: every contestant picks three queens, never herself
+  top3Ballots: [
+    ['D', 'B', 'E'], ['D', 'A', 'E'], ['E', 'D', 'B'],
+    ['B', 'A', 'E'], ['D', 'B', 'A'], ['D', 'E', 'B'],
+  ],
 }
