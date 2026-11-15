@@ -365,6 +365,11 @@ const mentionsAlternative = GROUP_RANKING.bandBonus < copy.compareBonusOriginal
 .group-help__notes {
   display: grid;
   gap: var(--space-3);
+
+  // `.card` is a grid: without this the bold lead and the rest of the sentence land on separate rows
+  > .card {
+    display: block;
+  }
 }
 
 .group-help__compare {
