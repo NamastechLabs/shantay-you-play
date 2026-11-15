@@ -18,6 +18,15 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.5.1',
+    date: '2026-11-15',
+    title: 'Fotos de los looks más claras',
+    features: [
+      'Las fotos de cada look ahora se llaman Foto 1, Foto 2, Foto 3 y Foto 4, igual que las de los grupos.',
+      'Las fotos subidas desde Safari y desde el iPhone también se guardan optimizadas y más ligeras.',
+    ],
+  },
+  {
     version: '0.5.0',
     date: '2026-11-14',
     title: 'Descarga de la semana para los comentarios',

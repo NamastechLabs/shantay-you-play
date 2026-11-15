@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-15
+
 ### Changed
 
 - Look photo slots are now labelled "Foto 1" to "Foto 4" (formerly Frente, Espalda, Reveal and Extra), like the group photos, in the app, the shared file names (`01-foto-1-…`), the ZIP export and the commentary endpoint; the copy that mentioned "frente" now says the first photo is required
