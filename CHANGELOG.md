@@ -5,6 +5,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-15
+
+### Added
+
+- `GET /api/commentary/runway` and the week ZIP now include each category's `type` (`individual` or `group`) and, for group categories, its `groups` (name, intro, photos and member drag names) plus the `group` of every queen's look. In the ZIP the group photos go to `<category>/grupos/`. Requires migration `20261115000000_service_role_read_groups.sql`
+
+### Changed
+
+- Navigation logo, favicon and app icons updated with a crown
+
 ## [0.5.1] - 2026-11-15
 
 ### Changed
@@ -37,7 +47,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - All pages share the same content width (82rem, formerly 60rem with a `page--wide` modifier on three pages).
 - The help page has a two-column layout with a sticky outline of its sections in a left aside (a wrapped list of chips above the content on small screens) that highlights the section being read.
-- New "Shantay You Play" logo (pink 3D lettering, transparent background) in the navigation bar, and a matching "S" favicon and app icons.
+- New "Shantay You Play" logo (pink lettering with a crown, transparent background) in the navigation bar, and a matching crowned "S" favicon and app icons.
 
 ## [0.3.1] - 2026-11-14
 
