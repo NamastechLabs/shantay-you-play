@@ -3,7 +3,7 @@ export interface CompressImageOptions {
   maxDimension?: number
   /** Encoder quality between 0 and 1 */
   quality?: number
-  /** Preferred output format; falls back to JPEG if the browser can't encode it */
+  /** Preferred output format; falls back to a WASM WebP encoder, then to JPEG, if the browser can't encode it */
   mimeType?: 'image/webp' | 'image/jpeg'
 }
 
@@ -28,6 +28,17 @@ function canvasToBlob(canvas: HTMLCanvasElement, mimeType: string, quality: numb
       quality,
     )
   })
+}
+
+/** Software WebP encoder for browsers whose canvas can't produce WebP. Loaded on demand; null if it fails. */
+async function encodeWebpWithWasm(imageData: ImageData, quality: number): Promise<Blob | null> {
+  try {
+    const { default: encode } = await import('@jsquash/webp/encode.js')
+    return new Blob([await encode(imageData, { quality: quality * 100 })], { type: 'image/webp' })
+  }
+  catch {
+    return null
+  }
 }
 
 /**
@@ -72,10 +83,16 @@ export async function compressImage(file: File, options: CompressImageOptions = 
     let blob = await canvasToBlob(canvas, mimeType, quality)
     let outputType: CompressedImage['mimeType'] = mimeType
 
-    // Browsers that can't encode the requested type silently return PNG instead
+    // Browsers that can't encode the requested type (Safari) silently return PNG instead
     if (blob.type !== mimeType) {
-      blob = await canvasToBlob(canvas, 'image/jpeg', quality)
-      outputType = 'image/jpeg'
+      const webp = mimeType === 'image/webp' ? await encodeWebpWithWasm(context.getImageData(0, 0, width, height), quality) : null
+      if (webp) {
+        blob = webp
+      }
+      else {
+        blob = await canvasToBlob(canvas, 'image/jpeg', quality)
+        outputType = 'image/jpeg'
+      }
     }
 
     return { blob, mimeType: outputType, width, height }

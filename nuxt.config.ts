@@ -45,6 +45,8 @@ export default defineNuxtConfig({
 
   // Dev only: let HTTPS tunnels (Cloudflare) reach the dev server, e.g. to test sharing on a phone
   vite: {
+    // The WebP WASM encoder resolves its .wasm file relative to its own module, which pre-bundling breaks
+    optimizeDeps: { exclude: ['@jsquash/webp'] },
     server: {
       allowedHosts: ['.trycloudflare.com'],
     },

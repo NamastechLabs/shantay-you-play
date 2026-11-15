@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Photos uploaded from browsers that cannot encode WebP natively (Safari) were stored as JPEG; they are now encoded to WebP with a WASM encoder (new dependency `@jsquash/webp`), keeping JPEG only as a last resort
+
 ## [0.5.0] - 2026-11-14
 
 ### Added
