@@ -481,6 +481,22 @@
     border-radius: var(--radius-sm);
   }
 
+  // Uploaded photo hidden by the admin: a card with the favicon in the centre
+  &__concealed {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    background-color: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+
+    img {
+      width: 40%;
+      height: auto;
+    }
+  }
+
   &__placeholder {
     display: grid;
     place-items: center;

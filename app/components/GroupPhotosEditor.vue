@@ -6,8 +6,10 @@ const props = defineProps<{
   /** The saved row of the group, or null when it has no photos yet */
   photos: GroupPhotos | null
   editable: boolean
-  /** 'collage' shows all the photos joined; 'gallery' one big photo with clickable thumbnails */
-  display?: 'collage' | 'gallery'
+  /** Shows an icon card in place of each uploaded photo (read-only), keeping the slots layout */
+  concealed?: boolean
+  /** 'collage' shows all the photos joined; 'gallery' one big photo with clickable thumbnails; 'grid' the four slots in a 2x2 grid */
+  display?: 'collage' | 'gallery' | 'grid'
 }>()
 
 const emit = defineEmits<{ changed: [] }>()
@@ -106,7 +108,15 @@ async function save(): Promise<void> {
     <template v-if="display === 'gallery' && currentUrls.length">
       <img class="group-photos__main" :src="currentUrls[selected]" :alt="`Foto ${selected + 1} del grupo ${groupName}`">
     </template>
-    <GroupPhotosCollage v-else-if="display !== 'gallery'" :urls="currentUrls" :name="groupName" />
+    <GroupPhotosCollage v-else-if="display !== 'gallery' && display !== 'grid' && !concealed" :urls="currentUrls" :name="groupName" />
+    <ul v-if="display === 'grid' && !editable && !concealed" class="group-photos__slots group-photos__slots--grid">
+      <li v-for="slot in GROUP_PHOTO_SLOTS" :key="slot.key" class="group-photos__slot">
+        <span class="group-photos__frame">
+          <img v-if="srcFor(slot.key)" :src="srcFor(slot.key)!" :alt="`${slot.label} del grupo ${groupName}`">
+          <span v-else class="group-photos__empty">{{ slot.label }}</span>
+        </span>
+      </li>
+    </ul>
     <p v-if="!currentUrls.length" class="hint">
       Aún no hay fotos del grupo.
     </p>
@@ -171,6 +181,16 @@ async function save(): Promise<void> {
         </button>
       </div>
     </template>
+    <ul v-else-if="concealed" class="group-photos__slots group-photos__slots--grid">
+      <li v-for="slot in GROUP_PHOTO_SLOTS" :key="slot.key" class="group-photos__slot">
+        <span v-if="srcFor(slot.key)" class="group-photos__frame group-photos__frame--concealed" role="img" :aria-label="`${slot.label} del grupo ${groupName} (oculta)`">
+          <img src="/icon-192.png" alt="">
+        </span>
+        <span v-else class="group-photos__frame">
+          <span class="group-photos__empty">{{ slot.label }}</span>
+        </span>
+      </li>
+    </ul>
   </div>
 </template>
 
@@ -203,6 +223,17 @@ async function save(): Promise<void> {
   }
 }
 
+// Concealed cards: a 2x2 flex grid that takes the available width
+.group-photos__slots--grid {
+  display: flex;
+  flex-wrap: wrap;
+
+  .group-photos__slot {
+    flex: 1 1 calc(50% - var(--space-3) / 2);
+    min-width: 0;
+  }
+}
+
 .group-photos__slot {
   display: grid;
   gap: var(--space-2);
@@ -221,6 +252,16 @@ async function save(): Promise<void> {
     width: 100%;
     height: 100%;
     object-fit: cover;
+  }
+}
+
+.group-photos__frame--concealed {
+  border-style: solid;
+
+  img {
+    width: auto;
+    height: 60%;
+    object-fit: contain;
   }
 }
 
