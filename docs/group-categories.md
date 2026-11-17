@@ -21,6 +21,8 @@ Some weeks have a category that is played by teams ("bands" in the UI). The quee
 
 A group category cannot go back to `individual` while it has groups (trigger `protect_category_kind`).
 
+A runway has either **one group category on its own** or individual categories only. This is enforced in the admin UI (`/admin/runways/[id]/categories`), not in the database: with a group category the `+ Nueva categoría` button is disabled and a note explains it; making a category grupal (new or edited) while the runway has other categories is blocked with a warning to remove the individual ones first.
+
 ## Ranking votes and points (DRG-8)
 
 Bands may have a different number of members: nothing assumes 3 per band. Only `rank` is stored, and points are computed when reading, normalized so bands of any size are comparable.
