@@ -54,7 +54,7 @@ A runway with a group category is revealed in two stages while it is in `reveal`
 
 The stage is gated **in the database**, not only on screen: `runway_results_visible(runway_id)` is true when the runway is `closed`, or in `reveal` with `top_three_revealed` set, or in `reveal` when it has **no** group category (those runways are not staged). `runway_top_three` and `category_ranking_result` return nothing until then, so the winner cannot be read early from the API or from the runway page (which refetches its group results when the flag flips). The flag resets whenever the status changes (trigger `runways_reset_top_three_revealed`), so reopening a reveal starts clean. `reveal_runway_top_three` is judge-only and requires the status `reveal`.
 
-Bands always need at least one photo for the reveal: a band without one is skipped (a future admin rule will require it).
+Bands always need at least one photo for the reveal. The admin runway page enforces it (DRG-9): while the runway is in `werk_room` and a group of a group category has no photo, the "Pasar a Pasarela" step is disabled and a message names the groups missing one (`app/pages/admin/runways/[id]/index.vue`). The check is repeated, with fresh data, when the step is clicked. It is a UI rule only: the database does not block the status change, and going back or forward from other statuses is unaffected. The reveal still skips a band without photos as a safety net.
 
 ### Sharing the band ("A desfilar con mi banda")
 
