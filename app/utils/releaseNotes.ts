@@ -18,6 +18,14 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.10.0',
+    date: '2026-11-17',
+    title: 'Los looks del jurado, en «Mis looks»',
+    features: [
+      'El jurado y las invitadas especiales ya ven sus propios looks y presentaciones en «Mis looks».',
+    ],
+  },
+  {
     version: '0.9.0',
     date: '2026-11-17',
     title: 'Quién votó a quién',
