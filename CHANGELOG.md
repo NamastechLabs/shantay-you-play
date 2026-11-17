@@ -5,6 +5,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+
+### Changed
+
+- A runway can no longer mix a group category with other categories: with a group category the new category button is disabled, and a category cannot be saved as grupal while the runway has other categories, with a warning to remove them first (DRG-10)
+
 ## [0.8.0] - 2026-11-17
 
 ### Changed

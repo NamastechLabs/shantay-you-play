@@ -24,9 +24,17 @@ const categoryChanged = (category: AdminCategory): boolean => {
   return !!draft && (draft.title.trim() !== category.title || (draft.intro.trim() || null) !== category.intro_text || draft.kind !== category.kind)
 }
 
+// A runway has either one group category on its own or individual categories only
+const hasGroupCategory = computed(() => categories.value.some(category => category.kind === 'group'))
+const GROUP_NEEDS_EMPTY_RUNWAY = 'Una categoría grupal no puede convivir con otras categorías: elimina primero las categorías individuales.'
+
+/** Whether the draft makes this category grupal while the runway has other categories */
+const groupBlocked = (category: AdminCategory): boolean =>
+  categoryDrafts[category.id]?.kind === 'group' && category.kind !== 'group' && categories.value.length > 1
+
 async function saveCategory(category: AdminCategory): Promise<void> {
   const draft = categoryDrafts[category.id]
-  if (!draft || !categoryChanged(category) || !draft.title.trim() || categorySavingId.value) return
+  if (!draft || !categoryChanged(category) || !draft.title.trim() || categorySavingId.value || groupBlocked(category)) return
 
   categorySavingId.value = category.id
   delete categoryErrors[category.id]
@@ -75,6 +83,7 @@ const newIntro = ref('')
 const newKind = ref<CategoryKind>('individual')
 const newCategorySaving = ref(false)
 const newCategoryError = ref<string | null>(null)
+const newGroupBlocked = computed(() => newKind.value === 'group' && categories.value.length > 0)
 
 function openNewCategory(): void {
   newTitle.value = ''
@@ -85,7 +94,7 @@ function openNewCategory(): void {
 }
 
 async function createCategory(): Promise<void> {
-  if (!newTitle.value.trim() || newCategorySaving.value) return
+  if (!newTitle.value.trim() || newCategorySaving.value || newGroupBlocked.value) return
 
   newCategorySaving.value = true
   newCategoryError.value = null
@@ -112,10 +121,14 @@ async function createCategory(): Promise<void> {
       <h2 id="categories-title">
         Categorías
       </h2>
-      <button type="button" class="btn btn--primary" @click="openNewCategory">
+      <button type="button" class="btn btn--primary" :disabled="hasGroupCategory" @click="openNewCategory">
         + Nueva categoría
       </button>
     </div>
+
+    <p v-if="hasGroupCategory" class="hint" role="status">
+      Esta pasarela ya tiene una categoría grupal, que va sola: para añadir otra categoría, elimina primero la grupal.
+    </p>
 
     <p v-if="!categories.length" class="empty">
       Añade al menos una categoría para poder subir los looks.
@@ -157,6 +170,9 @@ async function createCategory(): Promise<void> {
           </option>
         </select>
       </div>
+      <p v-if="groupBlocked(category)" class="form-error" role="alert">
+        {{ GROUP_NEEDS_EMPTY_RUNWAY }}
+      </p>
       <p v-if="categoryErrors[category.id]" class="form-error" role="alert">
         {{ categoryErrors[category.id] }}
       </p>
@@ -171,7 +187,7 @@ async function createCategory(): Promise<void> {
           Eliminar
         </button>
         <AdminCategoryGroups v-if="category.kind === 'group'" :category="category" />
-        <button type="submit" class="btn btn--primary" :disabled="!categoryChanged(category) || categorySavingId !== null">
+        <button type="submit" class="btn btn--primary" :disabled="!categoryChanged(category) || categorySavingId !== null || groupBlocked(category)">
           {{ categorySavingId === category.id ? 'Guardando…' : 'Guardar' }}
         </button>
       </div>
@@ -214,6 +230,9 @@ async function createCategory(): Promise<void> {
           </option>
         </select>
       </div>
+      <p v-if="newGroupBlocked" class="form-error" role="alert">
+        {{ GROUP_NEEDS_EMPTY_RUNWAY }}
+      </p>
       <p v-if="newCategoryError" class="form-error" role="alert">
         {{ newCategoryError }}
       </p>
@@ -221,7 +240,7 @@ async function createCategory(): Promise<void> {
         <button type="button" class="btn btn--ghost" @click="newCategoryOpen = false">
           Cancelar
         </button>
-        <button type="submit" class="btn btn--primary" :disabled="!newTitle.trim() || newCategorySaving">
+        <button type="submit" class="btn btn--primary" :disabled="!newTitle.trim() || newCategorySaving || newGroupBlocked">
           {{ newCategorySaving ? 'Creando…' : 'Crear categoría' }}
         </button>
       </div>
