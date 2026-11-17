@@ -20,10 +20,25 @@ interface MyLook {
 const supabase = useSupabaseClient()
 const { participant } = useCurrentParticipant()
 
-// Only the signed-in participant's own looks; draft runways stay hidden by RLS
+// The jury (judges and special guests) keeps its looks in jury_looks and is never ranked; queens use looks
+const isJury = computed(() => participant.value?.role !== undefined && participant.value.role !== 'concursante')
+
+// Only the signed-in participant's own looks; draft runways stay hidden by RLS for queens
 const { data, error } = await useAsyncData('my-looks', async (): Promise<MyLook[]> => {
   const participantId = participant.value?.id
   if (!participantId) return []
+
+  if (isJury.value) {
+    const { data: juryRows, error: juryError } = await supabase
+      .from('jury_looks')
+      .select('id, image_url, image2_url, image3_url, image4_url, intro, category:categories!jury_looks_category_id_fkey(id, title, runway:runways!categories_runway_id_fkey(id, week_number, status))')
+      .eq('participant_id', participantId)
+    if (juryError) throw juryError
+
+    return juryRows
+      .map(row => ({ ...row, place: null, totalPoints: null }))
+      .sort((a, b) => b.category.runway.week_number - a.category.runway.week_number)
+  }
 
   const { data: rows, error: looksError } = await supabase
     .from('looks')
@@ -123,10 +138,10 @@ function pendingLabel(look: MyLook): string {
             <span class="look-card__intro">
               Semana {{ look.category.runway.week_number }} ·
               <template v-if="look.place">
-                Puesto {{ look.place }}<template v-if="look.totalPoints !== null"> · {{ look.totalPoints }} pts</template>
+                Puesto {{ look.place }}<template v-if="look.totalPoints !== null"> · {{ look.totalPoints }} pts</template> ·
               </template>
-              <template v-else>{{ pendingLabel(look) }}</template>
-              · Ver pasarela →
+              <template v-else-if="!isJury">{{ pendingLabel(look) }} ·</template>
+              Ver pasarela →
             </span>
           </NuxtLink>
         </article>
@@ -134,7 +149,7 @@ function pendingLabel(look: MyLook): string {
     </ul>
 
     <p v-else class="empty">
-      Todavía no has desfilado en ninguna pasarela.
+      {{ isJury ? 'Todavía no tienes looks de jurado.' : 'Todavía no has desfilado en ninguna pasarela.' }}
     </p>
 
     <LookGalleryDialog
