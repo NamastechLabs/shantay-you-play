@@ -8,7 +8,6 @@ const props = defineProps<{
 
 const supabase = useSupabaseClient()
 const copy = GROUP_RESULT_COPY
-const showBonusInfo = ref(false)
 
 // Both functions return nothing until the runway reaches 'reveal'
 const { data, error } = await useAsyncData(`group-result-${props.category.id}`, async () => {
@@ -23,7 +22,7 @@ const { data, error } = await useAsyncData(`group-result-${props.category.id}`, 
 
   const ids = ranking.data.map(row => row.participant_id)
   const names = ids.length
-    ? await supabase.from('participants').select('id, name, drag_name').in('id', ids)
+    ? await supabase.from('participants').select('id, name, drag_name, avatar_url').in('id', ids)
     : { data: [], error: null }
   if (names.error) throw names.error
 
@@ -32,11 +31,12 @@ const { data, error } = await useAsyncData(`group-result-${props.category.id}`, 
     const queen = names.data.find(candidate => candidate.id === id)
     return queen ? (queen.drag_name ?? queen.name) : '—'
   }
+  const queenAvatar = (id: string): string | null => names.data.find(candidate => candidate.id === id)?.avatar_url ?? null
 
   return {
     winningGroups: groupResult.data.filter(row => row.is_winner).map(row => groupName(row.group_id)).filter(Boolean),
     // Order and shared positions come from the database (`position`)
-    rows: ranking.data.map(row => ({ ...row, name: queenName(row.participant_id), band: groupName(row.group_id) })),
+    rows: ranking.data.map(row => ({ ...row, name: queenName(row.participant_id), avatar: queenAvatar(row.participant_id), band: groupName(row.group_id) })),
   }
 })
 
@@ -73,6 +73,48 @@ const modalTitle = computed(() => `Resultados${props.showTitle ? ` · ${props.ca
           <p v-if="!hasRanking" class="hint">
             {{ copy.empty }}
           </p>
+          <!-- Phones: a card per queen with her scores -->
+          <ul class="group-cards" :aria-label="copy.title">
+            <li v-for="row in data.rows" :key="row.participant_id" class="group-cards__item" :class="{ 'group-result__first': row.position === 1 }">
+              <div class="group-cards__head">
+                <span class="group-result__position">{{ row.position }}.º</span>
+                <span class="avatar">
+                  <img v-if="row.avatar" :src="row.avatar" alt="" class="avatar__img">
+                  <span v-else class="avatar__initial" aria-hidden="true">{{ row.name.charAt(0).toUpperCase() }}</span>
+                </span>
+                <span class="group-cards__who">
+                  <span class="group-cards__name">{{ row.name }}</span>
+                  <span class="group-result__band">{{ row.band }}</span>
+                </span>
+                <span class="group-cards__total">
+                  <span class="group-cards__label">{{ copy.headers.total }}</span>
+                  {{ formatScore(row.total) }}
+                </span>
+              </div>
+              <dl class="group-cards__scores">
+                <div>
+                  <dt>
+                    {{ copy.headers.bonus }}
+                  </dt>
+                  <dd>{{ row.band_bonus ? formatScore(row.band_bonus, 1) : '0' }}</dd>
+                </div>
+                <div>
+                  <dt>{{ copy.headers.cross }}</dt>
+                  <dd>{{ formatScore(row.cross_score) }}</dd>
+                </div>
+                <div>
+                  <dt>{{ copy.headers.jury }}</dt>
+                  <dd>{{ formatScore(row.jury_score) }}</dd>
+                </div>
+                <div>
+                  <dt>{{ copy.headers.top3 }}</dt>
+                  <dd>{{ formatScore(row.top3_score) }}</dd>
+                </div>
+              </dl>
+            </li>
+          </ul>
+
+          <!-- Desktop: table -->
           <div class="group-result__table-wrap" tabindex="0" role="region" :aria-label="copy.title">
             <table class="group-result__table">
               <thead>
@@ -85,16 +127,6 @@ const modalTitle = computed(() => `Resultados${props.showTitle ? ` · ${props.ca
                   </th>
                   <th scope="col">
                     {{ copy.headers.bonus }}
-                    <button
-                      type="button"
-                      class="group-result__info"
-                      :title="copy.bonusInfo"
-                      :aria-label="copy.bonusInfoLabel"
-                      :aria-expanded="showBonusInfo"
-                      @click="showBonusInfo = !showBonusInfo"
-                    >
-                      i
-                    </button>
                   </th>
                   <th scope="col">
                     {{ copy.headers.cross }}
@@ -116,8 +148,16 @@ const modalTitle = computed(() => `Resultados${props.showTitle ? ` · ${props.ca
                     {{ row.position }}.º
                   </td>
                   <th scope="row">
-                    {{ row.name }}
-                    <span class="group-result__band">{{ row.band }}</span>
+                    <span class="group-result__queen">
+                      <span class="avatar">
+                        <img v-if="row.avatar" :src="row.avatar" alt="" class="avatar__img">
+                        <span v-else class="avatar__initial" aria-hidden="true">{{ row.name.charAt(0).toUpperCase() }}</span>
+                      </span>
+                      <span>
+                        {{ row.name }}
+                        <span class="group-result__band">{{ row.band }}</span>
+                      </span>
+                    </span>
                   </th>
                   <td>{{ row.band_bonus ? formatScore(row.band_bonus, 1) : '0' }}</td>
                   <td>{{ formatScore(row.cross_score) }}</td>
@@ -130,9 +170,6 @@ const modalTitle = computed(() => `Resultados${props.showTitle ? ` · ${props.ca
               </tbody>
             </table>
           </div>
-          <p v-if="showBonusInfo" class="hint" role="status">
-            {{ copy.bonusInfo }}
-          </p>
         </template>
       </div>
     </AppModal>
@@ -182,6 +219,7 @@ const modalTitle = computed(() => `Resultados${props.showTitle ? ` · ${props.ca
 
 // The table scrolls on its own so the modal never scrolls sideways on phones
 .group-result__table-wrap {
+  display: none;
   overflow-x: auto;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -226,24 +264,19 @@ const modalTitle = computed(() => `Resultados${props.showTitle ? ` · ${props.ca
   color: var(--color-title);
 }
 
-.group-result__info {
-  display: inline-grid;
-  place-items: center;
-  width: 1.125rem;
-  height: 1.125rem;
-  margin-left: var(--space-1);
-  padding: 0;
-  border: 1px solid currentcolor;
-  border-radius: 50%;
-  background: none;
-  font: inherit;
-  font-size: 0.6875rem;
-  font-style: italic;
-  font-weight: 700;
-  line-height: 1;
-  text-transform: none;
-  color: inherit;
-  cursor: help;
+.group-result__queen {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+
+  .avatar {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .avatar__initial {
+    font-size: 0.9rem;
+  }
 }
 
 .group-result__band {
@@ -259,5 +292,98 @@ const modalTitle = computed(() => `Resultados${props.showTitle ? ` · ${props.ca
 
 .group-result__first > * {
   background-color: color-mix(in srgb, var(--color-highlight) 25%, var(--color-surface));
+}
+
+.group-cards {
+  display: grid;
+  gap: var(--space-3);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.group-cards__item {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+// The winner's tint goes on the whole card, not on its children
+.group-cards__item.group-result__first {
+  background-color: color-mix(in srgb, var(--color-highlight) 25%, var(--color-surface));
+}
+
+.group-cards__item.group-result__first > * {
+  background-color: transparent;
+}
+
+.group-cards__head {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.group-cards__who {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.group-cards__name {
+  display: block;
+  font-weight: 700;
+}
+
+.group-cards__total {
+  display: grid;
+  justify-items: end;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.group-cards__label,
+.group-cards__scores dt {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.group-cards__scores {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+  margin: 0;
+  text-align: center;
+}
+
+.group-cards__scores dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.group-cards .avatar {
+  width: 2rem;
+  height: 2rem;
+}
+
+.group-cards .avatar__initial {
+  font-size: 0.9rem;
+}
+
+// Wide screens swap the cards for the table
+@media (min-width: 48rem) {
+  .group-cards {
+    display: none;
+  }
+
+  .group-result__table-wrap {
+    display: block;
+  }
 }
 </style>

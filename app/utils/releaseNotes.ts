@@ -18,6 +18,16 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.0',
+    date: '2026-11-17',
+    title: 'Quién votó a quién',
+    features: [
+      'Cuando una semana está cerrada, el botón «Resultados» muestra a quién votó cada persona en su Top 3, con las fotos de perfil y los puntos de cada reina.',
+      'Los votos de las invitadas especiales siguen siendo anónimos.',
+      'En una semana con categoría grupal, la clasificación de «Ver resultados» se ve en el móvil como una tarjeta por reina y muestra su foto de perfil.',
+    ],
+  },
+  {
     version: '0.8.1',
     date: '2026-11-17',
     title: 'Una categoría grupal va sola',

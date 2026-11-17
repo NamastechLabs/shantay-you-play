@@ -112,7 +112,7 @@ Each group has up to 4 landscape photos (**16:9 or 5:3**, with a 3% tolerance) s
 | Werk Room: badge, "Ver grupo", teammates' looks | `app/pages/semana/[week]/werk-room.vue` |
 | Group intro (inside the "Ver grupo" modal) | `app/components/GroupIntroEditor.vue` |
 | Voting (stepper, band vote and ranking ballots) | `app/pages/runways/[id]/vote.vue` (stepper, Top 3) and `app/components/GroupCategoryVote.vue` (band and ranking steps) |
-| Results ("Ver resultados" button and modal with the final ranking table) | `app/components/GroupCategoryResult.vue`, used by `app/pages/runways/[id]/index.vue`, which also adds the "Los grupos" heading above the group photos (`CategoryGroupPhotos.vue` `heading` prop) |
+| Results ("Ver resultados" button and modal with the final ranking table, with each queen's avatar; on phones, below 48rem, a card per queen with avatar, final score and the four partial scores instead of the table) | `app/components/GroupCategoryResult.vue`, used by `app/pages/runways/[id]/index.vue`, which also adds the "Los grupos" heading above the group photos (`CategoryGroupPhotos.vue` `heading` prop) |
 | Staged reveal (homepage) | `app/pages/index.vue`, `app/components/BandReveal.vue`, `app/components/TopThreeReveal.vue`, `app/composables/useConfetti.ts`, `loadBandResult` in `app/composables/useRunwayResults.ts` |
 | Scoring constants and help page | `app/utils/groupRanking.ts`, `app/utils/groupRankingContent.ts`, `app/pages/votacion-bandas.vue` |
 | Photos on runway and voting pages | `app/components/CategoryGroupPhotos.vue`, `app/components/GroupPhotosCollage.vue` |

@@ -121,6 +121,7 @@ const sections = computed(() => {
 })
 const allLooks = computed(() => sections.value.flatMap(section => section.looks))
 const hasAnyLooks = computed(() => allLooks.value.length > 0 || sections.value.some(section => section.jury.length > 0))
+const hasGroupCategory = computed(() => runway.value?.categories.some(category => category.kind === 'group') ?? false)
 const hasSeveralCategories = computed(() => (runway.value?.categories.length ?? 0) > 1)
 
 // Closed runways are reached from "Semanas pasadas", so the trail goes back through it
@@ -163,6 +164,8 @@ function showAdjacentLook(step: 1 | -1): void {
         <h1>{{ runwayTitle(runway.categories) }}</h1>
       </div>
       <nav class="page-header__actions">
+        <!-- Group runways have their own "Ver resultados" (the band ranking) -->
+        <RunwayBallotsResults v-if="isClosed && !hasGroupCategory" :runway-id="runway.id" :week-number="runway.week_number" />
         <NuxtLink v-if="runway.status === 'voting'" :to="`/runways/${runway.id}/vote`" class="btn btn--primary">
           Votar a las mejores reinas
         </NuxtLink>

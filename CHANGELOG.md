@@ -5,6 +5,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-17
+
+### Changed
+
+- On phones, the `Ver resultados` modal of a group category shows the final ranking as a card per queen (with avatar) instead of a wide table (DRG-3)
+
+### Added
+
+- A `Resultados` button on the public page of a closed runway without a group category opens a dialog with a cross table of the Top 3 votes (voters in rows, queens in columns, with avatars and total points; a card per voter on phones); special guests' ballots stay anonymous. No migration: it reads `votes`, already readable by everyone once the runway is closed (DRG-3)
+
 ## [0.8.1] - 2026-11-17
 
 ### Changed
