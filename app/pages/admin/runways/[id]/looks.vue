@@ -11,13 +11,17 @@ const { runway, categories, refresh: refreshRunway } = useAdminRunway()
 
 const { data, error: loadError, refresh } = await useAsyncData(`admin-runway-${runway.value.id}-looks`, async () => {
   const categoryIds = categories.value.map(category => category.id)
-  const [contestants, looks, judges, juryLooks, groups, groupPhotos] = await Promise.all([
+  const [contestants, looks, judges, invitations, juryLooks, groups, groupPhotos] = await Promise.all([
     supabase.from('participants').select('id, name, drag_name').eq('role', 'concursante').order('name', { ascending: true }),
     supabase
       .from('looks')
       .select('id, category_id, participant_id, image_url, image2_url, image3_url, image4_url, intro')
       .in('category_id', categoryIds),
     supabase.from('participants').select('id, name, drag_name').eq('role', 'jurado').order('name', { ascending: true }),
+    supabase
+      .from('runway_guests')
+      .select('guest:participants!runway_guests_participant_id_fkey(id, name, drag_name)')
+      .eq('runway_id', runway.value.id),
     supabase
       .from('jury_looks')
       .select('id, category_id, participant_id, image_url, image2_url, image3_url, image4_url, intro')
@@ -28,6 +32,7 @@ const { data, error: loadError, refresh } = await useAsyncData(`admin-runway-${r
   if (contestants.error) throw contestants.error
   if (looks.error) throw looks.error
   if (judges.error) throw judges.error
+  if (invitations.error) throw invitations.error
   if (juryLooks.error) throw juryLooks.error
   if (groups.error) throw groups.error
   if (groupPhotos.error) throw groupPhotos.error
@@ -35,7 +40,11 @@ const { data, error: loadError, refresh } = await useAsyncData(`admin-runway-${r
   return {
     contestants: contestants.data as Person[],
     looks: looks.data as QueenLook[],
-    judges: judges.data as Person[],
+    // The jury tab lists the jury and the special guests invited to this week
+    judges: [
+      ...(judges.data as Person[]),
+      ...(invitations.data as unknown as { guest: Person }[]).map(invitation => invitation.guest),
+    ],
     juryLooks: juryLooks.data as JuryLookSummary[],
     groups: groups.data as GroupSummary[],
     groupPhotos: groupPhotos.data as GroupPhotos[],
@@ -43,6 +52,22 @@ const { data, error: loadError, refresh } = await useAsyncData(`admin-runway-${r
 })
 
 const editable = computed(() => canEditLooks(runway.value.status))
+
+// Queens' looks and groups' photos: in the Werk Room they stay hidden (an icon card per uploaded photo) until the admin
+// views or edits them; from the runway on they are shown read-only, and `Editar` opens edition while they can still change.
+type LooksMode = 'hidden' | 'view' | 'edit'
+const initialMode = (): LooksMode => {
+  if (runway.value.status === 'draft') return 'edit'
+  return runway.value.status === 'werk_room' ? 'hidden' : 'view'
+}
+const queensMode = ref<LooksMode>(initialMode())
+const groupsMode = ref<LooksMode>(initialMode())
+watch(() => runway.value.status, () => {
+  queensMode.value = initialMode()
+  groupsMode.value = initialMode()
+})
+const queensEditable = computed(() => editable.value && queensMode.value === 'edit')
+const groupsEditable = computed(() => editable.value && groupsMode.value === 'edit')
 const personName = (person: Person): string => person.drag_name ?? person.name
 
 const lookKey = (categoryId: string, participantId: string): string => `${categoryId}:${participantId}`
@@ -115,7 +140,8 @@ watch(pasteTargetId, () => {
 })
 
 function onPaste(event: ClipboardEvent): void {
-  if (looksTab.value === 'groups' || !editable.value || !categories.value.length || pastedFile.value) return
+  const tabEditable = looksTab.value === 'queens' ? queensEditable.value : editable.value
+  if (looksTab.value === 'groups' || !tabEditable || !categories.value.length || pastedFile.value) return
   const image = Array.from(event.clipboardData?.files ?? []).find(file => file.type.startsWith('image/'))
   if (!image) return
   event.preventDefault()
@@ -223,9 +249,25 @@ async function savePasted(): Promise<void> {
       role="tabpanel"
       aria-labelledby="looks-tab-queens"
     >
-      <p v-if="editable" class="hint">
+      <p v-if="queensEditable" class="hint">
         Cada reina tiene un look por categoría, con hasta 4 fotos. Haz clic en una foto para elegirla, o pega una imagen del portapapeles (Ctrl+V) para asignarla.
       </p>
+      <p v-else-if="queensMode === 'hidden'" class="hint">
+        Los looks de las reinas están ocultos mientras la semana está en Werk Room.
+      </p>
+      <div v-if="data?.contestants.length && category && editable && !queensEditable" class="form-actions looks-actions">
+        <button v-if="queensMode === 'hidden'" type="button" class="btn btn--ghost" @click="queensMode = 'view'">
+          Ver los looks
+        </button>
+        <button type="button" class="btn btn--primary" @click="queensMode = 'edit'">
+          Editar
+        </button>
+      </div>
+      <div v-else-if="queensMode === 'edit' && runway.status !== 'draft'" class="form-actions looks-actions">
+        <button type="button" class="btn btn--ghost" @click="queensMode = initialMode()">
+          Terminar de editar
+        </button>
+      </div>
       <ul v-if="data?.contestants.length && category" class="row-list">
         <LookEditRow
           v-for="contestant in data.contestants"
@@ -233,7 +275,8 @@ async function savePasted(): Promise<void> {
           :category-id="category.id"
           :contestant="contestant"
           :look="looksByKey.get(lookKey(category.id, contestant.id)) ?? null"
-          :editable="editable"
+          :editable="queensEditable"
+          :concealed="queensMode === 'hidden'"
           @changed="refreshAll()"
         />
       </ul>
@@ -257,9 +300,25 @@ async function savePasted(): Promise<void> {
         para subir sus fotos.
       </p>
       <template v-else>
-        <p v-if="editable" class="hint">
+        <p v-if="groupsEditable" class="hint">
           Cada grupo tiene hasta 4 fotos apaisadas (16:9 o 5:3) que se muestran juntas. Las integrantes también pueden subirlas desde la Werk Room.
         </p>
+        <p v-else-if="groupsMode === 'hidden'" class="hint">
+          Las fotos de los grupos están ocultas mientras la semana está en Werk Room.
+        </p>
+        <div v-if="editable && !groupsEditable" class="form-actions looks-actions">
+          <button v-if="groupsMode === 'hidden'" type="button" class="btn btn--ghost" @click="groupsMode = 'view'">
+            Ver las fotos
+          </button>
+          <button type="button" class="btn btn--primary" @click="groupsMode = 'edit'">
+            Editar
+          </button>
+        </div>
+        <div v-else-if="groupsMode === 'edit' && runway.status !== 'draft'" class="form-actions looks-actions">
+          <button type="button" class="btn btn--ghost" @click="groupsMode = initialMode()">
+            Terminar de editar
+          </button>
+        </div>
         <ul class="row-list">
           <li v-for="group in categoryGroups" :key="group.id" class="card group-block">
             <h3>{{ group.name }}</h3>
@@ -268,7 +327,9 @@ async function savePasted(): Promise<void> {
               :group-id="group.id"
               :group-name="group.name"
               :photos="groupPhotosById.get(group.id) ?? null"
-              :editable="editable"
+              :editable="groupsEditable"
+              :concealed="groupsMode === 'hidden'"
+              display="grid"
               @changed="refreshAll()"
             />
           </li>
@@ -282,8 +343,8 @@ async function savePasted(): Promise<void> {
       role="tabpanel"
       aria-labelledby="looks-tab-jury"
     >
-      <p class="hint">
-        Cada jurado tiene un look por categoría, con hasta 4 fotos y una presentación obligatoria: se muestran en la portada mientras la semana está en Pasarela. Haz clic en una foto para elegirla, o pega una imagen del portapapeles (Ctrl+V) para asignarla.
+      <p class="hint looks-actions">
+        Aquí están los looks del jurado y de los invitados especiales de la semana. Cada uno tiene un look por categoría, con hasta 4 fotos y una presentación obligatoria: se muestran en la portada mientras la semana está en Pasarela. Haz clic en una foto para elegirla, o pega una imagen del portapapeles (Ctrl+V) para asignarla.
       </p>
       <ul v-if="data?.judges.length && category" class="row-list">
         <AdminJuryLookRow
@@ -297,7 +358,7 @@ async function savePasted(): Promise<void> {
         />
       </ul>
       <p v-else class="empty">
-        Aún no hay jurados. Asigna el rol en <NuxtLink to="/admin/participants" class="link">Participantes</NuxtLink>.
+        Aún no hay jurados ni invitados especiales. Asigna el rol en <NuxtLink to="/admin/participants" class="link">Participantes</NuxtLink> o invita a alguien en <NuxtLink :to="`/admin/runways/${runway.id}/guests`" class="link">Invitados</NuxtLink>.
       </p>
     </div>
   </section>
@@ -355,6 +416,10 @@ async function savePasted(): Promise<void> {
 </template>
 
 <style scoped lang="scss">
+.looks-actions {
+  margin-bottom: var(--space-4);
+}
+
 .group-block {
   display: grid;
   gap: var(--space-3);

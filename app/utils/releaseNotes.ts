@@ -18,6 +18,16 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.8.0',
+    date: '2026-11-17',
+    title: 'Looks del jurado según la etapa de la semana',
+    features: [
+      'En el panel del jurado, los looks de las reinas y las fotos de los grupos quedan ocultos durante el Werk Room: se ven con «Ver los looks» o «Ver las fotos» y se cambian con «Editar».',
+      'Desde la Pasarela, los looks y las fotos se muestran solo para verlos, con la opción de editarlos mientras todavía se puedan cambiar.',
+      'La pestaña de jurados ahora incluye también los looks de los invitados especiales de la semana.',
+    ],
+  },
+  {
     version: '0.7.1',
     date: '2026-11-17',
     title: 'Todas las bandas con foto antes de desfilar',

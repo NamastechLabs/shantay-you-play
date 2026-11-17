@@ -5,6 +5,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-17
+
+### Changed
+
+- The admin runway Looks tab now follows the runway stage: from Pasarela on, the queens' looks are read-only (with `Editar` while they can still change); in Werk Room they are hidden behind an icon card in each uploaded photo slot, with `Ver los looks` and `Editar` buttons. The Grupos tab works the same way (`Ver las fotos`), with the photos or cards in a 2x2 grid. The Jurados tab also lists the special guests invited to the week (DRG-4)
+
 ## [0.7.1] - 2026-11-17
 
 ### Changed

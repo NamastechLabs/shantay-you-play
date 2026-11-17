@@ -11,6 +11,8 @@ const props = defineProps<{
   look: LookSummary | null
   /** False once voting opens: looks are then read-only */
   editable: boolean
+  /** Shows an icon card in place of each uploaded photo (and hides the intro), keeping the same layout */
+  concealed?: boolean
   /** Heading of the row; defaults to the queen's name (e.g. the category title on the queen's own page) */
   title?: string
 }>()
@@ -155,7 +157,10 @@ async function save(): Promise<void> {
     <ul class="look-slot__grid look-slot__grid--stacked" :aria-label="`Fotos del look de ${displayName}`">
       <li v-for="slot in filledSlots" :key="slot.key" class="look-slot__cell">
         <component :is="editable ? 'label' : 'div'" class="look-slot__picture" :class="{ 'look-slot__picture--editable': editable }">
-          <img class="look-slot__photo" :src="srcFor(slot.key)!" :alt="`${slot.label} del look de ${displayName}`">
+          <span v-if="concealed" class="look-slot__concealed" role="img" :aria-label="`${slot.label} del look de ${displayName} (oculta)`">
+            <img src="/icon-192.png" alt="">
+          </span>
+          <img v-else class="look-slot__photo" :src="srcFor(slot.key)!" :alt="`${slot.label} del look de ${displayName}`">
           <span class="look-slot__tag">{{ slot.label }}</span>
           <template v-if="editable">
             <span class="look-slot__change" aria-hidden="true">Cambiar</span>
@@ -207,7 +212,10 @@ async function save(): Promise<void> {
     <ul class="look-slot__grid look-slot__grid--slots" :aria-label="`Fotos del look de ${displayName}`">
       <li v-for="slot in LOOK_SLOTS" :key="slot.key" class="look-slot__cell">
         <component :is="editable ? 'label' : 'div'" class="look-slot__picture" :class="{ 'look-slot__picture--editable': editable }">
-          <img v-if="srcFor(slot.key)" class="look-slot__photo" :src="srcFor(slot.key)!" :alt="`${slot.label} del look de ${displayName}`">
+          <span v-if="srcFor(slot.key) && concealed" class="look-slot__concealed" role="img" :aria-label="`${slot.label} del look de ${displayName} (oculta)`">
+            <img src="/icon-192.png" alt="">
+          </span>
+          <img v-else-if="srcFor(slot.key)" class="look-slot__photo" :src="srcFor(slot.key)!" :alt="`${slot.label} del look de ${displayName}`">
           <span v-else class="look-slot__placeholder">{{ slot.label }}{{ slot.key === 'image_url' ? ' *' : '' }}</span>
           <template v-if="editable">
             <span class="look-slot__change" aria-hidden="true">{{ srcFor(slot.key) ? 'Cambiar' : 'Añadir' }}</span>
@@ -246,7 +254,7 @@ async function save(): Promise<void> {
           placeholder="Opcional"
         />
       </template>
-      <p v-else-if="look?.intro" class="muted">
+      <p v-else-if="look?.intro && !concealed" class="muted">
         {{ look.intro }}
       </p>
       <p v-else-if="!look" class="muted">
