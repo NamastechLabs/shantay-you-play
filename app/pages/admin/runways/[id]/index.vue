@@ -20,6 +20,27 @@ const { data: lookCounts, refresh: refreshLookCounts } = await useAsyncData(`adm
 })
 const missingQueenLooks = computed(() => (lookCounts.value ? lookCounts.value.expected - lookCounts.value.done : 0))
 
+// Groups of the group categories with no photo yet: they block the move from Werk Room to Pasarela
+const { data: groupsWithoutPhotos, refresh: refreshGroupsWithoutPhotos } = await useAsyncData(`admin-runway-${runway.value.id}-group-photos`, async () => {
+  const groupCategoryIds = categories.value.filter(category => category.kind === 'group').map(category => category.id)
+  if (!groupCategoryIds.length) return []
+  const [groups, photos] = await Promise.all([
+    supabase.from('category_groups').select('id, name').in('category_id', groupCategoryIds).order('position'),
+    supabase.from('category_group_photos').select('group_id, image_url, image2_url, image3_url, image4_url').in('category_id', groupCategoryIds),
+  ])
+  if (groups.error) throw groups.error
+  if (photos.error) throw photos.error
+  const withPhotos = new Set(photos.data.filter(row => groupPhotoUrls(row).length).map(row => row.group_id))
+  return groups.data.filter(group => !withPhotos.has(group.id)).map(group => group.name)
+})
+// The cached result can be stale after uploading photos in the "Grupos" tab and coming back
+onMounted(() => refreshGroupsWithoutPhotos())
+const blockedByGroupPhotos =computed(() => runway.value.status === 'werk_room' && (groupsWithoutPhotos.value?.length ?? 0) > 0)
+const groupPhotosMessage = computed(() => {
+  const names = groupsWithoutPhotos.value ?? []
+  return `Para pasar a Pasarela, ${names.length === 1 ? 'el grupo' : 'los grupos'} ${names.join(' y ')} ${names.length === 1 ? 'necesita' : 'necesitan'} al menos una foto. Súbela${names.length === 1 ? '' : 's'} en la pestaña «Grupos» de Looks.`
+})
+
 // --- Download for the commentary ----------------------------------------------
 const { exporting, download: downloadRunway } = useRunwayExport()
 const exportError = ref<string | null>(null)
@@ -80,7 +101,11 @@ const statusError = ref<string | null>(null)
 async function changeStatus(status: RunwayStatus): Promise<void> {
   if (statusSaving.value) return
 
-  await refreshLookCounts()
+  await Promise.all([refreshLookCounts(), refreshGroupsWithoutPhotos()])
+  if (status === 'runway' && blockedByGroupPhotos.value) {
+    statusError.value = groupPhotosMessage.value
+    return
+  }
   const confirmation = status === 'voting' && missingQueenLooks.value > 0
     ? `Faltan ${missingQueenLooks.value} looks de reinas. Al abrir la votación ya no se podrán subir. ¿Continuar?`
     : status === 'reveal'
@@ -119,7 +144,7 @@ async function changeStatus(status: RunwayStatus): Promise<void> {
           type="button"
           class="stepper__step"
           :class="status === nextStatus ? 'stepper__step--next' : 'stepper__step--previous'"
-          :disabled="statusSaving"
+          :disabled="statusSaving || (status === 'runway' && blockedByGroupPhotos)"
           :title="status === nextStatus ? `Pasar a ${RUNWAY_STATUS_LABELS[status]}` : `Volver a ${RUNWAY_STATUS_LABELS[status]}`"
           @click="changeStatus(status)"
         >
@@ -138,6 +163,9 @@ async function changeStatus(status: RunwayStatus): Promise<void> {
         </span>
       </li>
     </ol>
+    <p v-if="blockedByGroupPhotos && !statusError" class="muted" role="status">
+      {{ groupPhotosMessage }}
+    </p>
     <p v-if="statusError" class="form-error" role="alert">
       {{ statusError }}
     </p>

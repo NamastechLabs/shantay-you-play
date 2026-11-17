@@ -18,6 +18,14 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.7.1',
+    date: '2026-11-17',
+    title: 'Todas las bandas con foto antes de desfilar',
+    features: [
+      'El jurado no puede pasar una semana del Werk Room a la Pasarela mientras alguna banda no tenga al menos una foto, y se le avisa de cuáles faltan.',
+    ],
+  },
+  {
     version: '0.7.0',
     date: '2026-11-15',
     title: 'Una sola ganadora en las semanas de bandas',
