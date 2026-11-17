@@ -57,19 +57,19 @@ export const HELP_COPY = {
       icon: '🗳️',
       title: 'Votación',
       who: 'Todas',
-      text: 'Eliges tu Top 3 de reinas (no de looks sueltos): la primera que toques será tu Top 1. No puedes votarte a ti misma, y puedes cambiar tu voto las veces que quieras mientras la votación siga abierta. Los votos de cada persona son secretos. Si hay una categoría grupal, también se vota por grupos: lo cuenta la sección «Categorías grupales».',
+      text: 'Eliges tu Top 3 de reinas (no de looks sueltos): la primera que toques será tu Top 1. No puedes votarte a ti misma, y puedes cambiar tu voto las veces que quieras mientras la votación siga abierta. Los votos de cada persona son secretos hasta que la semana se cierra. Si hay una categoría grupal, también se vota por grupos: lo cuenta la sección «Categorías grupales».',
     },
     {
       icon: '🎭',
       title: 'Revelación',
       who: 'Todas',
-      text: 'Se cierran las urnas y se revela el Top 3 de la semana con todo el dramatismo que merece. Si hay una categoría grupal, primero se revela la banda ganadora y, cuando el jurado lo decide, el Top 3. Los votos individuales siguen siendo privados.',
+      text: 'Se cierran las urnas y se revela el Top 3 de la semana con todo el dramatismo que merece. Si hay una categoría grupal, primero se revela la banda ganadora y, cuando el jurado lo decide, el Top 3. Los votos individuales siguen siendo privados hasta que se cierra la semana.',
     },
     {
       icon: '👑',
       title: 'Cerrada',
       who: 'Todas',
-      text: 'La semana pasa al archivo. Aparece el ranking completo con la ganadora coronada, y tus puntos y tu puesto se guardan en «Mis looks».',
+      text: 'La semana pasa al archivo. Aparece el ranking completo con la ganadora coronada, y tus puntos y tu puesto se guardan en «Mis looks». Con el botón «Resultados» de la página de la semana ves a quién votó cada persona en su Top 3 (los votos de las invitadas especiales siguen siendo anónimos). En una semana con categoría grupal, ese botón es «Ver resultados» y muestra la clasificación.',
     },
   ] satisfies HelpStage[],
 
