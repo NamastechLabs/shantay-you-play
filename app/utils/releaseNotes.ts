@@ -18,6 +18,15 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.8.1',
+    date: '2026-11-17',
+    title: 'Una categoría grupal va sola',
+    features: [
+      'Una pasarela con categoría grupal ya no admite más categorías: el botón de nueva categoría se desactiva y se explica por qué.',
+      'Para guardar una categoría como grupal hay que quitar antes las categorías individuales; el panel avisa de ello.',
+    ],
+  },
+  {
     version: '0.8.0',
     date: '2026-11-17',
     title: 'Looks del jurado según la etapa de la semana',
