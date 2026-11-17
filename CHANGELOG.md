@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-11-17
+
 ### Changed
 
 - The admin runway page no longer lets a runway move from Werk Room to Pasarela while a group of a group category has no photo, and says which groups are missing one (DRG-9)
