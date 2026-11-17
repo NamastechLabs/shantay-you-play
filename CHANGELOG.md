@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- "Mis looks" now shows the looks and intros of jury members and special guests (read from `jury_looks`, without a place or points). No migration (DRG-11)
+
 ## [0.9.0] - 2026-11-17
 
 ### Changed
