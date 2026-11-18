@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { HelpRole, HelpStage } from '~/utils/helpContent'
+
 const copy = HELP_COPY
 
 const sections = [
@@ -12,25 +14,13 @@ const sections = [
 ]
 
 // Highlights the outline entry of the section being read
-const activeId = ref(sections[0]!.id)
+const { activeId } = useActiveSection(sections.map(section => section.id))
 
-onMounted(() => {
-  const visible = new Set<string>()
-  const observer = new IntersectionObserver((entries) => {
-    for (const entry of entries) {
-      if (entry.isIntersecting) visible.add(entry.target.id)
-      else visible.delete(entry.target.id)
-    }
-    const first = sections.find(section => visible.has(section.id))
-    if (first) activeId.value = first.id
-  }, { rootMargin: '0px 0px -60% 0px' })
-
-  for (const section of sections) {
-    const el = document.getElementById(section.id)
-    if (el) observer.observe(el)
-  }
-  onBeforeUnmount(() => observer.disconnect())
-})
+// What matters to the person reading: their role's summary, and the stages they take part in
+const { participant } = useCurrentParticipant()
+const role = computed(() => participant.value?.role as HelpRole | undefined)
+const forYou = computed(() => (role.value ? copy.forYou[role.value] ?? null : null))
+const isForYou = (stage: HelpStage): boolean => !!role.value && stage.roles.includes(role.value)
 
 useHead({ title: `Ayuda · ${APP_NAME}` })
 useSeoMeta({ robots: 'noindex' })
@@ -53,6 +43,23 @@ useSeoMeta({ robots: 'noindex' })
     <p class="lead">
       {{ copy.lead }}
     </p>
+
+    <section v-if="forYou" class="card help__for-you" aria-labelledby="para-ti">
+      <p class="kicker">
+        {{ copy.forYouKicker }}
+      </p>
+      <h2 id="para-ti">
+        {{ forYou.title }}
+      </h2>
+      <ul>
+        <li v-for="point in forYou.points" :key="point">
+          {{ point }}
+        </li>
+      </ul>
+    </section>
+
+    <!-- Phones and tablets: sticky row of sections; desktop has the side outline instead -->
+    <SectionTabs :items="sections.map(section => ({ id: section.id, title: section.label }))" :label="copy.outlineTitle" until="desktop" />
 
     <div class="help__layout">
       <aside class="help__aside">
@@ -104,18 +111,23 @@ useSeoMeta({ robots: 'noindex' })
             {{ copy.stagesTitle }}
           </h2>
           <p>{{ copy.stagesIntro }}</p>
-          <ol class="help__stages">
-            <li v-for="(stage, index) in copy.stages" :key="stage.title" class="card help__stage">
-              <span class="help__icon" aria-hidden="true">{{ stage.icon }}</span>
-              <div class="help__stage-body">
-                <p class="kicker">
-                  Etapa {{ index + 1 }} · {{ stage.who }}
-                </p>
-                <h3>{{ stage.title }}</h3>
-                <p>{{ stage.text }}</p>
-              </div>
-            </li>
-          </ol>
+          <PhoneCollapse show-label="Ver las seis etapas" hide-label="Ocultar las etapas">
+            <ol class="help__stages">
+              <li v-for="(stage, index) in copy.stages" :key="stage.title" class="card help__stage" :class="{ 'help__stage--for-you': isForYou(stage) }">
+                <span class="help__icon" aria-hidden="true">{{ stage.icon }}</span>
+                <div class="help__stage-body">
+                  <p class="kicker">
+                    Etapa {{ index + 1 }} · {{ stage.who }}
+                  </p>
+                  <h3>
+                    {{ stage.title }}
+                    <span v-if="isForYou(stage)" class="badge help__badge">{{ copy.forYouBadge }}</span>
+                  </h3>
+                  <p>{{ stage.text }}</p>
+                </div>
+              </li>
+            </ol>
+          </PhoneCollapse>
         </section>
 
         <section class="help__section" aria-labelledby="categorias-grupales">
@@ -123,12 +135,14 @@ useSeoMeta({ robots: 'noindex' })
             {{ copy.groupTitle }}
           </h2>
           <p>{{ copy.groupIntro }}</p>
-          <ul class="help__grid">
-            <li v-for="item in copy.group" :key="item.title" class="card">
-              <h3>{{ item.title }}</h3>
-              <p>{{ item.text }}</p>
-            </li>
-          </ul>
+          <PhoneCollapse show-label="Ver cómo cambia con un grupo" hide-label="Ocultar los detalles">
+            <ul class="help__grid">
+              <li v-for="item in copy.group" :key="item.title" class="card">
+                <h3>{{ item.title }}</h3>
+                <p>{{ item.text }}</p>
+              </li>
+            </ul>
+          </PhoneCollapse>
           <NuxtLink :to="GROUP_VOTING_HELP_PATH" class="btn btn--secondary help__back">
             {{ copy.groupHelpLink }}
           </NuxtLink>
@@ -155,17 +169,19 @@ useSeoMeta({ robots: 'noindex' })
             {{ copy.securityTitle }}
           </h2>
           <p>{{ copy.securityIntro }}</p>
-          <ul class="help__grid">
-            <li v-for="item in copy.security" :key="item.title" class="card">
-              <h3>{{ item.title }}</h3>
-              <p>{{ item.text }}</p>
-            </li>
-          </ul>
+          <PhoneCollapse show-label="Ver cómo se protege" hide-label="Ocultar los detalles">
+            <ul class="help__grid">
+              <li v-for="item in copy.security" :key="item.title" class="card">
+                <h3>{{ item.title }}</h3>
+                <p>{{ item.text }}</p>
+              </li>
+            </ul>
 
-          <div class="card help__callout">
-            <h3>{{ copy.blockedTitle }}</h3>
-            <p>{{ copy.blockedText }}</p>
-          </div>
+            <div class="card help__callout">
+              <h3>{{ copy.blockedTitle }}</h3>
+              <p>{{ copy.blockedText }}</p>
+            </div>
+          </PhoneCollapse>
         </section>
 
         <section class="help__section" aria-labelledby="dudas">
@@ -185,6 +201,8 @@ useSeoMeta({ robots: 'noindex' })
         </NuxtLink>
       </div>
     </div>
+
+    <BackToTop />
   </main>
 </template>
 
@@ -216,10 +234,44 @@ useSeoMeta({ robots: 'noindex' })
   min-width: 0;
 }
 
+// Below desktop the sticky tabs are the outline
 .help__aside {
+  display: none;
+
   @media (min-width: 64rem) {
     position: sticky;
     top: var(--space-5);
+    display: block;
+  }
+}
+
+.help__for-you {
+  display: grid;
+  gap: var(--space-2);
+  border-color: var(--color-primary);
+  box-shadow: var(--glow-primary);
+
+  h2 {
+    font-size: 1.25rem;
+  }
+
+  ul {
+    display: grid;
+    gap: var(--space-2);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-2);
+  }
+
+  li::before {
+    color: var(--color-kicker);
+    content: '✦';
   }
 }
 
@@ -228,32 +280,19 @@ useSeoMeta({ robots: 'noindex' })
   gap: var(--space-2);
 
   ul {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-
-    @media (min-width: 64rem) {
-      display: grid;
-      gap: var(--space-1);
-      padding-left: var(--space-3);
-      border-left: 2px solid var(--color-border, currentcolor);
-    }
+    display: grid;
+    gap: var(--space-1);
+    padding-left: var(--space-3);
+    border-left: 2px solid var(--color-border, currentcolor);
   }
 
   a {
     display: block;
-    padding: var(--space-1) var(--space-3);
+    padding: var(--space-1) var(--space-2);
     font-size: 0.9rem;
     color: inherit;
     text-decoration: none;
-    border: 1px solid var(--color-border, currentcolor);
-    border-radius: var(--radius-pill);
-
-    @media (min-width: 64rem) {
-      padding: var(--space-1) var(--space-2);
-      border: 0;
-      border-radius: var(--radius-sm, 0);
-    }
+    border-radius: var(--radius-sm, 0);
 
     &:hover {
       color: var(--color-primary);
@@ -304,6 +343,47 @@ useSeoMeta({ robots: 'noindex' })
 .help__stage {
   grid-template-columns: auto minmax(0, 1fr);
   align-items: start;
+
+  // Phones: the icon sits next to the title and the text uses the full width of the card
+  @media (max-width: 47.99rem) {
+    grid-template:
+      'icon kicker' auto
+      'icon title' auto
+      'text text' auto / auto minmax(0, 1fr);
+    column-gap: var(--space-3);
+    row-gap: var(--space-2);
+
+    .help__icon {
+      grid-area: icon;
+    }
+
+    .help__stage-body {
+      display: contents;
+    }
+
+    .kicker {
+      grid-area: kicker;
+      align-self: end;
+    }
+
+    h3 {
+      grid-area: title;
+      align-self: start;
+    }
+
+    .help__stage-body > p:last-child {
+      grid-area: text;
+    }
+  }
+
+  &--for-you {
+    border-color: var(--color-primary);
+  }
+}
+
+.help__badge {
+  color: var(--color-on-primary);
+  background-color: var(--color-primary);
 }
 
 .help__icon {

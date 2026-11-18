@@ -1,8 +1,17 @@
+export type HelpRole = 'concursante' | 'jurado' | 'invitado'
+
 export interface HelpStage {
   icon: string
   title: string
   who: string
+  /** Roles that do something in this stage: the card says "Para ti" to them */
+  roles: HelpRole[]
   text: string
+}
+
+export interface HelpForYou {
+  title: string
+  points: string[]
 }
 
 export interface HelpFact {
@@ -16,6 +25,38 @@ export const HELP_COPY = {
   lead: '¡Bienvenida al taller, reina! Aquí tienes todo lo que necesitas saber para desfilar, votar y no quedar en el lip sync.',
   breadcrumb: 'Ayuda',
   outlineTitle: 'En esta página',
+
+  forYouKicker: 'Para ti',
+  forYouBadge: 'Para ti',
+  forYou: {
+    concursante: {
+      title: 'Si eres concursante',
+      points: [
+        'Werk Room: sube hasta 4 fotos de tu look y escribe tu presentación.',
+        'Pasarela: pulsa «A desfilar» en la página de inicio para compartir tu look en el grupo de WhatsApp.',
+        'Votación: elige tu Top 3 de reinas (no puedes votarte a ti misma).',
+        'Cerrada: tus puntos y tu puesto quedan guardados en «Mis looks».',
+      ],
+    },
+    jurado: {
+      title: 'Si eres del jurado',
+      points: [
+        'Prepara la semana, sus categorías, los grupos y las participantes desde el «Panel del jurado».',
+        'Cambia la semana de etapa cuando toque: todas lo verán al instante.',
+        'Sube el vídeo de introducción de la pasarela antes de abrirla.',
+        'En la revelación, pulsa «Revelar el Top 3 de la semana» cuando toque.',
+      ],
+    },
+    invitado: {
+      title: 'Si eres invitada especial',
+      points: [
+        'Werk Room: sube tu look de jurado desde la página de inicio.',
+        'Pasarela: pulsa «A desfilar» para compartir tu look en el grupo de WhatsApp.',
+        'Votación: eliges tu Top 3 de reinas y tus votos son anónimos.',
+        'Tus looks quedan guardados en «Mis looks».',
+      ],
+    },
+  } satisfies Record<HelpRole, HelpForYou>,
 
   gameTitle: 'La lógica del juego',
   gameIntro: `${APP_NAME} es una competencia semanal de looks entre amigas. Cada semana es una pasarela con una o varias categorías, y todo funciona en cuatro pasos:`,
@@ -39,36 +80,42 @@ export const HELP_COPY = {
       icon: '✂️',
       title: 'Borrador',
       who: 'Solo el jurado',
+      roles: ['jurado'],
       text: 'El jurado prepara la semana, sus categorías y los looks. Las concursantes todavía no ven nada: es el backstage.',
     },
     {
       icon: '🧵',
       title: 'Werk Room',
       who: 'Concursantes',
+      roles: ['concursante', 'invitado'],
       text: 'Hora de coser, pegar y brillar. Sube hasta 4 fotos de tu look y escribe tu presentación. La Foto 1 es obligatoria y puedes cambiarlo todo mientras el Werk Room siga abierto. Aquí solo ves tus propios looks (y, en una categoría grupal, los de tu grupo): ¡el misterio es parte del show! En la página de inicio, una cuenta atrás te dice cuánto falta para que abra la pasarela.',
     },
     {
       icon: '👠',
       title: 'Pasarela',
       who: 'Todas',
+      roles: ['concursante', 'jurado', 'invitado'],
       text: 'Se abre el telón: todos los looks son públicos y puedes verlos en grande. Tus looks quedan congelados, así que ya no se pueden cambiar. Admira, aplaude y ve pensando tu Top 3. Si eres concursante, pulsa «A desfilar» en la página de inicio para compartir tu look (fotos y presentación) en el grupo de WhatsApp.',
     },
     {
       icon: '🗳️',
       title: 'Votación',
       who: 'Todas',
+      roles: ['concursante', 'jurado', 'invitado'],
       text: 'Eliges tu Top 3 de reinas (no de looks sueltos): la primera que toques será tu Top 1. No puedes votarte a ti misma, y puedes cambiar tu voto las veces que quieras mientras la votación siga abierta. Los votos de cada persona son secretos hasta que la semana se cierra. Si hay una categoría grupal, también se vota por grupos: lo cuenta la sección «Categorías grupales».',
     },
     {
       icon: '🎭',
       title: 'Revelación',
       who: 'Todas',
+      roles: ['concursante', 'jurado', 'invitado'],
       text: 'Se cierran las urnas y se revela el Top 3 de la semana con todo el dramatismo que merece. Si hay una categoría grupal, primero se revela la banda ganadora y, cuando el jurado lo decide, el Top 3. Los votos individuales siguen siendo privados hasta que se cierra la semana.',
     },
     {
       icon: '👑',
       title: 'Cerrada',
       who: 'Todas',
+      roles: ['concursante', 'jurado', 'invitado'],
       text: 'La semana pasa al archivo. Aparece el ranking completo con la ganadora coronada, y tus puntos y tu puesto se guardan en «Mis looks». Con el botón «Resultados» de la página de la semana ves a quién votó cada persona en su Top 3 (los votos de las invitadas especiales siguen siendo anónimos). En una semana con categoría grupal, ese botón es «Ver resultados» y muestra la clasificación.',
     },
   ] satisfies HelpStage[],

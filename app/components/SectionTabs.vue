@@ -1,8 +1,20 @@
 <script setup lang="ts">
-const props = defineProps<{
-  /** Each item's section on the page has the id `category-<id>` */
+/**
+ * Sticky row of pill tabs that jumps between the sections of a long page (categories of a runway,
+ * sections of the help, versions of the release notes). It scrolls sideways, with a fade and an arrow
+ * on the edges that hide more tabs, and the active tab follows the scroll.
+ * Each item's section on the page has the id `<idPrefix><item.id>`.
+ */
+const props = withDefaults(defineProps<{
   items: { id: string, title: string }[]
-}>()
+  idPrefix?: string
+  label?: string
+  /** Where the tabs stop being shown: phones (below 48rem) or everything below desktop (64rem) */
+  until?: 'phone' | 'desktop'
+}>(), { idPrefix: '', label: 'Secciones', until: 'phone' })
+
+/** A tab is about to scroll to its section: the page can open it first (e.g. a collapsed block) */
+const emit = defineEmits<{ navigate: [id: string] }>()
 
 const activeId = ref<string | null>(props.items[0]?.id ?? null)
 const bar = ref<HTMLElement | null>(null)
@@ -12,7 +24,7 @@ const moreBefore = ref(false)
 const moreAfter = ref(false)
 let frame = 0
 
-const sectionId = (id: string): string => `category-${id}`
+const sectionId = (id: string): string => `${props.idPrefix}${id}`
 const prefersReducedMotion = (): boolean => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 function updateFades(): void {
@@ -29,7 +41,9 @@ function updateActive(): void {
   let current = props.items[0]?.id ?? null
   for (const item of props.items) {
     const section = document.getElementById(sectionId(item.id))
-    if (section && section.getBoundingClientRect().top <= limit) current = item.id
+    const box = section?.getBoundingClientRect()
+    // A section inside something collapsed has no box: it cannot be the one being read
+    if (box && (box.width || box.height) && box.top <= limit) current = item.id
   }
   activeId.value = current
 }
@@ -38,12 +52,14 @@ function onScroll(): void {
   if (!frame) frame = requestAnimationFrame(updateActive)
 }
 
-function goTo(id: string): void {
+async function goTo(id: string): Promise<void> {
   activeId.value = id
+  emit('navigate', id)
+  await nextTick()
   const section = document.getElementById(sectionId(id))
   section?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' })
-  // Screen readers and keyboard users continue from the category they chose
-  const heading = section?.querySelector<HTMLElement>('h2')
+  // Screen readers and keyboard users continue from the section they chose
+  const heading = section?.matches('h1, h2, h3') ? section : section?.querySelector<HTMLElement>('h2')
   if (heading) {
     heading.tabIndex = -1
     heading.focus({ preventScroll: true })
@@ -80,17 +96,21 @@ onBeforeUnmount(() => {
 <template>
   <nav
     ref="bar"
-    class="category-tabs"
-    :class="{ 'category-tabs--more-before': moreBefore, 'category-tabs--more-after': moreAfter }"
-    aria-label="Categorías de la semana"
+    class="section-tabs"
+    :class="{
+      'section-tabs--more-before': moreBefore,
+      'section-tabs--more-after': moreAfter,
+      'section-tabs--until-desktop': until === 'desktop',
+    }"
+    :aria-label="label"
   >
-    <ul ref="list" class="category-tabs__list" @scroll.passive="updateFades">
+    <ul ref="list" class="section-tabs__list" @scroll.passive="updateFades">
       <li v-for="item in items" :key="item.id">
         <a
           :href="`#${sectionId(item.id)}`"
           :data-id="item.id"
-          class="category-tabs__tab"
-          :class="{ 'category-tabs__tab--active': item.id === activeId }"
+          class="section-tabs__tab"
+          :class="{ 'section-tabs__tab--active': item.id === activeId }"
           :aria-current="item.id === activeId ? 'true' : undefined"
           @click.prevent="goTo(item.id)"
         >
@@ -102,8 +122,9 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped lang="scss">
-// Phones only: sits under the results button and, when it reaches the pinned top bar, sticks under it
-.category-tabs {
+// Sits in the page flow and, when it reaches the top (under the pinned top bar on phones), sticks there.
+// Shown on phones, or up to desktop width with `until="desktop"` (pages that have a side list from 64rem).
+.section-tabs {
   position: sticky;
   top: var(--app-nav-height);
   z-index: 15;
@@ -155,12 +176,31 @@ onBeforeUnmount(() => {
     opacity: 1;
   }
 
-  @media (min-width: 48rem) {
-    display: none;
+  &:not(.section-tabs--until-desktop) {
+    @media (min-width: 48rem) {
+      display: none;
+    }
+  }
+
+  &--until-desktop {
+    @media (min-width: 48rem) {
+      // The page's side padding is wider from tablets up
+      margin-inline: calc(var(--space-6) * -1);
+    }
+
+    @media (min-width: 64rem) {
+      display: none;
+    }
   }
 }
 
-.category-tabs__list {
+.section-tabs--until-desktop .section-tabs__list {
+  @media (min-width: 48rem) {
+    padding-inline: var(--space-6);
+  }
+}
+
+.section-tabs__list {
   display: flex;
   gap: var(--space-2);
   padding: 0 var(--space-4);
@@ -178,7 +218,7 @@ onBeforeUnmount(() => {
   }
 }
 
-.category-tabs__tab {
+.section-tabs__tab {
   display: inline-flex;
   align-items: center;
   min-height: 2.5rem;

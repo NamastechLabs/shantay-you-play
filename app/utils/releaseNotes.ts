@@ -10,7 +10,7 @@ export interface ReleaseNote {
 }
 
 /**
- * Release notes shown to users at /novedades, newest first. Every version has an
+ * Release notes shown to users at /release-notes, newest first. Every version has an
  * entry, added in the release commit (see CLAUDE.md and the `release` skill),
  * describing the functional changes users will notice, not the technical ones
  * (those go in CHANGELOG.md). A release with nothing users can see gets the

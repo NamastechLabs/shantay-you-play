@@ -36,7 +36,7 @@ Use the day the release is planned to be **merged**, not necessarily today, in `
 
 1. `CHANGELOG.md`: rename `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD` and add a new empty `## [Unreleased]` above it.
 2. `package.json`: set `"version": "X.Y.Z"`.
-3. `app/utils/releaseNotes.ts`: add an entry at the top, **always**: `/novedades` must contain every version.
+3. `app/utils/releaseNotes.ts`: add an entry at the top, **always**: `/release-notes` must contain every version.
    - `version`, `date` (same as the changelog), a short Spanish `title`.
    - `features`: one Spanish sentence per functional change users will notice (what they can now do), no technical terms.
    - A release with nothing users can see (fixes, internal work) still gets an entry, with the single feature `Mejoras y correcciones internas.`

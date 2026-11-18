@@ -173,9 +173,11 @@ function showAdjacentLook(step: 1 | -1): void {
     </header>
 
     <!-- Phones: jump between the categories of a runway with several; sticks under the top bar -->
-    <CategoryTabs
+    <SectionTabs
       v-if="hasSeveralCategories && hasAnyLooks"
       :items="sections.map(section => section.category)"
+      id-prefix="category-"
+      label="Categorías de la semana"
     />
 
     <RunwayCategories v-if="!hasSeveralCategories" :categories="runway.categories" />

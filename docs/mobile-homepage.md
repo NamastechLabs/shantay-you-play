@@ -34,10 +34,27 @@ At zero it shows "¡La pasarela está a punto de abrir!" until a jury member ope
 ## Runway page (`app/pages/runways/[id]/index.vue`)
 
 - The header stacks kicker, status badge and title; "Resultados" / "Votar a las mejores reinas" are full-width buttons on phones.
-- With **several categories** and looks, phones get `CategoryTabs` right under the header buttons: a row of pill tabs that scrolls sideways, with a semi-transparent fade on each edge that has more tabs behind it. The fades carry a small arrow (‹ ›, hidden from screen readers). When it reaches the pinned top bar it sticks under it (`top: var(--app-nav-height)`, same surface colour as the bar). Tapping a tab scrolls to that category's section (`#category-<id>`, below both bars thanks to `scroll-padding-top`) and moves focus to its heading; the active tab follows the scroll. It is hidden from 48rem up and on single-category runways. The page grid uses `minmax(0, 1fr)` so the tabs can never widen the page.
+- With **several categories** and looks, phones get `SectionTabs` (id prefix `category-`) right under the header buttons: a row of pill tabs that scrolls sideways, with a semi-transparent fade on each edge that has more tabs behind it. The fades carry a small arrow (‹ ›, hidden from screen readers). When it reaches the pinned top bar it sticks under it (`top: var(--app-nav-height)`, same surface colour as the bar). Tapping a tab scrolls to that category's section (`#category-<id>`, below both bars thanks to `scroll-padding-top`) and moves focus to its heading; the active tab follows the scroll. It is hidden from 48rem up and on single-category runways. The page grid uses `minmax(0, 1fr)` so the tabs can never widen the page.
+
+## Long pages: Help and Release notes
+
+Both pages are long (about 10,000 px for the help on a phone), so they share some pieces:
+
+- **`SectionTabs`** (generalised from the runway's category tabs): sticky row of pill tabs with the sideways scroll fades. `until="phone"` (runway categories) or `until="desktop"` (help and release notes: shown up to 64rem, where the pages have a side list instead). It emits `navigate` before scrolling so a page can open a collapsed block first. Sections inside something collapsed are never the active one.
+- **`BackToTop`**: floating button after 800 px of scroll, below 64rem.
+- **`useActiveSection`**: which section is being read, for the side lists (IntersectionObserver).
+
+**Help (`/help`)**
+- A "Para ti" card by role (`HELP_COPY.forYou`: concursante, jurado, invitado) opens the page, and the stages the person takes part in (`HelpStage.roles`) carry a "Para ti" badge.
+- On phones the icon of a stage card sits next to its title so the text uses the full width, and the three longest blocks (stages, group categories, security) are behind a "Ver…" button (`PhoneCollapse`, done in CSS so there is no layout jump; from 48rem up they are always shown).
+
+**Release notes (`/release-notes`)**
+- The latest 3 versions are open; the rest are behind "Versiones anteriores (N)" (`<details>`). Tapping an older version in the tabs or the side list, or arriving with `/release-notes#v0.2.0`, opens it first.
+- Each card (`ReleaseNoteCard`) has the version as a pill, a "Nueva" badge on the newest, the date, and a ✦ marker per feature.
+- From 64rem a sticky side list of versions (with the current one highlighted) replaces the tabs.
 
 ## Files
 
-`app/pages/index.vue`, `app/pages/runways/[id]/index.vue`, `app/components/{CollapsibleText,CategoryTabs,RunwayCategories,PastRunwayCard}.vue`, `app/composables/useCountdown.ts`, `app/utils/runwayFormat.ts`, `app/assets/scss/components/_nav.scss`.
+`app/pages/index.vue`, `app/pages/runways/[id]/index.vue`, `app/components/{CollapsibleText,SectionTabs,RunwayCategories,PastRunwayCard}.vue`, `app/composables/useCountdown.ts`, `app/utils/runwayFormat.ts`, `app/assets/scss/components/_nav.scss`, `app/components/{BackToTop,PhoneCollapse,ReleaseNoteCard}.vue`, `app/composables/useActiveSection.ts`, `app/pages/{help,release-notes}.vue`, `app/utils/helpContent.ts`.
 
 No migration.

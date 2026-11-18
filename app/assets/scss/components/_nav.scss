@@ -13,8 +13,15 @@
     scroll-padding-top: calc(var(--app-nav-height) + 0.5rem);
   }
 
-  html:has(.category-tabs) {
+  html:has(.section-tabs) {
     scroll-padding-top: calc(var(--app-nav-height) + 4rem);
+  }
+}
+
+// Tablets: tabs that stay until desktop width stick to the very top
+@media (min-width: 48rem) and (max-width: 63.99rem) {
+  html:has(.section-tabs--until-desktop) {
+    scroll-padding-top: 4.5rem;
   }
 }
 

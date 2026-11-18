@@ -9,6 +9,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Mobile redesign of the homepage: kicker, date and status badge on separate lines, full-width stacked buttons, the category text after the buttons, the jury below the week card, and a tall winner photo with ribbon and crown in "La semana pasada". On phones the top bar stays pinned to the top on every page. No migration (DRG-13)
 - On phones the category challenge text is cut to 3 lines with an inline "… Leer reto completo" link after the ellipsis, on the homepage and on the runway page. The look and jury intros of the runway page end in "… Ver más" (the card opens the full look). The runway page header stacks its status and full-width buttons (DRG-13)
+- The release notes page shows the latest 3 versions and keeps the rest under "Versiones anteriores"; versions have a pill badge, the newest a "Nueva" badge, each feature a marker, and there is a sticky row of versions on phones and tablets and a side list on desktop (DRG-13)
+- The help page opens with a "Para ti" summary for the reader's role, marks the stages they take part in, has a sticky row of sections on phones and tablets, shows the stage icon next to the title on phones and folds its three longest blocks behind a button on phones (DRG-13)
+- A "Volver arriba" button appears on the help and release notes pages on phones and tablets (DRG-13)
+- The release notes page moved from `/novedades` to `/release-notes` (the old path redirects; the menu link still reads "Novedades") (DRG-13)
 - On phones and small tablets (below 48rem) the user menu is a burger button that opens a panel from the left with the user's name, every menu option, the theme picker and "Salir"; `AppDrawer` gained `side` and `narrow` options. Wider screens keep the dropdown (DRG-13)
 - From tablet width up, the date and the status badge share a row on the homepage and the runway page (DRG-13)
 - The Retro Glam kicker and link colour is darker, to reach the 4.5:1 text contrast (DRG-13)

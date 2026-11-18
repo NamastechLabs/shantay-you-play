@@ -7,6 +7,11 @@ export default defineNuxtConfig({
 
   css: ['~/assets/scss/main.scss'],
 
+  routeRules: {
+    // The release notes page used to live at a Spanish path: keep old links working
+    '/novedades': { redirect: { to: '/release-notes', statusCode: 301 } },
+  },
+
   app: {
     head: {
       title: 'Shantay You Play',

@@ -41,7 +41,7 @@ const menuItems = computed(() => [
     ? [{ to: '/admin', label: 'Panel del jurado' }, { to: '/admin/participants', label: 'Participantes' }]
     : []),
   { to: '/help', label: 'Ayuda' },
-  { to: '/novedades', label: 'Novedades' },
+  { to: '/release-notes', label: 'Novedades' },
 ])
 
 async function signOut(): Promise<void> {
