@@ -24,10 +24,13 @@ interface RunwayData {
   juryLooks: (LookImages & { id: string, category_id: string, intro: string, participant: Pick<Tables<'participants'>, 'name' | 'drag_name'> })[]
   /** Final place per queen (participant id); only filled once the runway is closed */
   placeByParticipant: Record<string, number>
+  /** The signed-in person already cast a ballot (only looked up while voting is open) */
+  hasVoted: boolean
 }
 
 const route = useRoute()
 const supabase = useSupabaseClient()
+const { participant } = useCurrentParticipant()
 const runwayId = String(route.params.id)
 
 // RLS hides draft runways (and their categories and looks) from contestants, so they get a 404
@@ -45,10 +48,10 @@ const { data, error: loadError, refresh } = await useAsyncData(
     if (!runway.data) return null
     // Before voting opens nobody gets the looks, not even the jury (the page answers 403 below)
     if (!isRunwayPublic(runway.data.status)) {
-      return { runway: runway.data, looks: [], juryLooks: [], placeByParticipant: {} }
+      return { runway: runway.data, looks: [], juryLooks: [], placeByParticipant: {}, hasVoted: false }
     }
 
-    const [looks, juryLooks] = await Promise.all([
+    const [looks, juryLooks, ballot] = await Promise.all([
       supabase
         .from('looks')
         .select('id, category_id, image_url, image2_url, image3_url, image4_url, intro, participant:participants!looks_participant_id_fkey(id, name, drag_name), category:categories!looks_category_id_fkey!inner(runway_id)')
@@ -59,10 +62,15 @@ const { data, error: loadError, refresh } = await useAsyncData(
         .select('id, category_id, image_url, image2_url, image3_url, image4_url, intro, participant:participants!jury_looks_participant_id_fkey(name, drag_name), category:categories!jury_looks_category_id_fkey!inner(runway_id)')
         .eq('category.runway_id', runwayId)
         .order('created_at', { ascending: true }),
+      // RLS only returns the person's own ballot while voting is open
+      runway.data.status === 'voting' && participant.value
+        ? supabase.from('votes').select('id').eq('runway_id', runwayId).eq('voter_id', participant.value.id).maybeSingle()
+        : null,
     ])
 
     if (looks.error) throw looks.error
     if (juryLooks.error) throw juryLooks.error
+    if (ballot?.error) throw ballot.error
 
     let placeByParticipant: Record<string, number> = {}
     if (runway.data.status === 'closed') {
@@ -71,7 +79,7 @@ const { data, error: loadError, refresh } = await useAsyncData(
       placeByParticipant = Object.fromEntries(ranking.data.map(row => [row.participant_id, row.place]))
     }
 
-    return { runway: runway.data, looks: looks.data, juryLooks: juryLooks.data, placeByParticipant }
+    return { runway: runway.data, looks: looks.data, juryLooks: juryLooks.data, placeByParticipant, hasVoted: !!ballot?.data }
   },
 )
 
@@ -102,6 +110,9 @@ watch(
 const runway = computed(() => data.value?.runway ?? null)
 const placeByParticipant = computed(() => data.value?.placeByParticipant ?? {})
 const isClosed = computed(() => runway.value?.status === 'closed')
+const isVoting = computed(() => runway.value?.status === 'voting')
+const hasVoted = computed(() => data.value?.hasVoted ?? false)
+const voteLabel = computed(() => (hasVoted.value ? 'Cambiar mi Top 3' : 'Votar a las mejores reinas'))
 
 // One gallery per category. Closed runways list the final ranking first; queens nobody voted for keep their runway order
 const sections = computed(() => {
@@ -157,20 +168,33 @@ function showAdjacentLook(step: 1 | -1): void {
 
     <header class="page-header">
       <div class="page-header__titles">
+        <!-- The day only: the hour of the runway matters in the Werk Room, which is not public -->
         <p class="kicker">
-          Semana {{ runway.week_number }} · {{ formatRunwayDate(runway.runway_date) }}
-          <StatusBadge :status="runway.status" />
+          Semana {{ runway.week_number }} · {{ formatRunwayLongDate(runway.runway_date) }}
         </p>
+        <div class="runway-badges">
+          <StatusBadge :status="runway.status" />
+          <!-- While voting: has this person voted yet? -->
+          <span v-if="isVoting" class="badge" :class="hasVoted ? 'badge--approved' : 'badge--pending'">{{ hasVoted ? '✓ Votado' : 'Pendiente' }}</span>
+        </div>
         <h1>{{ runwayTitle(runway.categories) }}</h1>
       </div>
       <nav class="page-header__actions">
         <!-- Group runways have their own "Ver resultados" (the band ranking) -->
         <RunwayBallotsResults v-if="isClosed && !hasGroupCategory" :runway-id="runway.id" :week-number="runway.week_number" />
-        <NuxtLink v-if="runway.status === 'voting'" :to="`/runways/${runway.id}/vote`" class="btn btn--primary">
-          Votar a las mejores reinas
+        <NuxtLink v-if="isVoting" :to="`/runways/${runway.id}/vote`" class="btn btn--primary">
+          {{ voteLabel }}
         </NuxtLink>
       </nav>
     </header>
+
+    <!-- Phones: jump between the categories of a runway with several; sticks under the top bar -->
+    <SectionTabs
+      v-if="hasSeveralCategories && hasAnyLooks"
+      :items="sections.map(section => section.category)"
+      id-prefix="category-"
+      label="Categorías de la semana"
+    />
 
     <RunwayCategories v-if="!hasSeveralCategories" :categories="runway.categories" />
 
@@ -184,12 +208,10 @@ function showAdjacentLook(step: 1 | -1): void {
     </template>
 
     <template v-if="hasAnyLooks">
-      <section v-for="section in sections" :key="section.category.id" class="section">
+      <section v-for="section in sections" :id="`category-${section.category.id}`" :key="section.category.id" class="section">
         <template v-if="hasSeveralCategories">
           <h2>{{ section.category.title }}</h2>
-          <p v-if="section.category.intro_text" class="lead intro">
-            {{ section.category.intro_text }}
-          </p>
+          <CollapsibleText v-if="section.category.intro_text" class="lead intro" :text="section.category.intro_text" />
         </template>
 
         <!-- The jury walks first: its looks set the bar and are not voted on -->
@@ -207,7 +229,8 @@ function showAdjacentLook(step: 1 | -1): void {
           Las reinas
         </component>
 
-        <ul v-if="section.looks.length" class="gallery">
+        <!-- Phones: two queens per row, photo and name only (the intro is in the look dialog) -->
+        <ul v-if="section.looks.length" class="gallery runway-gallery">
           <li v-for="look in section.looks" :key="look.id">
             <article class="look-card">
               <span v-if="placeByParticipant[look.participant.id]" class="look-card__rank">{{ placeByParticipant[look.participant.id] }}</span>
@@ -220,7 +243,7 @@ function showAdjacentLook(step: 1 | -1): void {
                 />
                 <span class="look-card__body">
                   <span class="look-card__name">{{ displayName(look) }}</span>
-                  <span v-if="look.intro" class="look-card__intro">{{ look.intro }}</span>
+                  <CollapsibleText v-if="look.intro" class="look-card__intro-text" :text="look.intro" :lines="2" :phones-only="false" inert />
                 </span>
               </button>
             </article>
@@ -234,6 +257,13 @@ function showAdjacentLook(step: 1 | -1): void {
     <p v-else class="empty">
       Todavía no hay looks en la pasarela.
     </p>
+
+    <!-- The same vote button at the end of the page, so nobody scrolls back up to vote -->
+    <NuxtLink v-if="isVoting && hasAnyLooks" :to="`/runways/${runway.id}/vote`" class="btn btn--primary runway-vote-cta">
+      {{ voteLabel }}
+    </NuxtLink>
+
+    <BackToTop />
 
     <LookGalleryDialog
       :open="fullLook !== null"
@@ -257,13 +287,105 @@ function showAdjacentLook(step: 1 | -1): void {
   </main>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
+// Nothing inside (like the sideways-scrolling tabs) may stretch the page wider than the screen
+.page {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.page-header__titles {
+  justify-items: start;
+
+  // Wider screens: the date and the status badge side by side, the title under them
+  @media (min-width: 48rem) {
+    grid-template-columns: auto 1fr;
+    column-gap: var(--space-3);
+    align-items: center;
+
+    > h1 {
+      grid-column: 1 / -1;
+    }
+  }
+}
+
+.runway-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.runway-vote-cta {
+  justify-self: stretch;
+  // Phones: clear of the floating "Volver arriba" button
+  margin-bottom: var(--space-5);
+
+  @media (min-width: 48rem) {
+    justify-self: start;
+    margin-bottom: 0;
+  }
+}
+
+// Phones: two queens per row, name and photo only; the intro is one tap away in the look dialog
+@media (max-width: 47.99rem) {
+  .runway-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+
+    :deep(.look-card__intro-text) {
+      display: none;
+    }
+
+    :deep(.look-card__rank) {
+      width: 3rem;
+      height: 3rem;
+      padding: 0.25rem 0 0 0.5rem;
+      font-size: 1.125rem;
+    }
+
+    :deep(.look-card__crown) {
+      top: var(--space-2);
+      right: var(--space-2);
+      width: 2rem;
+      height: 2rem;
+      font-size: 1.125rem;
+    }
+
+    :deep(.look-card__body) {
+      padding: var(--space-2) var(--space-3);
+    }
+
+    :deep(.look-card__name) {
+      font-size: 1rem;
+    }
+
+    :deep(.look-card__count) {
+      right: var(--space-2);
+      bottom: var(--space-2);
+      padding: 0 var(--space-2);
+      font-size: 0.75rem;
+    }
+  }
+}
+
+// Phones: the action buttons take a full row each
+.page-header__actions {
+  @media (max-width: 47.99rem) {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+
+    > .btn {
+      width: 100%;
+    }
+  }
+}
+
 .queens-title {
   font-size: 1.25rem;
 }
 
 .intro {
   max-width: 44rem;
-  white-space: pre-line;
 }
 </style>

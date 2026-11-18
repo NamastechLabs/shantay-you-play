@@ -1,3 +1,30 @@
+// Height of the top bar while it is pinned (phones only); sticky elements below it use it as their `top`
+:root {
+  --app-nav-height: 0px;
+
+  @media (max-width: 47.99rem) {
+    --app-nav-height: 3.5rem;
+  }
+}
+
+// Phones: keyboard focus and in-page jumps stop below the pinned bar (and the category tabs, when the page has them)
+@media (max-width: 47.99rem) {
+  html {
+    scroll-padding-top: calc(var(--app-nav-height) + 0.5rem);
+  }
+
+  html:has(.section-tabs) {
+    scroll-padding-top: calc(var(--app-nav-height) + 4rem);
+  }
+}
+
+// Tablets: tabs that stay until desktop width stick to the very top
+@media (min-width: 48rem) and (max-width: 63.99rem) {
+  html:has(.section-tabs--until-desktop) {
+    scroll-padding-top: 4.5rem;
+  }
+}
+
 // Top bar: brand on the left, theme + user menu on the right, always on one line
 .app-nav {
   display: flex;
@@ -5,6 +32,21 @@
   align-items: center;
   justify-content: space-between;
   min-width: 0;
+
+  // Phones: the bar stays pinned to the top of the screen on every page, over the page's side padding
+  @media (max-width: 47.99rem) {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    box-sizing: border-box;
+    height: var(--app-nav-height);
+    padding-inline: var(--space-4);
+    margin-inline: calc(var(--space-4) * -1);
+    // The page has its own top padding: pull the bar up so it starts at the very top
+    margin-top: calc(var(--space-4) * -1);
+    background-color: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+  }
 
   &__brand {
     display: inline-flex;
@@ -45,16 +87,82 @@
     align-items: center;
   }
 
-  // Phones: the theme picker lives inside the user menu when there is one
+  // Phones and small tablets: the theme picker lives in the menu panel when there is a user
   &__theme--desktop {
-    @media (max-width: 39.99rem) {
+    @media (max-width: 47.99rem) {
       display: none;
+    }
+  }
+
+  // Phones and small tablets: the user's avatar opens the user menu panel (from the right)
+  &__avatar {
+    display: none;
+    flex: none;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    cursor: pointer;
+    background: none;
+    border: 0;
+    border-radius: 50%;
+
+    .avatar {
+      width: 2.75rem;
+      height: 2.75rem;
+      border-color: var(--color-kicker);
+    }
+
+    .avatar__initial {
+      font-size: 1.25rem;
+    }
+
+    @media (max-width: 47.99rem) {
+      display: grid;
+    }
+  }
+
+  &__start {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    min-width: 0;
+  }
+
+  // Phones and small tablets: opens the user menu panel (the dropdown is for wider screens)
+  &__burger {
+    display: none;
+    flex: none;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    color: var(--color-title);
+    cursor: pointer;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    transition: border-color 0.15s, box-shadow 0.15s;
+
+    &:hover,
+    &[aria-expanded='true'] {
+      border-color: var(--color-kicker);
+      box-shadow: var(--shadow-card);
+    }
+
+    @media (max-width: 47.99rem) {
+      display: grid;
     }
   }
 }
 
 .user-menu {
   position: relative;
+
+  // Phones and small tablets use the panel instead
+  @media (max-width: 47.99rem) {
+    display: none;
+  }
 
   &__trigger {
     display: inline-flex;
@@ -106,6 +214,12 @@
     box-shadow: var(--shadow-raised);
   }
 
+  &__divider {
+    height: 1px;
+    margin: var(--space-1) var(--space-2);
+    background-color: var(--color-border);
+  }
+
   &__item {
     display: block;
     width: 100%;
@@ -121,16 +235,40 @@
       background-color: var(--color-surface-raised);
     }
   }
+}
 
-  // Only shown on phones; larger screens keep the picker in the top bar
-  &__theme {
-    padding: var(--space-2) var(--space-3);
+// Phones: the user menu panel (AppDrawer from the left)
+.drawer-menu {
+  display: grid;
+  gap: var(--space-1);
+  padding: 0;
+  margin: 0;
+  list-style: none;
 
-    @media (min-width: 40rem) {
-      display: none;
+  &__item {
+    display: block;
+    padding: var(--space-3) var(--space-3);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text);
+    text-decoration: none;
+    border-radius: var(--radius-md);
+
+    &:hover,
+    &.router-link-active {
+      background-color: var(--color-surface-raised);
     }
 
-    .theme-switcher,
+    &.router-link-exact-active {
+      color: var(--color-title);
+    }
+  }
+
+  &__theme {
+    width: 100%;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border);
+
     select {
       width: 100%;
     }

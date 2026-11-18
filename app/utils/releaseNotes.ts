@@ -10,13 +10,30 @@ export interface ReleaseNote {
 }
 
 /**
- * Release notes shown to users at /novedades, newest first. Every version has an
+ * Release notes shown to users at /release-notes, newest first. Every version has an
  * entry, added in the release commit (see CLAUDE.md and the `release` skill),
  * describing the functional changes users will notice, not the technical ones
  * (those go in CHANGELOG.md). A release with nothing users can see gets the
  * single feature "Mejoras y correcciones internas.".
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.11.0',
+    date: '2026-11-18',
+    title: 'Pensada para el móvil',
+    features: [
+      'Nuevo menú en el móvil: tu foto, arriba a la derecha, abre tu menú (perfil, looks y salir) y las tres rayas, arriba a la izquierda, abren el resto de páginas y el cambio de tema.',
+      'Mientras la semana está en el Werk Room, la página de inicio muestra una cuenta atrás hasta que abra la pasarela.',
+      'En la votación, el inicio y la página de la semana te dicen si ya has votado («Votado» o «Pendiente») y puedes cambiar tu Top 3 desde ahí.',
+      'Votar es más rápido en el móvil: dos reinas por fila, una lupa para ver el look completo sin elegirla y una barra de tu Top 3 más pequeña.',
+      'La página de la semana enseña las reinas de dos en dos, con un botón para votar también al final y otro para volver arriba.',
+      'Los looks del jurado se deslizan de lado en el móvil y su presentación se abre al tocarlos.',
+      'Los textos largos de los retos y de los looks se acortan con «Leer reto completo» y «Ver más», y las fotos muestran el logo mientras cargan.',
+      'En una semana con varias categorías hay pestañas fijas para saltar de una a otra.',
+      'Ayuda y Novedades tienen un índice fijo y un botón para volver arriba; la Ayuda empieza con un resumen «Para ti» según tu rol.',
+      'La explicación de la votación de las bandas se lee mejor en el móvil, con una tarjeta por reina en el ejemplo.',
+    ],
+  },
   {
     version: '0.10.0',
     date: '2026-11-17',

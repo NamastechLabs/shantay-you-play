@@ -90,10 +90,16 @@
     box-shadow: var(--shadow-card);
   }
 
+  // The brand's "S" on a tinted card shows while the photo loads; the opaque photo covers it
   &__photo {
     width: 100%;
     aspect-ratio: 3 / 4;
     object-fit: cover;
+    background-color: var(--color-surface-raised);
+    background-image: url('/icon-192.png');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 30%;
   }
 
   // Card with several actions: the photo + text is one button, "Ver look completo" sits below it
@@ -158,6 +164,12 @@
       width: 1rem;
       height: 1rem;
     }
+  }
+
+  // Intro text with its own "… Ver más" (CollapsibleText), so no CSS clamp
+  &__intro-text {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
   }
 
   &__intro {

@@ -24,6 +24,28 @@
     }
   }
 
+  // Narrow menu panel
+  &--narrow {
+    width: min(20rem, 85vw);
+  }
+
+  // Pinned to the left edge, slides in from the left
+  &--left {
+    inset: 0 auto 0 0;
+    border-right: 1px solid var(--color-border);
+    border-left: 0;
+
+    &[open] {
+      @media (prefers-reduced-motion: no-preference) {
+        animation-name: drawer-in-left;
+      }
+    }
+
+    &.drawer--closing {
+      animation-name: drawer-out-left;
+    }
+  }
+
   &--closing {
     animation: drawer-out 0.2s ease-in forwards;
 
@@ -103,6 +125,26 @@ body:has(.drawer[open]) {
 
   to {
     transform: translateX(100%);
+  }
+}
+
+@keyframes drawer-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes drawer-out-left {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-100%);
   }
 }
 

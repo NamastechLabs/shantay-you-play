@@ -7,6 +7,12 @@ export default defineNuxtConfig({
 
   css: ['~/assets/scss/main.scss'],
 
+  routeRules: {
+    // These pages used to live at Spanish paths: keep old links working
+    '/novedades': { redirect: { to: '/release-notes', statusCode: 301 } },
+    '/votacion-bandas': { redirect: { to: '/band-voting', statusCode: 301 } },
+  },
+
   app: {
     head: {
       title: 'Shantay You Play',

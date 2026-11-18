@@ -1,8 +1,9 @@
 import { APP_NAME } from './brand'
+import type { HelpRole } from './helpContent'
 import { GROUP_RANKING, GROUP_RANKING_MAX_TOTAL, formatScore, rankValue } from './groupRanking'
 
 /** Route of the help page that explains the group voting system */
-export const GROUP_VOTING_HELP_PATH = '/votacion-bandas'
+export const GROUP_VOTING_HELP_PATH = '/band-voting'
 
 /** Short number for prose ("0,2", "1,2"): no trailing zeros */
 const plain = (value: number): string => new Intl.NumberFormat('es-ES', { maximumFractionDigits: 3 }).format(value)
@@ -13,7 +14,7 @@ const share = (weight: number): string => weight === 0.5 ? '½' : `${Math.round(
 const values = (candidates: number, decimals: number): string[] =>
   Array.from({ length: candidates }, (_, index) => formatScore(rankValue(index + 1, candidates), decimals))
 
-/** Spanish copy of `/votacion-bandas`. Every number comes from `GROUP_RANKING`. `**x**` marks bold text. */
+/** Spanish copy of `/band-voting`. Every number comes from `GROUP_RANKING`. `**x**` marks bold text. */
 export const GROUP_VOTING_COPY = {
   breadcrumb: 'Votación de bandas',
   helpLink: '¿Cómo funciona esta votación?',
@@ -21,11 +22,30 @@ export const GROUP_VOTING_COPY = {
   title: 'Cómo funciona la votación de las bandas',
   lead: `Tres votaciones de bandas más el Top 3 de la semana, una sola clasificación y una única ganadora absoluta. La banda que gane la primera fase se lleva un regalo.`,
 
+  /** What each role does in the group voting, shown at the top of the page */
+  forYouKicker: 'Tu parte',
+  forYou: {
+    concursante: 'Ordenas a todas las reinas de la banda contraria (fase 2) y eliges tu Top 3 de la semana.',
+    jurado: 'Votas qué banda ha trabajado mejor (fase 1) y ordenas a todas las concursantes (fase 3).',
+    invitado: 'Eliges tu Top 3 de la semana, y tus votos son anónimos.',
+  } satisfies Record<HelpRole, string>,
+
+  outlineTitle: 'En esta página',
+  tabs: {
+    phases: 'Las fases',
+    values: 'Cuánto vale cada puesto',
+    formula: 'La nota final',
+    example: 'Ejemplo',
+    compare: 'Simulación original',
+  },
+  phasesLabel: 'Las fases de la votación',
+  phasesHint: 'Desliza para ver las cuatro fases',
+
   phases: [
     {
       tag: 'Fase 1',
       title: 'Los Javis votan a las bandas',
-      text: `Eligen qué banda ha trabajado mejor. La ganadora sale arriba en la clasificación provisional y cada una de sus integrantes recibe **${plain(GROUP_RANKING.bandBonus)}** en su nota final.`,
+      text: `Los Javis (el jurado) eligen qué banda ha trabajado mejor. La ganadora sale arriba en la clasificación provisional y cada una de sus integrantes recibe **${plain(GROUP_RANKING.bandBonus)}** en su nota final.`,
     },
     {
       tag: 'Fase 2',
@@ -70,6 +90,8 @@ export const GROUP_VOTING_COPY = {
   exampleHeaders: ['Concursante', 'Fase 2', 'Fase 3', 'Regalo', 'Top 3', 'Nota final'],
 
   compareTitle: 'Diferencia con la simulación original',
+  compareShow: 'Ver la diferencia con la simulación',
+  compareHide: 'Ocultar la diferencia',
   /** Bonus roughly equivalent to the +6 points of the original simulation */
   compareBonusOriginal: 0.4,
   compareNow: (winner: string): string =>

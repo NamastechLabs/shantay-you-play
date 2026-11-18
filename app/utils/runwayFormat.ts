@@ -53,6 +53,11 @@ export function runwayTitle(categories: readonly { title: string }[]): string {
   return categories.map(category => category.title).join(' · ') || 'Pasarela'
 }
 
+/** "2026-11-05T20:00:00+00:00" -> "5 de noviembre" (in the runway time zone): the day without the hour */
+export function formatRunwayLongDate(timestamp: string): string {
+  return new Date(timestamp).toLocaleDateString('es', { day: 'numeric', month: 'long', timeZone: RUNWAY_TIME_ZONE })
+}
+
 /** "2026-11-05T20:00:00+00:00" -> "5 nov" (in the runway time zone) */
 export function formatRunwayDay(timestamp: string): string {
   return new Date(timestamp).toLocaleDateString('es', { day: 'numeric', month: 'short', timeZone: RUNWAY_TIME_ZONE }).replace('.', '')
@@ -61,4 +66,23 @@ export function formatRunwayDay(timestamp: string): string {
 /** "2026-11-05T20:00:00+00:00" -> "21:00" (in the runway time zone) */
 export function formatRunwayTime(timestamp: string): string {
   return new Date(timestamp).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', timeZone: RUNWAY_TIME_ZONE })
+}
+
+const pad2 = (value: number): string => String(value).padStart(2, '0')
+
+/**
+ * Time left until a runway, as a countdown:
+ * more than 24 h -> "2 días 03:04:05", more than 1 h -> "03:04:05", more than 1 min -> "04:05", else "05".
+ */
+export function formatCountdown(milliseconds: number): string {
+  const total = Math.max(0, Math.floor(milliseconds / 1000))
+  const days = Math.floor(total / 86_400)
+  const hours = Math.floor((total % 86_400) / 3600)
+  const minutes = Math.floor((total % 3600) / 60)
+  const seconds = total % 60
+
+  if (total > 86_400) return `${days} ${days === 1 ? 'día' : 'días'} ${pad2(hours)}:${pad2(minutes)}:${pad2(seconds)}`
+  if (total > 3600) return `${pad2(hours)}:${pad2(minutes)}:${pad2(seconds)}`
+  if (total > 60) return `${pad2(minutes)}:${pad2(seconds)}`
+  return pad2(seconds)
 }

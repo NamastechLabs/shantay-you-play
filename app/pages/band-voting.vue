@@ -34,6 +34,22 @@ const tiedPair = computed(() => {
 })
 
 const mentionsAlternative = GROUP_RANKING.bandBonus < copy.compareBonusOriginal
+
+// What the reader does in this voting, by role
+const { participant } = useCurrentParticipant()
+const myPart = computed(() => {
+  const role = participant.value?.role as keyof typeof copy.forYou | undefined
+  return role ? copy.forYou[role] ?? null : null
+})
+
+// Sticky row of sections on phones and tablets (the page is short enough on desktop)
+const tabs = [
+  { id: 'fases', title: copy.tabs.phases },
+  { id: 'valores', title: copy.tabs.values },
+  { id: 'nota-final', title: copy.tabs.formula },
+  { id: 'ejemplo', title: copy.tabs.example },
+  { id: 'simulacion', title: copy.tabs.compare },
+]
 </script>
 
 <template>
@@ -54,20 +70,33 @@ const mentionsAlternative = GROUP_RANKING.bandBonus < copy.compareBonusOriginal
       {{ copy.lead }}
     </p>
 
-    <ol class="group-help__phases">
-      <li v-for="(phase, index) in copy.phases" :key="phase.tag" class="card">
-        <span class="badge" :class="`group-help__tag--${index + 1}`">{{ phase.tag }}</span>
-        <h2 class="group-help__card-title">
-          {{ phase.title }}
-        </h2>
-        <p>
-          <template v-for="(part, partIndex) in segments(phase.text)" :key="partIndex">
-            <strong v-if="part.bold">{{ part.text }}</strong>
-            <template v-else>{{ part.text }}</template>
-          </template>
-        </p>
-      </li>
-    </ol>
+    <p v-if="myPart" class="card group-help__for-you">
+      <span class="kicker">{{ copy.forYouKicker }}</span>
+      {{ myPart }}
+    </p>
+
+    <SectionTabs :items="tabs" :label="copy.outlineTitle" until="desktop" />
+
+    <!-- Phones: the four phases slide sideways (the next card peeks out), so they do not take a whole screen each -->
+    <section id="fases" class="group-help__phases-wrap" :aria-label="copy.phasesLabel">
+      <ol class="group-help__phases" tabindex="0">
+        <li v-for="(phase, index) in copy.phases" :key="phase.tag" class="card">
+          <span class="badge" :class="`group-help__tag--${index + 1}`">{{ phase.tag }}</span>
+          <h2 class="group-help__card-title">
+            {{ phase.title }}
+          </h2>
+          <p>
+            <template v-for="(part, partIndex) in segments(phase.text)" :key="partIndex">
+              <strong v-if="part.bold">{{ part.text }}</strong>
+              <template v-else>{{ part.text }}</template>
+            </template>
+          </p>
+        </li>
+      </ol>
+      <p class="hint group-help__swipe" aria-hidden="true">
+        {{ copy.phasesHint }} →
+      </p>
+    </section>
 
     <section class="group-help__section" aria-labelledby="valores">
       <h2 id="valores">
@@ -81,7 +110,7 @@ const mentionsAlternative = GROUP_RANKING.bandBonus < copy.compareBonusOriginal
       </p>
       <ul class="group-help__chips">
         <li v-for="chip in [copy.valuesCross, copy.valuesJury]" :key="chip.label" class="group-help__chip">
-          {{ chip.label }}:
+          <span>{{ chip.label }}:</span>
           <strong>{{ chip.values.join(' · ') }}</strong>
         </li>
       </ul>
@@ -122,7 +151,7 @@ const mentionsAlternative = GROUP_RANKING.bandBonus < copy.compareBonusOriginal
       <ul class="group-help__chips">
         <li v-for="band in bands" :key="band.name" class="group-help__chip">
           <strong>{{ band.name }}</strong>
-          {{ band.won ? copy.exampleWon : copy.exampleLost }} · {{ band.members }}
+          <span>{{ band.won ? copy.exampleWon : copy.exampleLost }} · {{ band.members }}</span>
         </li>
       </ul>
 
@@ -154,6 +183,41 @@ const mentionsAlternative = GROUP_RANKING.bandBonus < copy.compareBonusOriginal
         </table>
       </div>
 
+      <!-- Phones: a card per queen, so the final score is never off screen -->
+      <ol class="group-help__queens" :aria-label="copy.exampleTitle">
+        <li v-for="row in rows" :key="row.id" class="group-help__queen" :class="{ 'group-help__queen--winner': row.id === winner?.id }">
+          <div class="group-help__queen-head">
+            <span class="group-help__position">{{ row.position }}.º</span>
+            <span class="group-help__queen-name">
+              {{ row.id }}
+              <span class="group-help__band">{{ row.band }}</span>
+            </span>
+            <span class="group-help__queen-total">
+              <span class="group-help__queen-label">{{ copy.exampleHeaders[5] }}</span>
+              {{ formatScore(row.total) }}
+            </span>
+          </div>
+          <dl class="group-help__queen-stats">
+            <div>
+              <dt>{{ copy.exampleHeaders[1] }}</dt>
+              <dd>{{ formatScore(row.crossScore) }}</dd>
+            </div>
+            <div>
+              <dt>{{ copy.exampleHeaders[2] }}</dt>
+              <dd>{{ formatScore(row.juryScore) }}</dd>
+            </div>
+            <div>
+              <dt>{{ copy.exampleHeaders[3] }}</dt>
+              <dd>{{ row.bandBonus ? formatScore(row.bandBonus, 1) : '0' }}</dd>
+            </div>
+            <div>
+              <dt>{{ copy.exampleHeaders[4] }}</dt>
+              <dd>{{ formatScore(row.top3Score) }}</dd>
+            </div>
+          </dl>
+        </li>
+      </ol>
+
       <div v-if="winner" class="group-help__notes">
         <p class="card">
           <strong>Ganadora individual: {{ winner.id }}</strong>, de la banda {{ winner.band === example.winningBand ? 'ganadora' : 'perdedora' }}.
@@ -166,11 +230,11 @@ const mentionsAlternative = GROUP_RANKING.bandBonus < copy.compareBonusOriginal
         </p>
         <p class="card">
           <strong>Cuenta de {{ winner.id }}:</strong>
-          {{ formatScore(GROUP_RANKING.weightGroup) }} × ({{ formatScore(GROUP_RANKING.weightCross) }} × {{ formatScore(winner.crossScore) }}
-          + {{ formatScore(GROUP_RANKING.weightJury) }} × {{ formatScore(winner.juryScore) }}
-          + {{ formatScore(winner.bandBonus, 1) }})
-          + {{ formatScore(GROUP_RANKING.weightTop3) }} × {{ formatScore(winner.top3Score) }}
-          = {{ formatScore(winner.total) }}.
+          <span class="group-help__step">{{ formatScore(GROUP_RANKING.weightGroup) }} × ({{ formatScore(GROUP_RANKING.weightCross) }} × {{ formatScore(winner.crossScore) }}</span>
+          <span class="group-help__step">+ {{ formatScore(GROUP_RANKING.weightJury) }} × {{ formatScore(winner.juryScore) }}</span>
+          <span class="group-help__step">+ {{ formatScore(winner.bandBonus, 1) }})</span>
+          <span class="group-help__step">+ {{ formatScore(GROUP_RANKING.weightTop3) }} × {{ formatScore(winner.top3Score) }}</span>
+          <span class="group-help__step group-help__step--result">= {{ formatScore(winner.total) }}.</span>
         </p>
       </div>
     </section>
@@ -179,23 +243,27 @@ const mentionsAlternative = GROUP_RANKING.bandBonus < copy.compareBonusOriginal
       <h2 id="simulacion">
         {{ copy.compareTitle }}
       </h2>
-      <p>
-        <template v-for="(part, partIndex) in segments(copy.compareNow(winner?.id ?? ''))" :key="partIndex">
-          <strong v-if="part.bold">{{ part.text }}</strong>
-          <template v-else>{{ part.text }}</template>
-        </template>
-      </p>
-      <p v-if="mentionsAlternative">
-        <template v-for="(part, partIndex) in segments(copy.compareAlternative(copy.compareBonusOriginal))" :key="partIndex">
-          <strong v-if="part.bold">{{ part.text }}</strong>
-          <template v-else>{{ part.text }}</template>
-        </template>
-      </p>
+      <PhoneCollapse :show-label="copy.compareShow" :hide-label="copy.compareHide">
+        <p>
+          <template v-for="(part, partIndex) in segments(copy.compareNow(winner?.id ?? ''))" :key="partIndex">
+            <strong v-if="part.bold">{{ part.text }}</strong>
+            <template v-else>{{ part.text }}</template>
+          </template>
+        </p>
+        <p v-if="mentionsAlternative">
+          <template v-for="(part, partIndex) in segments(copy.compareAlternative(copy.compareBonusOriginal))" :key="partIndex">
+            <strong v-if="part.bold">{{ part.text }}</strong>
+            <template v-else>{{ part.text }}</template>
+          </template>
+        </p>
+      </PhoneCollapse>
     </section>
 
     <NuxtLink to="/help" class="btn btn--secondary group-help__back">
       Volver a la ayuda
     </NuxtLink>
+
+    <BackToTop />
   </main>
 </template>
 
@@ -210,9 +278,48 @@ const mentionsAlternative = GROUP_RANKING.bandBonus < copy.compareBonusOriginal
   gap: var(--space-3);
 }
 
+.group-help__for-you {
+  // `.card` is a grid: the kicker and the sentence stay in one block
+  display: block;
+  border-color: var(--color-primary);
+  box-shadow: var(--glow-primary);
+
+  .kicker {
+    display: block;
+    margin-bottom: var(--space-1);
+  }
+}
+
+.group-help__phases-wrap {
+  display: grid;
+  gap: var(--space-2);
+}
+
 .group-help__phases {
   display: grid;
   gap: var(--space-3);
+
+  // Phones: one card at a time, sliding sideways; the next one peeks out
+  @media (max-width: 47.99rem) {
+    grid-auto-columns: 82%;
+    grid-auto-flow: column;
+    padding-bottom: var(--space-2);
+    margin-inline: calc(var(--space-4) * -1);
+    padding-inline: var(--space-4);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-padding-inline: var(--space-4);
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    > li {
+      scroll-snap-align: start;
+    }
+  }
 
   @media (min-width: 48rem) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -225,6 +332,14 @@ const mentionsAlternative = GROUP_RANKING.bandBonus < copy.compareBonusOriginal
   > li {
     align-content: start;
     justify-items: start;
+  }
+}
+
+.group-help__swipe {
+  text-align: right;
+
+  @media (min-width: 48rem) {
+    display: none;
   }
 }
 
@@ -260,11 +375,15 @@ const mentionsAlternative = GROUP_RANKING.bandBonus < copy.compareBonusOriginal
   gap: var(--space-2);
 }
 
+// Rounded rectangles, not pills: the text wraps onto two lines on a phone
 .group-help__chip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
   padding: var(--space-1) var(--space-4);
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-md);
 
   strong {
     color: var(--color-title);
@@ -301,9 +420,14 @@ const mentionsAlternative = GROUP_RANKING.bandBonus < copy.compareBonusOriginal
   color: var(--color-title);
 }
 
-// The table scrolls on its own so the page never scrolls sideways on phones
+// The table scrolls on its own so the page never scrolls sideways on tablets; phones show cards instead
 .group-help__table-wrap {
   overflow-x: auto;
+
+  @media (max-width: 47.99rem) {
+    display: none;
+  }
+
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -341,6 +465,86 @@ const mentionsAlternative = GROUP_RANKING.bandBonus < copy.compareBonusOriginal
   }
 }
 
+// Phones: a card per queen with the final score big and the phases below
+.group-help__queens {
+  display: grid;
+  gap: var(--space-3);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+
+  @media (min-width: 48rem) {
+    display: none;
+  }
+}
+
+.group-help__queen {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+
+  &--winner {
+    background-color: color-mix(in srgb, var(--color-highlight) 25%, var(--color-surface));
+  }
+}
+
+.group-help__queen-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.group-help__queen-name {
+  font-weight: 700;
+}
+
+.group-help__queen-total {
+  display: grid;
+  justify-items: end;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1.1;
+  color: var(--color-title);
+  font-variant-numeric: tabular-nums;
+}
+
+.group-help__queen-label {
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.group-help__queen-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+  margin: 0;
+  border-top: 1px solid var(--color-border);
+  font-variant-numeric: tabular-nums;
+
+  dt {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 600;
+  }
+}
+
 .group-help__winner > * {
   background-color: color-mix(in srgb, var(--color-highlight) 25%, var(--color-surface));
 }
@@ -369,6 +573,22 @@ const mentionsAlternative = GROUP_RANKING.bandBonus < copy.compareBonusOriginal
   // `.card` is a grid: without this the bold lead and the rest of the sentence land on separate rows
   > .card {
     display: block;
+  }
+}
+
+// The calculation: one step per line on phones, running text from tablets up
+.group-help__step {
+  @media (max-width: 47.99rem) {
+    display: block;
+    padding-left: var(--space-3);
+
+    &:first-of-type {
+      padding-left: 0;
+    }
+  }
+
+  &--result {
+    font-weight: 700;
   }
 }
 

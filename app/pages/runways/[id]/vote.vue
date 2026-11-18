@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import type { Tables } from '~/types/database.types'
+import type { LookImages } from '~/utils/lookSlots'
 
 type Runway = Pick<Tables<'runways'>, 'id' | 'week_number' | 'runway_date' | 'status'> & {
   categories: Pick<Tables<'categories'>, 'id' | 'title' | 'kind'>[]
 }
 type Ballot = Pick<Tables<'votes'>, 'id' | 'top_1_participant_id' | 'top_2_participant_id' | 'top_3_participant_id'>
 
-interface VoteLook {
+interface VoteLook extends LookImages {
   id: string
   category_id: string
-  image_url: string
+  intro: string | null
   participant: Pick<Tables<'participants'>, 'id' | 'name' | 'drag_name'>
 }
 
@@ -56,7 +57,7 @@ const { data, error: loadError } = await useAsyncData(
         .maybeSingle(),
       supabase
         .from('looks')
-        .select('id, category_id, image_url, participant:participants!looks_participant_id_fkey(id, name, drag_name), category:categories!looks_category_id_fkey!inner(runway_id)')
+        .select('id, category_id, image_url, image2_url, image3_url, image4_url, intro, participant:participants!looks_participant_id_fkey(id, name, drag_name), category:categories!looks_category_id_fkey!inner(runway_id)')
         .eq('category.runway_id', runwayId)
         .order('created_at', { ascending: true }),
       supabase
@@ -184,6 +185,22 @@ const rankOf = (queen: Queen): number | null => {
   return index === -1 ? null : index + 1
 }
 
+/** First photo of a picked queen, for the small thumbnails of the ballot bar */
+function pickPhoto(index: number): string | null {
+  return queens.value.find(candidate => candidate.id === picks.value[index])?.looks[0]?.image_url ?? null
+}
+
+// --- Look dialog: the whole look of a queen, without picking her -----------------------
+const zoom = ref<{ queenId: string, index: number } | null>(null)
+const zoomQueen = computed(() => queens.value.find(queen => queen.id === zoom.value?.queenId) ?? null)
+const zoomLook = computed(() => zoomQueen.value?.looks[zoom.value?.index ?? 0] ?? null)
+
+function showAdjacentLook(step: 1 | -1): void {
+  const queen = zoomQueen.value
+  if (!queen || !zoom.value) return
+  zoom.value = { queenId: queen.id, index: (zoom.value.index + step + queen.looks.length) % queen.looks.length }
+}
+
 function pickName(index: number): string {
   const queen = queens.value.find(candidate => candidate.id === picks.value[index])
   return queen ? queen.name : '—'
@@ -253,7 +270,7 @@ async function saveBallot(): Promise<void> {
         <h1>{{ groupCategory ? 'Tu votación' : 'Tu Top 3' }}</h1>
       </div>
       <nav class="page-header__actions">
-        <NuxtLink :to="`/runways/${runway.id}`" class="btn btn--secondary">
+        <NuxtLink :to="`/runways/${runway.id}`" class="btn btn--secondary btn--small">
           Ver la pasarela
         </NuxtLink>
       </nav>
@@ -281,10 +298,12 @@ async function saveBallot(): Promise<void> {
         <h2 v-if="hasSteps" class="vote-top3__title">
           Tu Top 3 de la semana
         </h2>
-        <p class="lead">
-          Vota a las reinas por el conjunto de sus looks de la semana. Toca las reinas en orden: la primera será tu Top 1. Tócala otra vez para quitarla.
-          {{ ballotId ? 'Puedes cambiar tu voto mientras la votación siga abierta.' : '' }}
-        </p>
+        <!-- Phones: only the first sentence, the how-to is behind "Leer más" -->
+        <ReadMoreText
+          class="lead"
+          intro="Vota a las reinas por el conjunto de sus looks de la semana."
+          :more="`Toca las reinas en orden: la primera será tu Top 1. Tócala otra vez para quitarla.${ballotId ? ' Puedes cambiar tu voto mientras la votación siga abierta.' : ''}`"
+        />
 
 
         <p v-if="hasSteps && isJury && lastPrefill.length" class="hint">
@@ -301,8 +320,9 @@ async function saveBallot(): Promise<void> {
           Hacen falta al menos {{ BALLOT_SIZE }} reinas con looks para votar.
         </p>
 
-        <ul v-else class="gallery">
-          <li v-for="queen in queens" :key="queen.id">
+        <!-- Phones: two queens per row, so six fit in a screen and a half instead of six screens -->
+        <ul v-else class="gallery vote-gallery">
+          <li v-for="queen in queens" :key="queen.id" class="vote-card" :class="{ 'vote-card--own': isOwnQueen(queen) }">
             <button
               type="button"
               class="look-card"
@@ -312,7 +332,7 @@ async function saveBallot(): Promise<void> {
               @click="togglePick(queen)"
             >
               <span v-if="rankOf(queen)" class="look-card__rank">{{ rankOf(queen) }}</span>
-              <span class="queen-photos" :style="{ gridTemplateColumns: `repeat(${queen.looks.length}, minmax(0, 1fr))` }">
+              <span class="queen-photos" :style="{ '--looks': queen.looks.length }">
                 <img
                   v-for="look in queen.looks"
                   :key="look.id"
@@ -321,11 +341,30 @@ async function saveBallot(): Promise<void> {
                   :alt="`Look de ${queen.name}: ${categoryTitles.get(look.category_id) ?? ''}`"
                   loading="lazy"
                 >
+                <!-- Phones show the first look only; the others are in the look dialog -->
+                <span v-if="queen.looks.length > 1" class="look-card__count queen-photos__more" aria-hidden="true">+{{ queen.looks.length - 1 }}</span>
               </span>
               <span class="look-card__body">
                 <span class="look-card__name">{{ queen.name }}</span>
                 <span v-if="isOwnQueen(queen)" class="look-card__intro">Eres tú: no puedes votarte.</span>
               </span>
+            </button>
+
+            <!-- Your own queen: a thin row on phones (a whole card to say "it is you" is a waste of screen) -->
+            <p v-if="isOwnQueen(queen)" class="vote-card__own">
+              {{ queen.name }}: eres tú, no puedes votarte.
+            </p>
+            <button
+              v-else
+              type="button"
+              class="vote-card__zoom"
+              :aria-label="`Ver el look de ${queen.name} en grande`"
+              @click="zoom = { queenId: queen.id, index: 0 }"
+            >
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5" />
+                <path d="m16 16 4.5 4.5M11 8.5v5M8.5 11h5" />
+              </svg>
             </button>
           </li>
         </ul>
@@ -340,6 +379,9 @@ async function saveBallot(): Promise<void> {
             >
               <span class="ballot-bar__rank">{{ label }}</span>
               <span class="ballot-bar__name">{{ pickName(index) }}</span>
+              <!-- Phones: a small photo and the rank number instead of the (clipped) name -->
+              <span class="ballot-bar__num" aria-hidden="true">{{ index + 1 }}</span>
+              <img v-if="pickPhoto(index)" class="ballot-bar__thumb" :src="pickPhoto(index)!" alt="">
             </li>
           </ol>
           <div class="ballot-bar__actions">
@@ -355,7 +397,7 @@ async function saveBallot(): Promise<void> {
               :disabled="!isComplete || saving"
               @click="saveBallot"
             >
-              {{ saving ? 'Guardando…' : ballotId ? 'Actualizar mi voto' : 'Enviar mi voto' }}
+              {{ saving ? 'Guardando…' : ballotId ? 'Actualizar' : 'Votar' }}
             </button>
           </div>
         </div>
@@ -369,6 +411,18 @@ async function saveBallot(): Promise<void> {
         :current="stepIndex"
         label="Pasos de la votación (abajo)"
         @select="goToStep"
+      />
+
+      <LookGalleryDialog
+        :open="zoom !== null"
+        :title="zoomQueen?.name ?? ''"
+        :photos="zoomLook ? lookPhotos(zoomLook) : []"
+        :category-title="(zoomQueen?.looks.length ?? 0) > 1 && zoomLook ? categoryTitles.get(zoomLook.category_id) ?? null : null"
+        :intro="zoomLook?.intro"
+        :can-navigate="(zoomQueen?.looks.length ?? 0) > 1"
+        @previous="showAdjacentLook(-1)"
+        @next="showAdjacentLook(1)"
+        @close="zoom = null"
       />
     </template>
     <p v-else class="empty">
@@ -403,15 +457,213 @@ async function saveBallot(): Promise<void> {
   }
 }
 
-// All the looks of a queen side by side, one per category
+// The title and the "Ver la pasarela" link share a line, the link on the right
+.page-header {
+  flex-wrap: nowrap;
+  align-items: flex-end;
+}
+
+.page-header__titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.page-header__actions {
+  flex: none;
+}
+
+// All the looks of a queen side by side, one per category (phones: only the first, with a "+N")
 .queen-photos {
+  position: relative;
   display: grid;
+  grid-template-columns: repeat(var(--looks, 1), minmax(0, 1fr));
   gap: 2px;
+
+  @media (max-width: 47.99rem) {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .queen-photos__photo {
   width: 100%;
   aspect-ratio: 3 / 4;
   object-fit: cover;
+  // The brand's "S" on a tinted card while the photo loads
+  background-color: var(--color-surface-raised);
+  background-image: url('/icon-192.png');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 30%;
+
+  @media (max-width: 47.99rem) {
+    &:nth-child(n + 2) {
+      display: none;
+    }
+  }
+}
+
+.queen-photos__more {
+  @media (min-width: 48rem) {
+    display: none;
+  }
+}
+
+.vote-card {
+  position: relative;
+}
+
+// Own queen: a thin row on phones, the full card from tablets up
+.vote-card__own {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+
+  @media (min-width: 48rem) {
+    display: none;
+  }
+}
+
+// Under the pinned ballot bar (z-index 5), over the card
+.ballot-bar {
+  z-index: 5;
+}
+
+.vote-card__zoom {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  color: var(--color-title);
+  cursor: pointer;
+  background-color: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-card);
+}
+
+// Phones: two queens per row
+@media (max-width: 47.99rem) {
+  .vote-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+
+  .vote-card--own {
+    grid-column: 1 / -1;
+
+    > .look-card {
+      display: none;
+    }
+  }
+
+  .vote-gallery :deep(.look-card__rank) {
+    width: 3rem;
+    height: 3rem;
+    padding: 0.25rem 0 0 0.5rem;
+    font-size: 1.125rem;
+  }
+
+  .vote-gallery :deep(.look-card__body) {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .vote-gallery :deep(.look-card__name) {
+    font-size: 1rem;
+  }
+
+  // The zoom button must not cover the photo count badge
+  .vote-gallery :deep(.look-card__count) {
+    right: var(--space-2);
+    bottom: var(--space-2);
+    padding: 0 var(--space-2);
+    font-size: 0.75rem;
+  }
+}
+
+// Ballot bar: from tablets up the three picks have their name; on phones a photo with the rank,
+// next to the button, so the bar is one short row instead of a third of the screen
+.ballot-bar__num,
+.ballot-bar__thumb {
+  display: none;
+}
+
+@media (max-width: 47.99rem) {
+  .ballot-bar {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-3);
+    align-items: center;
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .ballot-bar__picks {
+    gap: var(--space-2);
+  }
+
+  // A short label and a compact button, to the right of the slots
+  .ballot-bar__actions {
+    justify-items: end;
+  }
+
+  .ballot-bar__actions .btn {
+    padding: var(--space-2) var(--space-5);
+  }
+
+  .ballot-bar__pick {
+    position: relative;
+    width: 2.75rem;
+    height: 3.5rem;
+    padding: 0;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+  }
+
+  // The rank and the name stay for screen readers
+  .ballot-bar__rank,
+  .ballot-bar__name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .ballot-bar__num {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--color-on-primary);
+    background-color: var(--color-primary);
+    border-bottom-right-radius: var(--radius-sm);
+  }
+
+  .ballot-bar__pick:not(.ballot-bar__pick--filled) .ballot-bar__num {
+    top: 50%;
+    left: 50%;
+    width: auto;
+    height: auto;
+    color: var(--color-text-muted);
+    background: none;
+    transform: translate(-50%, -50%);
+  }
+
+  .ballot-bar__thumb {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 }
 </style>

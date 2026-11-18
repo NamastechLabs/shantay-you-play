@@ -46,7 +46,7 @@ function showAdjacent(step: 1 | -1): void {
           <span class="jury__body">
             <strong class="jury__name">{{ member.name }}</strong>
             <span v-if="member.categoryTitle" class="muted">{{ member.categoryTitle }}</span>
-            <span class="jury__intro">{{ member.intro }}</span>
+            <CollapsibleText class="jury__intro" :text="member.intro" :lines="5" :phones-only="false" inert />
           </span>
         </button>
       </li>
@@ -84,6 +84,28 @@ function showAdjacent(step: 1 | -1): void {
   margin: 0;
   list-style: none;
 
+  /* Phones: the jury slides sideways, one look at a time (the next one peeks out) */
+  @media (max-width: 47.99rem) {
+    grid-auto-columns: 46%;
+    grid-auto-flow: column;
+    align-items: stretch;
+    padding: var(--space-1) var(--space-4) var(--space-3);
+    margin-inline: calc(var(--space-4) * -1);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-padding-inline: var(--space-4);
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    & > li {
+      scroll-snap-align: start;
+    }
+  }
+
   @media (min-width: 48rem) {
     grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
   }
@@ -91,7 +113,7 @@ function showAdjacent(step: 1 | -1): void {
 
 .jury__card {
   display: grid;
-  grid-template-columns: 10rem 1fr;
+  grid-template-columns: 1fr;
   gap: var(--space-3);
   align-items: start;
   width: 100%;
@@ -105,6 +127,11 @@ function showAdjacent(step: 1 | -1): void {
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
   transition: transform 0.15s, box-shadow 0.15s;
+
+  /* Photo on the left and the text beside it, from tablets up */
+  @media (min-width: 48rem) {
+    grid-template-columns: 10rem 1fr;
+  }
 
   &:hover {
     box-shadow: var(--shadow-raised);
@@ -139,13 +166,24 @@ function showAdjacent(step: 1 | -1): void {
   color: var(--color-title);
 }
 
-/* The full intro is in the gallery dialog */
+/* Phones: small cards with the photo and the name only; the intro is one tap away in the look dialog */
+@media (max-width: 47.99rem) {
+  .jury__card {
+    gap: var(--space-2);
+    padding: var(--space-2);
+  }
+
+  .jury__name {
+    font-size: 1rem;
+  }
+
+  .jury__intro {
+    display: none;
+  }
+}
+
+/* The full intro is in the gallery dialog: the card opens it ("… Ver más") */
 .jury__intro {
-  display: -webkit-box;
-  overflow: hidden;
   white-space: pre-line;
-  -webkit-line-clamp: 5;
-  line-clamp: 5;
-  -webkit-box-orient: vertical;
 }
 </style>

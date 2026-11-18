@@ -2,7 +2,7 @@
  * Scoring constants of the group categories (DRG-8).
  *
  * They MUST match the constants at the top of `category_ranking_core`, as last defined in
- * `supabase/migrations/20261115000100_group_ranking_includes_top3.sql` (or a later migration that replaces it). The help page `/votacion-bandas` reads them from here,
+ * `supabase/migrations/20261115000100_group_ranking_includes_top3.sql` (or a later migration that replaces it). The help page `/band-voting` reads them from here,
  * so changing a value means: new migration for the function + this file. The worked
  * example of the help page is recomputed from these values.
  *

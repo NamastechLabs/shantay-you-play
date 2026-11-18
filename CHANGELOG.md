@@ -5,6 +5,30 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-11-18
+
+### Changed
+
+- Mobile redesign of the homepage: kicker, date and status badge on separate lines, full-width stacked buttons, the category text after the buttons, the jury below the week card, and a tall winner photo with ribbon and crown in "La semana pasada". On phones the top bar stays pinned to the top on every page. No migration (DRG-13)
+- On phones the category challenge text is cut to 3 lines with an inline "… Leer reto completo" link after the ellipsis, on the homepage and on the runway page. The look and jury intros of the runway page end in "… Ver más" (the card opens the full look). The runway page header stacks its status and full-width buttons (DRG-13)
+- The release notes page shows the latest 3 versions and keeps the rest under "Versiones anteriores"; versions have a pill badge, the newest a "Nueva" badge, each feature a marker, and there is a sticky row of versions on phones and tablets and a side list on desktop (DRG-13)
+- The band voting explanation (`/band-voting`) on phones: a "Tu parte" line by role, the four phases as cards that slide sideways, the example as a card per queen instead of a wide table, the calculation one step per line, formula chips as rounded rectangles, the comparison with the original simulation folded, a sticky row of sections and a "Volver arriba" button; the first mention of the Javis says they are the jury (DRG-13)
+- The help page opens with a "Para ti" summary for the reader's role, marks the stages they take part in, has a sticky row of sections on phones and tablets, shows the stage icon next to the title on phones and folds its three longest blocks behind a button on phones (DRG-13)
+- A "Volver arriba" button appears on the help and release notes pages on phones and tablets (DRG-13)
+- The release notes page moved from `/novedades` to `/release-notes` and the band voting explanation from `/votacion-bandas` to `/band-voting`; the old paths redirect and the page texts stay in Spanish (DRG-13)
+- On phones and small tablets (below 48rem) the user menu is split in two panels: the user's avatar (top right) opens, from the right, the user menu (name, "Mi perfil", "Mis looks", "Salir"), and the burger button (top left) opens, from the left, the app menu ("Panel del jurado" and "Participantes" for the jury, "Semanas pasadas", "Ayuda", "Novedades" and the theme picker). Wider screens keep one dropdown with both menus; `AppDrawer` gained `side` and `narrow` options (DRG-13)
+- The homepage says whether you already voted while the week is in Votación (a "✓ Votado" or "Pendiente" pill and a matching sentence), and the challenge text is only shown in the Werk Room and the Pasarela (DRG-13)
+- The vote page on phones: two queens per row (only the first look, with a "+N" when there are more), a magnifier on each card opens the full look without picking her, your own queen is a thin row, the ballot bar is one short row with a photo and the rank of each pick next to the button, "Ver la pasarela" is a small button on the title line, the button reads "Votar" or "Actualizar" and the instructions are cut after the first sentence with a "Leer más" link (DRG-13)
+- The public runway page on phones: two queens per row with the photo and the name only (the intro is in the look dialog), a "✓ Votado" or "Pendiente" pill and "Cambiar mi Top 3" while voting is open, the vote button repeated at the end, a "Volver arriba" button, and the date without the hour (DRG-13)
+- On the homepage "La semana pasada" only shows while the week is in the Werk Room (or there is no week), the date and time of the week are only shown in the Werk Room, the jury looks slide sideways on phones as small cards with the photo and the name (the intro is in the look dialog), and photos show the brand "S" on a tinted card while they load (DRG-13)
+- From tablet width up, the date and the status badge share a row on the homepage and the runway page (DRG-13)
+- The Retro Glam kicker and link colour is darker, to reach the 4.5:1 text contrast (DRG-13)
+
+### Added
+
+- A countdown to the runway's date on the homepage while the week is in the Werk Room (`2 días 03:04:05`, then `03:04:05`, `04:05` and `05`) (DRG-13)
+- Category tabs on phones for runways with several categories, under the header buttons: they scroll sideways with a fade on the edges that hide more tabs, stick under the pinned top bar, and tapping one scrolls to it while the active one follows the scroll (DRG-13)
+
 ## [0.10.0] - 2026-11-17
 
 ### Added

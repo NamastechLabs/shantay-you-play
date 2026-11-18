@@ -6,18 +6,14 @@ defineProps<{
 
 <template>
   <!-- One category: its title is already the heading, so only the intro is shown -->
-  <p v-if="categories.length === 1" class="lead categories__single">
-    {{ categories[0]!.intro_text }}
-  </p>
+  <CollapsibleText v-if="categories.length === 1" class="lead categories__single" :text="categories[0]!.intro_text ?? ''" />
 
   <ul v-else-if="categories.length" class="categories">
     <li v-for="category in categories" :key="category.id" class="categories__item">
       <h2 class="categories__title">
         {{ category.title }}
       </h2>
-      <p v-if="category.intro_text" class="categories__intro">
-        {{ category.intro_text }}
-      </p>
+      <CollapsibleText v-if="category.intro_text" class="categories__intro" :text="category.intro_text" />
     </li>
   </ul>
 </template>
@@ -25,7 +21,6 @@ defineProps<{
 <style scoped lang="scss">
 .categories__single {
   max-width: 40rem;
-  white-space: pre-line;
 }
 
 .categories {
@@ -51,6 +46,5 @@ defineProps<{
 
 .categories__intro {
   color: var(--color-text-muted);
-  white-space: pre-line;
 }
 </style>
