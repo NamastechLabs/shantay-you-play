@@ -10,7 +10,7 @@ Status: **implemented** (DRG-13). Designs: Figma `drag-race-game`, frames "Homep
 - States: no open runway (`La pasarela está en pausa`), Werk Room, Pasarela, Votación and Reveal (Top 3 and band reveal; the category text is hidden on phones while it plays, as before).
 - While the week is in Votación the status line starts with a "✓ Votado" or "Pendiente" pill (from `votedRunwayIds`) and says whether the ballot can be changed. The category text (`RunwayCategories`) is only shown in the Werk Room and the Pasarela.
 - "La semana pasada" only shows while the week is in the Werk Room (or there is no open week); from the runway on it is hidden and not even loaded. The date and time of the week are shown only in the Werk Room (they are the countdown's target), later only "Semana N".
-- The jury looks (`JuryLooks`) slide sideways on phones, one at a time (the next one peeks out), photo on top and text below; from 48rem up they are a grid with the photo on the left.
+- The jury looks (`JuryLooks`) slide sideways on phones as small cards (about two and a bit in view), photo on top and only the name below (the intro is in the look dialog, one tap away); from 48rem up they are a grid with the photo on the left.
 - While a look, jury or winner photo loads, the card shows the brand "S" (`/icon-192.png`) on a tinted background; it is the `background` of the `<img>`, so the opaque photo simply covers it (no script).
 - "La semana pasada" shows the winner's photo tall (3:4) with the place ribbon and the crown on phones (`PastRunwayCard` with `featured`).
 - Below 48rem the menu is split in two `AppDrawer` panels: the **user's avatar** (top right, or their initial) opens the **user menu** from the right (the user's name, "Mi perfil", "Mis looks", "Salir"; `userItems` in `AppNav.vue`) and the **burger button** (top left, next to the logo) opens the **app menu** from the left ("Panel del jurado" and "Participantes" for the jury, "Semanas pasadas", "Ayuda", "Novedades" and the theme picker; `appItems`). Links and "Salir" close the panel; Escape and a tap on the backdrop do too. From 48rem up one dropdown with the user's name holds both lists (separated), and the theme picker is in the top bar. The **top bar is pinned**
@@ -39,6 +39,12 @@ At zero it shows "¡La pasarela está a punto de abrir!" until a jury member ope
 
 - The header stacks kicker, status badge and title; "Resultados" / "Votar a las mejores reinas" are full-width buttons on phones.
 - With **several categories** and looks, phones get `SectionTabs` (id prefix `category-`) right under the header buttons: a row of pill tabs that scrolls sideways, with a semi-transparent fade on each edge that has more tabs behind it. The fades carry a small arrow (‹ ›, hidden from screen readers). When it reaches the pinned top bar it sticks under it (`top: var(--app-nav-height)`, same surface colour as the bar). Tapping a tab scrolls to that category's section (`#category-<id>`, below both bars thanks to `scroll-padding-top`) and moves focus to its heading; the active tab follows the scroll. It is hidden from 48rem up and on single-category runways. The page grid uses `minmax(0, 1fr)` so the tabs can never widen the page.
+
+## Public runway page (`/runways/[id]`)
+
+- On phones the queens are **two per row** (`runway-gallery`): photo, rank ribbon / winner crown and name; the intro text is hidden there because the look dialog (tap a card) shows it in full. From 48rem up the cards keep the intro with "… Ver más".
+- While voting is open the header shows a "✓ Votado" or "Pendiente" pill next to the status (the person's own ballot is read from `votes`, which RLS only returns to its owner) and the button reads "Cambiar mi Top 3" or "Votar a las mejores reinas". The same button is repeated at the end of the page.
+- The kicker shows the day (`formatRunwayLongDate`), not the hour. `BackToTop` is on this page too.
 
 ## Vote page (`/runways/[id]/vote`)
 

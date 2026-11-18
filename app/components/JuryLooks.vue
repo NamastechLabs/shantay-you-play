@@ -86,7 +86,7 @@ function showAdjacent(step: 1 | -1): void {
 
   /* Phones: the jury slides sideways, one look at a time (the next one peeks out) */
   @media (max-width: 47.99rem) {
-    grid-auto-columns: 72%;
+    grid-auto-columns: 46%;
     grid-auto-flow: column;
     align-items: stretch;
     padding: var(--space-1) var(--space-4) var(--space-3);
@@ -164,6 +164,22 @@ function showAdjacent(step: 1 | -1): void {
   font-size: 1.125rem;
   line-height: 1.3;
   color: var(--color-title);
+}
+
+/* Phones: small cards with the photo and the name only; the intro is one tap away in the look dialog */
+@media (max-width: 47.99rem) {
+  .jury__card {
+    gap: var(--space-2);
+    padding: var(--space-2);
+  }
+
+  .jury__name {
+    font-size: 1rem;
+  }
+
+  .jury__intro {
+    display: none;
+  }
 }
 
 /* The full intro is in the gallery dialog: the card opens it ("… Ver más") */
