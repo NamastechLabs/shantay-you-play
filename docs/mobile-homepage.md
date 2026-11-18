@@ -40,7 +40,7 @@ At zero it shows "¡La pasarela está a punto de abrir!" until a jury member ope
 
 Both pages are long (about 10,000 px for the help on a phone), so they share some pieces:
 
-- **`SectionTabs`** (generalised from the runway's category tabs): sticky row of pill tabs with the sideways scroll fades. `until="phone"` (runway categories) or `until="desktop"` (help and release notes: shown up to 64rem, where the pages have a side list instead). It emits `navigate` before scrolling so a page can open a collapsed block first. Sections inside something collapsed are never the active one.
+- **`SectionTabs`** (generalised from the runway's category tabs): sticky row of pill tabs with the sideways scroll fades. `until="phone"` (runway categories) or `until="desktop"` (help, release notes and band voting: shown up to 64rem, where the pages have a side list or are short). At the very bottom of the page the last tab becomes the active one. It emits `navigate` before scrolling so a page can open a collapsed block first. Sections inside something collapsed are never the active one.
 - **`BackToTop`**: floating button after 800 px of scroll, below 64rem.
 - **`useActiveSection`**: which section is being read, for the side lists (IntersectionObserver).
 

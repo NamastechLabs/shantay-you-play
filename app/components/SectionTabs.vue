@@ -34,16 +34,23 @@ function updateFades(): void {
   moreAfter.value = row.scrollLeft + row.clientWidth < row.scrollWidth - 4
 }
 
+/** A section inside something collapsed is not rendered: it cannot be the one being read */
+function isRendered(element: HTMLElement | null): element is HTMLElement {
+  if (!element) return false
+  const box = element.getBoundingClientRect()
+  return (box.width > 0 || box.height > 0) && (element.checkVisibility?.() ?? true)
+}
+
 // The active tab is the last section whose top has reached the area under the tabs
 function updateActive(): void {
   frame = 0
   const limit = (bar.value?.getBoundingClientRect().bottom ?? 0) + 16
+  const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2
   let current = props.items[0]?.id ?? null
   for (const item of props.items) {
     const section = document.getElementById(sectionId(item.id))
-    const box = section?.getBoundingClientRect()
-    // A section inside something collapsed has no box: it cannot be the one being read
-    if (box && (box.width || box.height) && box.top <= limit) current = item.id
+    // At the very bottom a short last section can never reach the top: it is the one being read
+    if (isRendered(section) && (atBottom || section.getBoundingClientRect().top <= limit)) current = item.id
   }
   activeId.value = current
 }

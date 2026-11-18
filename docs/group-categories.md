@@ -77,7 +77,7 @@ The jury's Top 3 step is **pre-filled** with the first three queens of their sav
 
 ### Help page
 
-`/band-voting` (`app/pages/band-voting.vue`) explains the system in plain language, with a worked example (bands HOT and COLD) recomputed from `GROUP_RANKING`. Its copy lives in `app/utils/groupRankingContent.ts`. It is linked from the voting and results screens of group categories and from the group section of `/help`. It uses the theme tokens and shared classes only, and its table scrolls in its own container.
+`/band-voting` (`app/pages/band-voting.vue`) explains the system in plain language, with a worked example (bands HOT and COLD) recomputed from `GROUP_RANKING`. Its copy lives in `app/utils/groupRankingContent.ts`. It is linked from the voting and results screens of group categories and from the group section of `/help`. It uses the theme tokens and shared classes only. On phones (below 48rem): a "Tu parte" line says what the reader's role does in the voting, the four phase cards slide sideways (scroll snap, the next card peeks out), the example is a card per queen (final score big, phases below) instead of the table, the calculation is one step per line, the comparison with the original simulation is behind a button (`PhoneCollapse`), and a sticky `SectionTabs` row and a "Volver arriba" button help to move around. From tablets up the table (which scrolls in its own container) and the 2 or 4 column cards are used.
 
 ## Group photos
 
