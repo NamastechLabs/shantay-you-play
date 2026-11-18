@@ -45,7 +45,7 @@ export const HELP_COPY = {
       icon: '🧵',
       title: 'Werk Room',
       who: 'Concursantes',
-      text: 'Hora de coser, pegar y brillar. Sube hasta 4 fotos de tu look y escribe tu presentación. La Foto 1 es obligatoria y puedes cambiarlo todo mientras el Werk Room siga abierto. Aquí solo ves tus propios looks (y, en una categoría grupal, los de tu grupo): ¡el misterio es parte del show!',
+      text: 'Hora de coser, pegar y brillar. Sube hasta 4 fotos de tu look y escribe tu presentación. La Foto 1 es obligatoria y puedes cambiarlo todo mientras el Werk Room siga abierto. Aquí solo ves tus propios looks (y, en una categoría grupal, los de tu grupo): ¡el misterio es parte del show! En la página de inicio, una cuenta atrás te dice cuánto falta para que abra la pasarela.',
     },
     {
       icon: '👠',

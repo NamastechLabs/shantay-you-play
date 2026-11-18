@@ -1,3 +1,12 @@
+// Height of the top bar while it is pinned (phones only); sticky elements below it use it as their `top`
+:root {
+  --app-nav-height: 0px;
+
+  @media (max-width: 47.99rem) {
+    --app-nav-height: 4rem;
+  }
+}
+
 // Top bar: brand on the left, theme + user menu on the right, always on one line
 .app-nav {
   display: flex;
@@ -5,6 +14,21 @@
   align-items: center;
   justify-content: space-between;
   min-width: 0;
+
+  // Phones: the bar stays pinned to the top of the screen on every page, over the page's side padding
+  @media (max-width: 47.99rem) {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    box-sizing: border-box;
+    height: var(--app-nav-height);
+    padding-inline: var(--space-4);
+    margin-inline: calc(var(--space-4) * -1);
+    // The page has its own top padding: pull the bar up so it starts at the very top
+    margin-top: calc(var(--space-4) * -1);
+    background-color: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+  }
 
   &__brand {
     display: inline-flex;
@@ -49,6 +73,30 @@
   &__theme--desktop {
     @media (max-width: 39.99rem) {
       display: none;
+    }
+  }
+
+  // Phones: the user menu takes all the width the logo leaves
+  @media (max-width: 39.99rem) {
+    &__actions {
+      flex: 1 1 auto;
+      justify-content: flex-end;
+      min-width: 0;
+    }
+
+    .user-menu {
+      flex: 1 1 auto;
+      min-width: 0;
+
+      &__trigger {
+        width: 100%;
+      }
+
+      &__name {
+        flex: 1;
+        max-width: none;
+        text-align: left;
+      }
     }
   }
 }

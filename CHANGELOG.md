@@ -5,6 +5,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Mobile redesign of the homepage: kicker, date and status badge on separate lines, full-width stacked buttons, the category text after the buttons, the jury below the week card, a tall winner photo with ribbon and crown in "La semana pasada" and a wider user menu in the top bar. On phones the top bar stays pinned to the top on every page. No migration (DRG-13)
+- On phones the category challenge text is cut to 3 lines with a "Leer reto completo" button, on the homepage and on the runway page. The runway page header stacks its status and full-width buttons (DRG-13)
+
+### Added
+
+- A countdown to the runway's date on the homepage while the week is in the Werk Room (`2 días 03:04:05`, then `03:04:05`, `04:05` and `05`) (DRG-13)
+- Category tabs on phones for runways with several categories, under the header buttons: they scroll sideways with a fade on the edges that hide more tabs, stick under the pinned top bar, and tapping one scrolls to it while the active one follows the scroll (DRG-13)
+
 ## [0.10.0] - 2026-11-17
 
 ### Added

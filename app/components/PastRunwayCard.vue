@@ -4,11 +4,17 @@ import type { RunwayQueen } from '~/composables/useRunwayResults'
 defineProps<{
   runway: { id: string, week_number: number, runway_date: string, categories: { id: string, title: string }[] }
   winner?: RunwayQueen | null
+  /** Homepage: on phones the winner's photo is big, with the place ribbon and the crown on it */
+  featured?: boolean
 }>()
 </script>
 
 <template>
-  <NuxtLink :to="`/runways/${runway.id}`" class="past-card" :class="{ 'past-card--no-photo': !winner }">
+  <NuxtLink :to="`/runways/${runway.id}`" class="past-card" :class="{ 'past-card--no-photo': !winner, 'past-card--featured': featured && winner }">
+    <template v-if="featured && winner">
+      <span class="look-card__rank past-card__ribbon">1</span>
+      <span class="look-card__crown past-card__ribbon" role="img" aria-label="Ganadora">♛</span>
+    </template>
     <img
       v-if="winner"
       class="past-card__photo"
@@ -37,6 +43,7 @@ defineProps<{
 
 <style scoped lang="scss">
 .past-card {
+  position: relative;
   display: grid;
   overflow: hidden;
   color: inherit;
@@ -83,6 +90,23 @@ defineProps<{
 
   @media (min-width: 64rem) {
     grid-column: span 2;
+  }
+}
+
+// Featured on phones: a tall photo like the runway page's look cards
+.past-card--featured .past-card__photo {
+  aspect-ratio: 3 / 4;
+  max-height: none;
+
+  @media (min-width: 48rem) {
+    aspect-ratio: auto;
+    max-height: 14rem;
+  }
+}
+
+.past-card__ribbon {
+  @media (min-width: 48rem) {
+    display: none;
   }
 }
 

@@ -236,6 +236,10 @@ async function revealTopThree(): Promise<void> {
   }
   await refresh()
 }
+// Werk Room: counts down to the runway's date
+const { remaining: countdownRemaining, label: countdownLabel } = useCountdown(
+  () => (weekRunway.value?.status === 'werk_room' ? weekRunway.value.runway_date : null),
+)
 const runwayJury = computed(() => (weekRunway.value?.status === 'runway' ? data.value?.jury ?? [] : []))
 
 // The queen's own look, ready to paste into the WhatsApp group where everyone comments
@@ -358,20 +362,20 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
     </p>
 
     <section v-else-if="weekRunway" class="week-hero" aria-labelledby="week-title">
-      <p class="kicker week-hero__kicker">
-        {{ weekRunway.categories.length > 1 ? 'Categorías de la semana' : 'Categoría de la semana' }} · Semana {{ weekRunway.week_number }} · {{ formatRunwayDate(weekRunway.runway_date) }}
+      <div class="week-hero__head">
+        <p class="kicker">
+          {{ weekRunway.categories.length > 1 ? 'Categorías de la semana' : 'Categoría de la semana' }}
+        </p>
+        <p class="kicker week-hero__when">
+          Semana {{ weekRunway.week_number }} · {{ formatRunwayDate(weekRunway.runway_date) }}
+        </p>
         <StatusBadge :status="weekRunway.status" />
-      </p>
+      </div>
 
       <h1 id="week-title" class="display week-hero__title">
         {{ runwayTitle(weekRunway.categories) }}
       </h1>
       <span class="rule" aria-hidden="true" />
-
-      <RunwayCategories
-        :categories="weekRunway.categories"
-        :class="{ 'week-hero__categories--revealing': weekRunway.status === 'reveal' }"
-      />
 
       <p class="week-hero__status">
         {{ weekRunway.status === 'voting'
@@ -385,39 +389,18 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
               : 'Las reinas ya están en la pasarela. La votación abrirá pronto.' }}
       </p>
 
-      <JuryLooks :members="runwayJury" title="El jurado en la pasarela" />
-
-      <div v-if="weekRunway.status === 'runway'" class="actions">
-        <button type="button" class="btn btn--secondary" @click="playIntro">
-          Ver la intro de la pasarela
-        </button>
-      </div>
-
-      <!-- Queens and the jury (judges and special guests) share their look in the WhatsApp group once the week is on the runway; queens also share their group -->
-      <div v-if="myLooks.length || myGroup" class="actions">
-        <button v-if="myLooks.length" type="button" class="btn btn--primary" :disabled="sharing" @click="shareMyLook">
-          <svg class="btn__icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="18" cy="5" r="3" />
-            <circle cx="6" cy="12" r="3" />
-            <circle cx="18" cy="19" r="3" />
-            <path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" />
-          </svg>
-          {{ sharing && sharingTarget === 'look' ? 'Preparando…' : 'A desfilar' }}
-        </button>
-        <button v-if="myGroup" type="button" class="btn btn--secondary" :disabled="sharing" @click="shareMyGroup">
-          <svg class="btn__icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="18" cy="5" r="3" />
-            <circle cx="6" cy="12" r="3" />
-            <circle cx="18" cy="19" r="3" />
-            <path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" />
-          </svg>
-          {{ sharing && sharingTarget === 'group' ? 'Preparando…' : 'A desfilar con mi banda' }}
-        </button>
-        <p v-if="shareMessage" class="muted" role="status">
-          {{ shareMessage }}
-        </p>
-        <p v-if="shareError" class="form-error" role="alert">
-          {{ shareError }}
+      <!-- Werk Room: time left until the runway opens (counts down to its date) -->
+      <div v-if="countdownRemaining !== null && weekRunway.status === 'werk_room'" class="countdown">
+        <template v-if="countdownRemaining > 0">
+          <p class="kicker">
+            La pasarela abre en
+          </p>
+          <p class="countdown__time" role="timer">
+            {{ countdownLabel }}
+          </p>
+        </template>
+        <p v-else class="countdown__time countdown__time--soon">
+          ¡La pasarela está a punto de abrir!
         </p>
       </div>
 
@@ -487,6 +470,40 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
         </NuxtLink>
       </div>
 
+      <!-- Queens and the jury (judges and special guests) share their look in the WhatsApp group once the week is on the runway; queens also share their group -->
+      <div v-if="myLooks.length || myGroup" class="actions">
+        <button v-if="myLooks.length" type="button" class="btn btn--primary" :disabled="sharing" @click="shareMyLook">
+          <svg class="btn__icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" />
+          </svg>
+          {{ sharing && sharingTarget === 'look' ? 'Preparando…' : 'A desfilar' }}
+        </button>
+        <button v-if="myGroup" type="button" class="btn btn--secondary" :disabled="sharing" @click="shareMyGroup">
+          <svg class="btn__icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="18" cy="5" r="3" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="19" r="3" />
+            <path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" />
+          </svg>
+          {{ sharing && sharingTarget === 'group' ? 'Preparando…' : 'A desfilar con mi banda' }}
+        </button>
+        <p v-if="shareMessage" class="muted" role="status">
+          {{ shareMessage }}
+        </p>
+        <p v-if="shareError" class="form-error" role="alert">
+          {{ shareError }}
+        </p>
+      </div>
+
+      <div v-if="weekRunway.status === 'runway'" class="actions">
+        <button type="button" class="btn btn--secondary" @click="playIntro">
+          Ver la intro de la pasarela
+        </button>
+      </div>
+
       <div v-if="primaryAction(weekRunway)" class="actions">
         <NuxtLink :to="primaryAction(weekRunway)!.to" class="btn btn--primary">
           {{ primaryAction(weekRunway)!.label }}
@@ -495,6 +512,12 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
           Ver la pasarela
         </NuxtLink>
       </div>
+
+      <!-- After the buttons, so on phones the long challenge text never pushes them off screen -->
+      <RunwayCategories
+        :categories="weekRunway.categories"
+        :class="{ 'week-hero__categories--revealing': weekRunway.status === 'reveal' }"
+      />
     </section>
 
     <section v-else class="week-empty" aria-labelledby="week-empty-title">
@@ -506,6 +529,8 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
         El jurado está preparando la próxima categoría. ¡Vuelve pronto, reina!
       </p>
     </section>
+
+    <JuryLooks :members="runwayJury" title="El jurado en la pasarela" />
 
     <section v-if="otherOpenRunways.length" class="section" aria-labelledby="open-title">
       <h2 id="open-title">
@@ -535,7 +560,7 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
       <h2 id="previous-title">
         La semana pasada
       </h2>
-      <PastRunwayCard :runway="data.previousWeek.runway" :winner="data.previousWeek.winner" />
+      <PastRunwayCard :runway="data.previousWeek.runway" :winner="data.previousWeek.winner" featured />
     </section>
 
     <NuxtLink to="/runways/past" class="row row--link past-link">
@@ -570,7 +595,7 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
   display: grid;
   gap: var(--space-4);
   justify-items: start;
-  padding: var(--space-6) var(--space-4);
+  padding: var(--space-5) var(--space-4);
   overflow: hidden;
   background:
     radial-gradient(28rem 18rem at 100% 0%, color-mix(in srgb, var(--color-primary) 28%, transparent), transparent 70%),
@@ -585,13 +610,39 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
   }
 }
 
-.week-hero__kicker {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
-  justify-content: space-between;
+// Werk Room countdown
+.countdown {
+  display: grid;
+  gap: var(--space-1);
   justify-self: stretch;
+  padding: var(--space-3) var(--space-4);
+  background-color: color-mix(in srgb, var(--color-surface) 70%, transparent);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.countdown__time {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  line-height: 1.2;
+  color: var(--color-title);
+  font-variant-numeric: tabular-nums;
+
+  &--soon {
+    font-size: 1.125rem;
+  }
+}
+
+// Kicker, date and status badge: one line each, so nothing wraps awkwardly on a phone
+.week-hero__head {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+  justify-self: stretch;
+}
+
+.week-hero__when {
+  color: var(--color-text-muted);
 }
 
 .week-hero__title {
@@ -657,9 +708,14 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
 .week-hero .actions {
   width: 100%;
 
-  @media (max-width: 30rem) {
+  // Phones and small tablets: one full-width button per row, primary first
+  @media (max-width: 47.99rem) {
+    flex-direction: column;
+    align-items: stretch;
+
     > .btn {
-      flex: 1 1 100%;
+      flex: none;
+      width: 100%;
     }
   }
 }

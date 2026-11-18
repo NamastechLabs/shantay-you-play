@@ -159,8 +159,8 @@ function showAdjacentLook(step: 1 | -1): void {
       <div class="page-header__titles">
         <p class="kicker">
           Semana {{ runway.week_number }} · {{ formatRunwayDate(runway.runway_date) }}
-          <StatusBadge :status="runway.status" />
         </p>
+        <StatusBadge :status="runway.status" />
         <h1>{{ runwayTitle(runway.categories) }}</h1>
       </div>
       <nav class="page-header__actions">
@@ -171,6 +171,12 @@ function showAdjacentLook(step: 1 | -1): void {
         </NuxtLink>
       </nav>
     </header>
+
+    <!-- Phones: jump between the categories of a runway with several; sticks under the top bar -->
+    <CategoryTabs
+      v-if="hasSeveralCategories && hasAnyLooks"
+      :items="sections.map(section => section.category)"
+    />
 
     <RunwayCategories v-if="!hasSeveralCategories" :categories="runway.categories" />
 
@@ -184,12 +190,12 @@ function showAdjacentLook(step: 1 | -1): void {
     </template>
 
     <template v-if="hasAnyLooks">
-      <section v-for="section in sections" :key="section.category.id" class="section">
+      <section v-for="section in sections" :id="`category-${section.category.id}`" :key="section.category.id" class="section category-section">
         <template v-if="hasSeveralCategories">
           <h2>{{ section.category.title }}</h2>
-          <p v-if="section.category.intro_text" class="lead intro">
+          <CollapsibleText v-if="section.category.intro_text" class="lead intro">
             {{ section.category.intro_text }}
-          </p>
+          </CollapsibleText>
         </template>
 
         <!-- The jury walks first: its looks set the bar and are not voted on -->
@@ -257,13 +263,39 @@ function showAdjacentLook(step: 1 | -1): void {
   </main>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
+// Nothing inside (like the sideways-scrolling tabs) may stretch the page wider than the screen
+.page {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.page-header__titles {
+  justify-items: start;
+}
+
+// Phones: the action buttons take a full row each
+.page-header__actions {
+  @media (max-width: 47.99rem) {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+
+    > .btn {
+      width: 100%;
+    }
+  }
+}
+
+// The sticky category tabs must not cover the heading a tab scrolls to
+.category-section {
+  scroll-margin-top: calc(var(--app-nav-height) + 5rem);
+}
+
 .queens-title {
   font-size: 1.25rem;
 }
 
 .intro {
   max-width: 44rem;
-  white-space: pre-line;
 }
 </style>
