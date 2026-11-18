@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-11-18
+
 ### Changed
 
 - Mobile redesign of the homepage: kicker, date and status badge on separate lines, full-width stacked buttons, the category text after the buttons, the jury below the week card, and a tall winner photo with ribbon and crown in "La semana pasada". On phones the top bar stays pinned to the top on every page. No migration (DRG-13)
