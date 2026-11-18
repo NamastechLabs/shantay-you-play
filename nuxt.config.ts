@@ -8,8 +8,9 @@ export default defineNuxtConfig({
   css: ['~/assets/scss/main.scss'],
 
   routeRules: {
-    // The release notes page used to live at a Spanish path: keep old links working
+    // These pages used to live at Spanish paths: keep old links working
     '/novedades': { redirect: { to: '/release-notes', statusCode: 301 } },
+    '/votacion-bandas': { redirect: { to: '/band-voting', statusCode: 301 } },
   },
 
   app: {

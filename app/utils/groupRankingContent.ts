@@ -2,7 +2,7 @@ import { APP_NAME } from './brand'
 import { GROUP_RANKING, GROUP_RANKING_MAX_TOTAL, formatScore, rankValue } from './groupRanking'
 
 /** Route of the help page that explains the group voting system */
-export const GROUP_VOTING_HELP_PATH = '/votacion-bandas'
+export const GROUP_VOTING_HELP_PATH = '/band-voting'
 
 /** Short number for prose ("0,2", "1,2"): no trailing zeros */
 const plain = (value: number): string => new Intl.NumberFormat('es-ES', { maximumFractionDigits: 3 }).format(value)
@@ -13,7 +13,7 @@ const share = (weight: number): string => weight === 0.5 ? '½' : `${Math.round(
 const values = (candidates: number, decimals: number): string[] =>
   Array.from({ length: candidates }, (_, index) => formatScore(rankValue(index + 1, candidates), decimals))
 
-/** Spanish copy of `/votacion-bandas`. Every number comes from `GROUP_RANKING`. `**x**` marks bold text. */
+/** Spanish copy of `/band-voting`. Every number comes from `GROUP_RANKING`. `**x**` marks bold text. */
 export const GROUP_VOTING_COPY = {
   breadcrumb: 'Votación de bandas',
   helpLink: '¿Cómo funciona esta votación?',
