@@ -193,9 +193,7 @@ function showAdjacentLook(step: 1 | -1): void {
       <section v-for="section in sections" :id="`category-${section.category.id}`" :key="section.category.id" class="section category-section">
         <template v-if="hasSeveralCategories">
           <h2>{{ section.category.title }}</h2>
-          <CollapsibleText v-if="section.category.intro_text" class="lead intro">
-            {{ section.category.intro_text }}
-          </CollapsibleText>
+          <CollapsibleText v-if="section.category.intro_text" class="lead intro" :text="section.category.intro_text" />
         </template>
 
         <!-- The jury walks first: its looks set the bar and are not voted on -->
@@ -226,7 +224,7 @@ function showAdjacentLook(step: 1 | -1): void {
                 />
                 <span class="look-card__body">
                   <span class="look-card__name">{{ displayName(look) }}</span>
-                  <span v-if="look.intro" class="look-card__intro">{{ look.intro }}</span>
+                  <CollapsibleText v-if="look.intro" class="look-card__intro-text" :text="look.intro" :lines="2" :phones-only="false" inert />
                 </span>
               </button>
             </article>

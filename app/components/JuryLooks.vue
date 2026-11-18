@@ -46,7 +46,7 @@ function showAdjacent(step: 1 | -1): void {
           <span class="jury__body">
             <strong class="jury__name">{{ member.name }}</strong>
             <span v-if="member.categoryTitle" class="muted">{{ member.categoryTitle }}</span>
-            <span class="jury__intro">{{ member.intro }}</span>
+            <CollapsibleText class="jury__intro" :text="member.intro" :lines="5" :phones-only="false" inert />
           </span>
         </button>
       </li>
@@ -139,13 +139,8 @@ function showAdjacent(step: 1 | -1): void {
   color: var(--color-title);
 }
 
-/* The full intro is in the gallery dialog */
+/* The full intro is in the gallery dialog: the card opens it ("… Ver más") */
 .jury__intro {
-  display: -webkit-box;
-  overflow: hidden;
   white-space: pre-line;
-  -webkit-line-clamp: 5;
-  line-clamp: 5;
-  -webkit-box-orient: vertical;
 }
 </style>

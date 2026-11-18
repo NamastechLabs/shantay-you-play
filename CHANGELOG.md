@@ -8,7 +8,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Changed
 
 - Mobile redesign of the homepage: kicker, date and status badge on separate lines, full-width stacked buttons, the category text after the buttons, the jury below the week card, a tall winner photo with ribbon and crown in "La semana pasada" and a wider user menu in the top bar. On phones the top bar stays pinned to the top on every page. No migration (DRG-13)
-- On phones the category challenge text is cut to 3 lines with a "Leer reto completo" button, on the homepage and on the runway page. The runway page header stacks its status and full-width buttons (DRG-13)
+- On phones the category challenge text is cut to 3 lines with an inline "… Leer reto completo" link after the ellipsis, on the homepage and on the runway page. The look and jury intros of the runway page end in "… Ver más" (the card opens the full look). The runway page header stacks its status and full-width buttons (DRG-13)
 
 ### Added
 

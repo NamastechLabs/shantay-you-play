@@ -23,9 +23,12 @@ While the week is in `werk_room`, the card counts down to the runway's `runway_d
 
 At zero it shows "¡La pasarela está a punto de abrir!" until a jury member opens the runway (the realtime refresh then changes the card).
 
-## Collapsible challenge text
+## Collapsible text
 
-`CollapsibleText` cuts the category text to 3 lines on phones and adds a full-width "Leer reto completo ↓" / "Leer menos ↑" button, shown **only when the text is actually cut**. From 48rem up the whole text is shown and there is no button. Used by `RunwayCategories` (homepage and runway page) and by the per-category intro on the runway page.
+`CollapsibleText` cuts a text to a number of lines and puts a link **right after the ellipsis**, at the end of the last line ("… Leer reto completo"). It measures where to cut (binary search on a hidden copy of the text, never in the middle of a word), so it works on any background; before it is measured (server render) a plain CSS clamp is used. It re-measures when the width changes.
+
+- **Challenge text** (`RunwayCategories` on the homepage and the runway page, and the category intro on the runway page): cut to 3 lines on phones only, link "Leer reto completo" that expands the text ("Leer menos" collapses it). From 48rem up the whole text is shown.
+- **Texts inside a clickable card** (`inert`: a look card's intro on the runway page, cut to 2 lines, and a jury member's intro, cut to 5 lines; at every width): the link is only a hint, "… Ver más", because a link inside a button is invalid; tapping the card opens the full look in the dialog.
 
 ## Runway page (`app/pages/runways/[id]/index.vue`)
 

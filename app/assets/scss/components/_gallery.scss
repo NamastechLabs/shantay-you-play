@@ -160,6 +160,12 @@
     }
   }
 
+  // Intro text with its own "… Ver más" (CollapsibleText), so no CSS clamp
+  &__intro-text {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+  }
+
   &__intro {
     display: -webkit-box;
     overflow: hidden;
