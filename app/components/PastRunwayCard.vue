@@ -74,6 +74,12 @@ defineProps<{
 }
 
 .past-card__photo {
+  // The brand's "S" on a tinted card while the photo loads
+  background-color: var(--color-surface-raised);
+  background-image: url('/icon-192.png');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 20%;
   display: block;
   width: 100%;
   height: 100%;

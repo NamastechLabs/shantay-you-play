@@ -71,7 +71,8 @@ const { data, error, refresh } = await useAsyncData('home', async (): Promise<Ho
     featured?.status === 'runway' ? loadJury(featured) : [],
     featured?.status === 'runway' ? loadMyLooks(featured) : [],
     featured?.status === 'runway' ? loadMyGroup(featured) : null,
-    loadPreviousWeek(),
+    // Last week only fills the page while this one has not started (Werk Room) or there is none: from the runway on it is noise
+    !featured || featured.status === 'werk_room' ? loadPreviousWeek() : null,
   ])
 
   return { runways, votedRunwayIds, topThree, bands, jury, myLooks, myGroup, previousWeek }
@@ -366,8 +367,9 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
         <p class="kicker">
           {{ weekRunway.categories.length > 1 ? 'Categorías de la semana' : 'Categoría de la semana' }}
         </p>
+        <!-- The date and time only matter while the countdown runs (Werk Room); after that they are in the past -->
         <p class="kicker week-hero__when">
-          Semana {{ weekRunway.week_number }} · {{ formatRunwayDate(weekRunway.runway_date) }}
+          Semana {{ weekRunway.week_number }}<template v-if="weekRunway.status === 'werk_room'"> · {{ formatRunwayDate(weekRunway.runway_date) }}</template>
         </p>
         <StatusBadge :status="weekRunway.status" />
       </div>

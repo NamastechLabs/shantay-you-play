@@ -94,6 +94,34 @@
     }
   }
 
+  // Phones and small tablets: the user's avatar opens the user menu panel (from the right)
+  &__avatar {
+    display: none;
+    flex: none;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    cursor: pointer;
+    background: none;
+    border: 0;
+    border-radius: 50%;
+
+    .avatar {
+      width: 2.75rem;
+      height: 2.75rem;
+      border-color: var(--color-kicker);
+    }
+
+    .avatar__initial {
+      font-size: 1.25rem;
+    }
+
+    @media (max-width: 47.99rem) {
+      display: grid;
+    }
+  }
+
   &__start {
     display: flex;
     gap: var(--space-2);
@@ -184,6 +212,12 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-raised);
+  }
+
+  &__divider {
+    height: 1px;
+    margin: var(--space-1) var(--space-2);
+    background-color: var(--color-border);
   }
 
   &__item {

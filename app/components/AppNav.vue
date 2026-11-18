@@ -3,8 +3,9 @@ const supabase = useSupabaseClient()
 const { participant, isJurado, clear } = useCurrentParticipant()
 
 const menuOpen = ref(false)
-/** Phones: the same options in a panel that slides in from the left */
-const drawerOpen = ref(false)
+/** Phones: the app menu (burger, left) and the user menu (avatar, right) are two panels */
+const appDrawerOpen = ref(false)
+const userDrawerOpen = ref(false)
 const menuId = useId()
 const menuRoot = ref<HTMLElement | null>(null)
 const trigger = ref<HTMLButtonElement | null>(null)
@@ -33,20 +34,26 @@ onBeforeUnmount(() => {
   document.removeEventListener('keydown', onKeydown)
 })
 
-// One list for the dropdown (wide screens) and the panel (phones)
-const menuItems = computed(() => [
+const initial = computed(() => displayName.value.charAt(0).toUpperCase())
+
+// The user menu: things about the person. The app menu: places of the app. Wide screens show both in one dropdown.
+const userItems = [
   { to: '/profile', label: 'Mi perfil' },
   { to: '/my-looks', label: 'Mis looks' },
+]
+const appItems = computed(() => [
   ...(isJurado.value
     ? [{ to: '/admin', label: 'Panel del jurado' }, { to: '/admin/participants', label: 'Participantes' }]
     : []),
+  { to: '/runways/past', label: 'Semanas pasadas' },
   { to: '/help', label: 'Ayuda' },
   { to: '/release-notes', label: 'Novedades' },
 ])
 
 async function signOut(): Promise<void> {
   closeMenu()
-  drawerOpen.value = false
+  appDrawerOpen.value = false
+  userDrawerOpen.value = false
   await supabase.auth.signOut()
   clear()
   await navigateTo('/login')
@@ -56,15 +63,15 @@ async function signOut(): Promise<void> {
 <template>
   <nav class="app-nav" aria-label="Principal">
     <div class="app-nav__start">
-      <!-- Phones: opens the user menu as a panel from the left -->
+      <!-- Phones: the app menu (places of the app), a panel from the left -->
       <button
         v-if="participant"
         type="button"
         class="app-nav__burger"
-        aria-label="Abrir el menú"
+        aria-label="Abrir el menú de la aplicación"
         aria-haspopup="dialog"
-        :aria-expanded="drawerOpen"
-        @click="drawerOpen = true"
+        :aria-expanded="appDrawerOpen"
+        @click="appDrawerOpen = true"
       >
         <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" aria-hidden="true">
           <path d="M4 6.5h16M4 12h16M4 17.5h16" />
@@ -79,7 +86,23 @@ async function signOut(): Promise<void> {
     <div class="app-nav__actions">
       <ThemeSwitcher :class="{ 'app-nav__theme--desktop': participant }" />
 
-      <!-- Tablets and desktop: dropdown -->
+      <!-- Phones: the user menu (name, profile, looks, sign out), a panel from the right -->
+      <button
+        v-if="participant"
+        type="button"
+        class="app-nav__avatar"
+        :aria-label="`Abrir el menú de usuario de ${displayName}`"
+        aria-haspopup="dialog"
+        :aria-expanded="userDrawerOpen"
+        @click="userDrawerOpen = true"
+      >
+        <span class="avatar">
+          <img v-if="participant.avatar_url" :src="participant.avatar_url" alt="" class="avatar__img">
+          <span v-else class="avatar__initial" aria-hidden="true">{{ initial }}</span>
+        </span>
+      </button>
+
+      <!-- Tablets and desktop: one dropdown with both menus -->
       <div v-if="participant" ref="menuRoot" class="user-menu">
         <button
           ref="trigger"
@@ -95,11 +118,18 @@ async function signOut(): Promise<void> {
         </button>
 
         <ul v-show="menuOpen" :id="menuId" class="user-menu__list">
-          <li v-for="item in menuItems" :key="item.to">
+          <li v-for="item in userItems" :key="item.to">
             <NuxtLink :to="item.to" class="user-menu__item" @click="closeMenu()">
               {{ item.label }}
             </NuxtLink>
           </li>
+          <li class="user-menu__divider" role="separator" />
+          <li v-for="item in appItems" :key="item.to">
+            <NuxtLink :to="item.to" class="user-menu__item" @click="closeMenu()">
+              {{ item.label }}
+            </NuxtLink>
+          </li>
+          <li class="user-menu__divider" role="separator" />
           <li>
             <button type="button" class="user-menu__item" @click="signOut">
               Salir
@@ -109,23 +139,38 @@ async function signOut(): Promise<void> {
       </div>
     </div>
 
-    <!-- Phones: the user's name and every option of the menu -->
-    <AppDrawer v-if="participant" :open="drawerOpen" :title="displayName" side="left" narrow @close="drawerOpen = false">
-      <nav aria-label="Menú de usuario">
-        <ul class="drawer-menu">
-          <li v-for="item in menuItems" :key="item.to">
-            <NuxtLink :to="item.to" class="drawer-menu__item" @click="drawerOpen = false">
-              {{ item.label }}
-            </NuxtLink>
-          </li>
-        </ul>
-      </nav>
-      <ThemeSwitcher class="drawer-menu__theme" />
-      <template #footer>
-        <button type="button" class="btn btn--secondary btn--block" @click="signOut">
-          Salir
-        </button>
-      </template>
-    </AppDrawer>
+    <template v-if="participant">
+      <!-- App menu: places of the app and the theme -->
+      <AppDrawer :open="appDrawerOpen" title="Menú" side="left" narrow @close="appDrawerOpen = false">
+        <nav aria-label="Menú de la aplicación">
+          <ul class="drawer-menu">
+            <li v-for="item in appItems" :key="item.to">
+              <NuxtLink :to="item.to" class="drawer-menu__item" @click="appDrawerOpen = false">
+                {{ item.label }}
+              </NuxtLink>
+            </li>
+          </ul>
+        </nav>
+        <ThemeSwitcher class="drawer-menu__theme" />
+      </AppDrawer>
+
+      <!-- User menu: the user's name, profile, looks and sign out -->
+      <AppDrawer :open="userDrawerOpen" :title="displayName" side="right" narrow @close="userDrawerOpen = false">
+        <nav aria-label="Menú de usuario">
+          <ul class="drawer-menu">
+            <li v-for="item in userItems" :key="item.to">
+              <NuxtLink :to="item.to" class="drawer-menu__item" @click="userDrawerOpen = false">
+                {{ item.label }}
+              </NuxtLink>
+            </li>
+          </ul>
+        </nav>
+        <template #footer>
+          <button type="button" class="btn btn--secondary btn--block" @click="signOut">
+            Salir
+          </button>
+        </template>
+      </AppDrawer>
+    </template>
   </nav>
 </template>

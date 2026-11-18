@@ -14,7 +14,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - The help page opens with a "Para ti" summary for the reader's role, marks the stages they take part in, has a sticky row of sections on phones and tablets, shows the stage icon next to the title on phones and folds its three longest blocks behind a button on phones (DRG-13)
 - A "Volver arriba" button appears on the help and release notes pages on phones and tablets (DRG-13)
 - The release notes page moved from `/novedades` to `/release-notes` and the band voting explanation from `/votacion-bandas` to `/band-voting`; the old paths redirect and the page texts stay in Spanish (DRG-13)
-- On phones and small tablets (below 48rem) the user menu is a burger button that opens a panel from the left with the user's name, every menu option, the theme picker and "Salir"; `AppDrawer` gained `side` and `narrow` options. Wider screens keep the dropdown (DRG-13)
+- On phones and small tablets (below 48rem) the user menu is split in two panels: the user's avatar (top right) opens, from the right, the user menu (name, "Mi perfil", "Mis looks", "Salir"), and the burger button (top left) opens, from the left, the app menu ("Panel del jurado" and "Participantes" for the jury, "Semanas pasadas", "Ayuda", "Novedades" and the theme picker). Wider screens keep one dropdown with both menus; `AppDrawer` gained `side` and `narrow` options (DRG-13)
+- On the homepage "La semana pasada" only shows while the week is in the Werk Room (or there is no week), the date and time of the week are only shown in the Werk Room, the jury looks slide sideways on phones, and photos show the brand "S" on a tinted card while they load (DRG-13)
 - From tablet width up, the date and the status badge share a row on the homepage and the runway page (DRG-13)
 - The Retro Glam kicker and link colour is darker, to reach the 4.5:1 text contrast (DRG-13)
 
