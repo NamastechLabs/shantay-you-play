@@ -190,7 +190,7 @@ function showAdjacentLook(step: 1 | -1): void {
     </template>
 
     <template v-if="hasAnyLooks">
-      <section v-for="section in sections" :id="`category-${section.category.id}`" :key="section.category.id" class="section category-section">
+      <section v-for="section in sections" :id="`category-${section.category.id}`" :key="section.category.id" class="section">
         <template v-if="hasSeveralCategories">
           <h2>{{ section.category.title }}</h2>
           <CollapsibleText v-if="section.category.intro_text" class="lead intro" :text="section.category.intro_text" />
@@ -269,6 +269,17 @@ function showAdjacentLook(step: 1 | -1): void {
 
 .page-header__titles {
   justify-items: start;
+
+  // Wider screens: the date and the status badge side by side, the title under them
+  @media (min-width: 48rem) {
+    grid-template-columns: auto 1fr;
+    column-gap: var(--space-3);
+    align-items: center;
+
+    > h1 {
+      grid-column: 1 / -1;
+    }
+  }
 }
 
 // Phones: the action buttons take a full row each
@@ -282,11 +293,6 @@ function showAdjacentLook(step: 1 | -1): void {
       width: 100%;
     }
   }
-}
-
-// The sticky category tabs must not cover the heading a tab scrolls to
-.category-section {
-  scroll-margin-top: calc(var(--app-nav-height) + 5rem);
 }
 
 .queens-title {

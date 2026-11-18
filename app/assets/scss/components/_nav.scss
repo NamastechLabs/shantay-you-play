@@ -3,7 +3,18 @@
   --app-nav-height: 0px;
 
   @media (max-width: 47.99rem) {
-    --app-nav-height: 4rem;
+    --app-nav-height: 3.5rem;
+  }
+}
+
+// Phones: keyboard focus and in-page jumps stop below the pinned bar (and the category tabs, when the page has them)
+@media (max-width: 47.99rem) {
+  html {
+    scroll-padding-top: calc(var(--app-nav-height) + 0.5rem);
+  }
+
+  html:has(.category-tabs) {
+    scroll-padding-top: calc(var(--app-nav-height) + 4rem);
   }
 }
 
@@ -90,6 +101,7 @@
 
       &__trigger {
         width: 100%;
+        min-height: 2.75rem;
       }
 
       &__name {

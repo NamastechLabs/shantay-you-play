@@ -645,6 +645,19 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
   color: var(--color-text-muted);
 }
 
+// Wider screens: the kicker on its own line, then the date and the status badge side by side
+@media (min-width: 48rem) {
+  .week-hero__head {
+    grid-template-columns: auto 1fr;
+    column-gap: var(--space-3);
+    align-items: center;
+
+    > .kicker:first-child {
+      grid-column: 1 / -1;
+    }
+  }
+}
+
 .week-hero__title {
   font-size: clamp(2rem, 1.5rem + 2.5vw, 3rem);
   overflow-wrap: anywhere;

@@ -40,7 +40,14 @@ function onScroll(): void {
 
 function goTo(id: string): void {
   activeId.value = id
-  document.getElementById(sectionId(id))?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' })
+  const section = document.getElementById(sectionId(id))
+  section?.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' })
+  // Screen readers and keyboard users continue from the category they chose
+  const heading = section?.querySelector<HTMLElement>('h2')
+  if (heading) {
+    heading.tabIndex = -1
+    heading.focus({ preventScroll: true })
+  }
 }
 
 // Keep the active tab in view inside the sideways-scrolling row (without moving the page)
@@ -102,38 +109,50 @@ onBeforeUnmount(() => {
   z-index: 15;
   // Full width, over the page's own side padding
   min-width: 0;
-  padding-block: var(--space-3);
+  padding-block: var(--space-2);
   margin-inline: calc(var(--space-4) * -1);
-  background-color: var(--color-page);
+  background-color: var(--color-surface);
   box-shadow: 0 1px 0 var(--color-border);
 
-  // Semi-transparent fades on the edges that have more tabs behind them
+  // Fades with a small arrow on the edges that have more tabs behind them
   &::before,
   &::after {
     position: absolute;
     top: 0;
     bottom: 0;
     z-index: 1;
-    width: 2.5rem;
+    display: flex;
+    align-items: center;
+    width: 3rem;
+    padding-inline: var(--space-2);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--color-kicker);
     pointer-events: none;
-    content: '';
     opacity: 0;
     transition: opacity 0.15s;
   }
 
   &::before {
     left: 0;
-    background: linear-gradient(to right, var(--color-page) 15%, transparent);
+    justify-content: flex-start;
+    content: '‹';
+    content: '‹' / '';
+    background: linear-gradient(to right, var(--color-surface) 35%, transparent);
   }
 
   &::after {
     right: 0;
-    background: linear-gradient(to left, var(--color-page) 15%, transparent);
+    justify-content: flex-end;
+    content: '›';
+    content: '›' / '';
+    background: linear-gradient(to left, var(--color-surface) 35%, transparent);
   }
 
   &--more-before::before,
   &--more-after::after {
-    opacity: 0.9;
+    opacity: 1;
   }
 
   @media (min-width: 48rem) {
@@ -162,8 +181,8 @@ onBeforeUnmount(() => {
 .category-tabs__tab {
   display: inline-flex;
   align-items: center;
-  min-height: 2.75rem;
-  padding: var(--space-2) var(--space-4);
+  min-height: 2.5rem;
+  padding: var(--space-1) var(--space-4);
   font-size: 0.875rem;
   font-weight: 700;
   color: var(--color-text);

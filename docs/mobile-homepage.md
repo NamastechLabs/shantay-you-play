@@ -5,10 +5,11 @@ Status: **implemented** (DRG-13). Designs: Figma `drag-race-game`, frames "Homep
 ## Homepage (`app/pages/index.vue`)
 
 - The week card has, from top to bottom: kicker, date, status badge, title, status text, the Werk Room countdown, the reveal blocks, the action buttons and, last, the category text (`RunwayCategories`). The jury ("El jurado en la pasarela") is a section **below** the card, not inside it.
+- From 48rem up the kicker has its own line and the date and the status badge share the next one (the runway page header does the same).
 - On phones (below 48rem) every action is a full-width button, one per row, primary first ("A desfilar", then "Ver la intro de la pasarela"; "Votar a las mejores reinas", then "Ver la pasarela").
 - States: no open runway (`La pasarela está en pausa`), Werk Room, Pasarela, Votación and Reveal (Top 3 and band reveal; the category text is hidden on phones while it plays, as before).
 - "La semana pasada" shows the winner's photo tall (3:4) with the place ribbon and the crown on phones (`PastRunwayCard` with `featured`).
-- On phones the user menu in the top bar takes the width the logo leaves, and the **top bar is pinned** (`position: sticky`) on every page (`_nav.scss`). `--app-nav-height` (4rem on phones, 0 otherwise) is its height, used by whatever sticks under it.
+- On phones the user menu in the top bar takes the width the logo leaves, and the **top bar is pinned** (`position: sticky`) on every page (`_nav.scss`). `--app-nav-height` (3.5rem on phones, 0 otherwise) is its height, used by whatever sticks under it. `html { scroll-padding-top }` keeps keyboard focus and in-page jumps below the pinned bar(s). The user menu is 44px tall on phones.
 
 ## Werk Room countdown
 
@@ -33,7 +34,7 @@ At zero it shows "¡La pasarela está a punto de abrir!" until a jury member ope
 ## Runway page (`app/pages/runways/[id]/index.vue`)
 
 - The header stacks kicker, status badge and title; "Resultados" / "Votar a las mejores reinas" are full-width buttons on phones.
-- With **several categories** and looks, phones get `CategoryTabs` right under the header buttons: a row of pill tabs that scrolls sideways, with a semi-transparent fade on each edge that has more tabs behind it. When it reaches the pinned top bar it sticks under it (`top: var(--app-nav-height)`). Tapping a tab scrolls to that category's section (`#category-<id>`, with `scroll-margin-top` for both bars); the active tab follows the scroll. It is hidden from 48rem up and on single-category runways. The page grid uses `minmax(0, 1fr)` so the tabs can never widen the page.
+- With **several categories** and looks, phones get `CategoryTabs` right under the header buttons: a row of pill tabs that scrolls sideways, with a semi-transparent fade on each edge that has more tabs behind it. The fades carry a small arrow (‹ ›, hidden from screen readers). When it reaches the pinned top bar it sticks under it (`top: var(--app-nav-height)`, same surface colour as the bar). Tapping a tab scrolls to that category's section (`#category-<id>`, below both bars thanks to `scroll-padding-top`) and moves focus to its heading; the active tab follows the scroll. It is hidden from 48rem up and on single-category runways. The page grid uses `minmax(0, 1fr)` so the tabs can never widen the page.
 
 ## Files
 
