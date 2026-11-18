@@ -241,6 +241,8 @@ async function revealTopThree(): Promise<void> {
 const { remaining: countdownRemaining, label: countdownLabel } = useCountdown(
   () => (weekRunway.value?.status === 'werk_room' ? weekRunway.value.runway_date : null),
 )
+// Whether the signed-in person already cast a ballot in the week's runway (voting only)
+const hasVotedThisWeek = computed(() => !!weekRunway.value && (data.value?.votedRunwayIds.includes(weekRunway.value.id) ?? false))
 const runwayJury = computed(() => (weekRunway.value?.status === 'runway' ? data.value?.jury ?? [] : []))
 
 // The queen's own look, ready to paste into the WhatsApp group where everyone comments
@@ -380,8 +382,16 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
       <span class="rule" aria-hidden="true" />
 
       <p class="week-hero__status">
+        <!-- While voting, say whether this person already voted -->
+        <span
+          v-if="weekRunway.status === 'voting'"
+          class="badge week-hero__vote-state"
+          :class="hasVotedThisWeek ? 'badge--approved' : 'badge--pending'"
+        >{{ hasVotedThisWeek ? '✓ Votado' : 'Pendiente' }}</span>
         {{ weekRunway.status === 'voting'
-          ? '¡La votación está abierta! Elige tu Top 3 de reinas de la semana.'
+          ? hasVotedThisWeek
+            ? 'Ya has votado. Puedes cambiar tu voto mientras la votación siga abierta.'
+            : '¡La votación está abierta! Elige tu Top 3 de reinas de la semana.'
           : weekRunway.status === 'reveal'
             ? inBandStage
               ? '¡La votación terminó! Primero, la banda ganadora de la semana.'
@@ -515,10 +525,11 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
         </NuxtLink>
       </div>
 
-      <!-- After the buttons, so on phones the long challenge text never pushes them off screen -->
+      <!-- The challenge text is only useful until the runway opens: from the voting on it is gone.
+           After the buttons, so on phones it never pushes them off screen. -->
       <RunwayCategories
+        v-if="weekRunway.status === 'werk_room' || weekRunway.status === 'runway'"
         :categories="weekRunway.categories"
-        :class="{ 'week-hero__categories--revealing': weekRunway.status === 'reveal' }"
       />
     </section>
 
@@ -669,11 +680,10 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
   font-weight: 600;
 }
 
-// On phones the reveal gets the whole screen: the category intro is hidden while it runs
-.week-hero__categories--revealing {
-  @media (max-width: 47.99rem) {
-    display: none;
-  }
+// "Votado" / "Pendiente" in front of the voting status line
+.week-hero__vote-state {
+  margin-right: var(--space-1);
+  vertical-align: 0.1em;
 }
 
 .week-hero__reveal {

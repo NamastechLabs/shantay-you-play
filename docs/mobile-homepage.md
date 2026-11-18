@@ -8,6 +8,7 @@ Status: **implemented** (DRG-13). Designs: Figma `drag-race-game`, frames "Homep
 - From 48rem up the kicker has its own line and the date and the status badge share the next one (the runway page header does the same).
 - On phones (below 48rem) every action is a full-width button, one per row, primary first ("A desfilar", then "Ver la intro de la pasarela"; "Votar a las mejores reinas", then "Ver la pasarela").
 - States: no open runway (`La pasarela está en pausa`), Werk Room, Pasarela, Votación and Reveal (Top 3 and band reveal; the category text is hidden on phones while it plays, as before).
+- While the week is in Votación the status line starts with a "✓ Votado" or "Pendiente" pill (from `votedRunwayIds`) and says whether the ballot can be changed. The category text (`RunwayCategories`) is only shown in the Werk Room and the Pasarela.
 - "La semana pasada" only shows while the week is in the Werk Room (or there is no open week); from the runway on it is hidden and not even loaded. The date and time of the week are shown only in the Werk Room (they are the countdown's target), later only "Semana N".
 - The jury looks (`JuryLooks`) slide sideways on phones, one at a time (the next one peeks out), photo on top and text below; from 48rem up they are a grid with the photo on the left.
 - While a look, jury or winner photo loads, the card shows the brand "S" (`/icon-192.png`) on a tinted background; it is the `background` of the `<img>`, so the opaque photo simply covers it (no script).
@@ -38,6 +39,13 @@ At zero it shows "¡La pasarela está a punto de abrir!" until a jury member ope
 
 - The header stacks kicker, status badge and title; "Resultados" / "Votar a las mejores reinas" are full-width buttons on phones.
 - With **several categories** and looks, phones get `SectionTabs` (id prefix `category-`) right under the header buttons: a row of pill tabs that scrolls sideways, with a semi-transparent fade on each edge that has more tabs behind it. The fades carry a small arrow (‹ ›, hidden from screen readers). When it reaches the pinned top bar it sticks under it (`top: var(--app-nav-height)`, same surface colour as the bar). Tapping a tab scrolls to that category's section (`#category-<id>`, below both bars thanks to `scroll-padding-top`) and moves focus to its heading; the active tab follows the scroll. It is hidden from 48rem up and on single-category runways. The page grid uses `minmax(0, 1fr)` so the tabs can never widen the page.
+
+## Vote page (`/runways/[id]/vote`)
+
+- On phones the queens are **two per row** (`vote-gallery`); a queen with several looks shows the first one with a "+N" badge. A **magnifier button** on each card (a sibling of the card button, never nested in it) opens `LookGalleryDialog` with all her photos and intro without changing the ballot; with several looks, the arrows step through them. Your own queen is a thin row ("eres tú, no puedes votarte"); from 48rem up the full (disabled) card is kept.
+- The **ballot bar** is one short row on phones: three small slots (photo and rank number, or the dashed rank number when empty) next to the button. The queen's name and "Top N" stay for screen readers. From 48rem up it keeps the three named boxes.
+- The title line holds the small "Ver la pasarela" button on the right. The save button reads "Votar" (first vote) or "Actualizar", and is compact on phones. The instructions show only their first sentence followed by "Leer más" on phones (`ReadMoreText`, done in CSS; from 48rem up the whole text). The ballot bar stays above the magnifier buttons (`z-index`).
+- Looks selected for the page now include `image2_url`–`image4_url` and `intro` (same table, no migration).
 
 ## Long pages: Help and Release notes
 
