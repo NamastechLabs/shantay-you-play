@@ -7,8 +7,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
-- Mobile redesign of the homepage: kicker, date and status badge on separate lines, full-width stacked buttons, the category text after the buttons, the jury below the week card, a tall winner photo with ribbon and crown in "La semana pasada" and a wider, 44px-tall user menu in the top bar. On phones the top bar stays pinned to the top on every page. No migration (DRG-13)
+- Mobile redesign of the homepage: kicker, date and status badge on separate lines, full-width stacked buttons, the category text after the buttons, the jury below the week card, and a tall winner photo with ribbon and crown in "La semana pasada". On phones the top bar stays pinned to the top on every page. No migration (DRG-13)
 - On phones the category challenge text is cut to 3 lines with an inline "… Leer reto completo" link after the ellipsis, on the homepage and on the runway page. The look and jury intros of the runway page end in "… Ver más" (the card opens the full look). The runway page header stacks its status and full-width buttons (DRG-13)
+- On phones and small tablets (below 48rem) the user menu is a burger button that opens a panel from the left with the user's name, every menu option, the theme picker and "Salir"; `AppDrawer` gained `side` and `narrow` options. Wider screens keep the dropdown (DRG-13)
 - From tablet width up, the date and the status badge share a row on the homepage and the runway page (DRG-13)
 - The Retro Glam kicker and link colour is darker, to reach the 4.5:1 text contrast (DRG-13)
 

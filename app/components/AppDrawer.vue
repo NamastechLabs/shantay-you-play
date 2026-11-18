@@ -1,8 +1,12 @@
 <script setup lang="ts">
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   open: boolean
   title: string
-}>()
+  /** Edge the panel slides in from */
+  side?: 'left' | 'right'
+  /** Menu width (20rem) instead of the wide form panel */
+  narrow?: boolean
+}>(), { side: 'right', narrow: false })
 
 const emit = defineEmits<{ close: [] }>()
 
@@ -56,7 +60,7 @@ onMounted(() => sync(props.open))
   <dialog
     ref="dialog"
     class="drawer"
-    :class="{ 'drawer--closing': closing }"
+    :class="{ 'drawer--closing': closing, 'drawer--left': side === 'left', 'drawer--narrow': narrow }"
     :aria-labelledby="titleId"
     @click.self="emit('close')"
     @cancel.prevent="emit('close')"

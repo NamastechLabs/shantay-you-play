@@ -80,41 +80,54 @@
     align-items: center;
   }
 
-  // Phones: the theme picker lives inside the user menu when there is one
+  // Phones and small tablets: the theme picker lives in the menu panel when there is a user
   &__theme--desktop {
-    @media (max-width: 39.99rem) {
+    @media (max-width: 47.99rem) {
       display: none;
     }
   }
 
-  // Phones: the user menu takes all the width the logo leaves
-  @media (max-width: 39.99rem) {
-    &__actions {
-      flex: 1 1 auto;
-      justify-content: flex-end;
-      min-width: 0;
+  &__start {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    min-width: 0;
+  }
+
+  // Phones and small tablets: opens the user menu panel (the dropdown is for wider screens)
+  &__burger {
+    display: none;
+    flex: none;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    color: var(--color-title);
+    cursor: pointer;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    transition: border-color 0.15s, box-shadow 0.15s;
+
+    &:hover,
+    &[aria-expanded='true'] {
+      border-color: var(--color-kicker);
+      box-shadow: var(--shadow-card);
     }
 
-    .user-menu {
-      flex: 1 1 auto;
-      min-width: 0;
-
-      &__trigger {
-        width: 100%;
-        min-height: 2.75rem;
-      }
-
-      &__name {
-        flex: 1;
-        max-width: none;
-        text-align: left;
-      }
+    @media (max-width: 47.99rem) {
+      display: grid;
     }
   }
 }
 
 .user-menu {
   position: relative;
+
+  // Phones and small tablets use the panel instead
+  @media (max-width: 47.99rem) {
+    display: none;
+  }
 
   &__trigger {
     display: inline-flex;
@@ -181,16 +194,40 @@
       background-color: var(--color-surface-raised);
     }
   }
+}
 
-  // Only shown on phones; larger screens keep the picker in the top bar
-  &__theme {
-    padding: var(--space-2) var(--space-3);
+// Phones: the user menu panel (AppDrawer from the left)
+.drawer-menu {
+  display: grid;
+  gap: var(--space-1);
+  padding: 0;
+  margin: 0;
+  list-style: none;
 
-    @media (min-width: 40rem) {
-      display: none;
+  &__item {
+    display: block;
+    padding: var(--space-3) var(--space-3);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text);
+    text-decoration: none;
+    border-radius: var(--radius-md);
+
+    &:hover,
+    &.router-link-active {
+      background-color: var(--color-surface-raised);
     }
 
-    .theme-switcher,
+    &.router-link-exact-active {
+      color: var(--color-title);
+    }
+  }
+
+  &__theme {
+    width: 100%;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border);
+
     select {
       width: 100%;
     }
