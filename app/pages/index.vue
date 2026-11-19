@@ -49,6 +49,14 @@ const supabase = useSupabaseClient()
 const { loadTopThree, loadWinners, loadBandResult } = useRunwayResults()
 const { participant } = useCurrentParticipant()
 
+/** Categories whose sub-category the signed-in queen has not picked yet: until she does, the Werk Room card only shows the picker */
+const pendingSubcategoryIds = ref<string[]>([])
+const mustPickSubcategory = computed(() => pendingSubcategoryIds.value.length > 0)
+function onSubcategoryPending(categoryId: string, pending: boolean): void {
+  const others = pendingSubcategoryIds.value.filter(id => id !== categoryId)
+  pendingSubcategoryIds.value = pending ? [...others, categoryId] : others
+}
+
 // RLS already hides drafts from contestants
 const { data, error, refresh } = await useAsyncData('home', async (): Promise<HomeData> => {
   const { data: runways, error } = await supabase
@@ -381,7 +389,7 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
       </h1>
       <span class="rule" aria-hidden="true" />
 
-      <p class="week-hero__status">
+      <p v-if="!mustPickSubcategory" class="week-hero__status">
         <!-- While voting, say whether this person already voted -->
         <span
           v-if="weekRunway.status === 'voting'"
@@ -397,12 +405,12 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
               ? '¡La votación terminó! Primero, la banda ganadora de la semana.'
               : '¡La votación terminó! Estas son las tres mejores reinas de la semana.'
             : weekRunway.status === 'werk_room'
-              ? 'Las reinas se están preparando en el Werk Room. ¡La pasarela abrirá pronto!'
+              ? 'Las reinas se están preparando en el Werk Room.'
               : 'Las reinas ya están en la pasarela. La votación abrirá pronto.' }}
       </p>
 
       <!-- Werk Room: time left until the runway opens (counts down to its date) -->
-      <div v-if="countdownRemaining !== null && weekRunway.status === 'werk_room'" class="countdown">
+      <div v-if="countdownRemaining !== null && weekRunway.status === 'werk_room' && !mustPickSubcategory" class="countdown">
         <template v-if="countdownRemaining > 0">
           <p class="kicker">
             La pasarela abre en
@@ -469,7 +477,7 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
       </div>
 
       <!-- Queens upload their own look while the week is in the Werk Room -->
-      <div v-if="weekRunway.status === 'werk_room' && participant?.role === 'concursante'" class="actions">
+      <div v-if="weekRunway.status === 'werk_room' && participant?.role === 'concursante' && !mustPickSubcategory" class="actions">
         <NuxtLink :to="`/semana/${weekRunway.week_number}/werk-room`" class="btn btn--primary">
           Ya tienes tu look, súbelo
         </NuxtLink>
@@ -531,6 +539,17 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
         v-if="weekRunway.status === 'werk_room' || weekRunway.status === 'runway'"
         :categories="weekRunway.categories"
       />
+
+      <!-- Sub-categories are picked in the Werk Room, in ranking order (individual categories only) -->
+      <template v-if="weekRunway.status === 'werk_room'">
+        <CategorySubcategories
+          v-for="category in weekRunway.categories.filter(candidate => candidate.kind === 'individual')"
+          :key="category.id"
+          :category="category"
+          :show-title="weekRunway.categories.length > 1"
+          @pending="onSubcategoryPending"
+        />
+      </template>
     </section>
 
     <section v-else class="week-empty" aria-labelledby="week-empty-title">

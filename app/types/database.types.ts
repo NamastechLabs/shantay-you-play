@@ -171,6 +171,53 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"category_subcategories": {
+                  Row: {
+                    "category_id": string,"created_at": string,"id": string,"name": string,"position": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "category_id": string,"created_at"?: string,"id"?: string,"name": string,"position"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "category_id"?: string,"created_at"?: string,"id"?: string,"name"?: string,"position"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "category_subcategories_category_id_fkey"
+      columns: ["category_id"]
+isOneToOne: false
+      referencedRelation: "categories"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"category_subcategory_picks": {
+                  Row: {
+                    "category_id": string,"created_at": string,"id": string,"participant_id": string,"subcategory_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "category_id": string,"created_at"?: string,"id"?: string,"participant_id": string,"subcategory_id": string
+                  }
+                  Update: {
+                    "category_id"?: string,"created_at"?: string,"id"?: string,"participant_id"?: string,"subcategory_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "category_subcategory_picks_participant_id_fkey"
+      columns: ["participant_id"]
+isOneToOne: false
+      referencedRelation: "participants"
+      referencedColumns: ["id"]
+    },
+                    {
+      foreignKeyName: "category_subcategory_picks_subcategory_fkey"
+      columns: ["subcategory_id","category_id"]
+isOneToOne: false
+      referencedRelation: "category_subcategories"
+      referencedColumns: ["id","category_id"]
+    }
+                  ]
                 },"category_ranking_votes": {
                   Row: {
                     "category_id": string,"created_at": string,"id": string,"participant_id": string,"rank": number,"stage": Database["public"]["Enums"]["ranking_stage"],"updated_at": string,"voter_id": string
@@ -432,6 +479,17 @@ isOneToOne: false
                            },
 "participant_is_guest":
 { Args: { "p_participant_id": string }; Returns: boolean
+                           },
+"assign_subcategory":
+{ Args: { "p_participant_id": string,"p_subcategory_id": string }; Returns: undefined
+                           },
+"pick_subcategory":
+{ Args: { "p_subcategory_id": string }; Returns: undefined
+                           },
+"subcategory_turn_order":
+{ Args: { "p_category_id": string }; Returns: {
+              "participant_id": string,"turn": number
+            }[]
                            },
 "promote_guest_to_contestant":
 { Args: { "p_participant_id": string }; Returns: undefined

@@ -35,10 +35,11 @@ type MemberRow = {
   participant: { drag_name: string | null } | null
 }
 
-function toLook(row: LookRow, groupName: string | null = null) {
+function toLook(row: LookRow, groupName: string | null = null, subcategory: string | null = null) {
   return {
     queen: row.participant?.drag_name ?? null,
     group: groupName,
+    subcategory,
     intro: row.intro,
     photos: SLOTS.flatMap(({ column, label }) => (row[column] ? [{ label, url: row[column] as string }] : [])),
   }
@@ -108,6 +109,17 @@ export default defineEventHandler(async (event) => {
   const groupNames = new Map(groupRows.map(group => [group.id, group.name]))
   const groupNameOf = (look: LookRow) => groupNames.get(groupOfQueen.get(look.participant_id) ?? '') ?? null
 
+  // Sub-categories of the individual categories and the one each queen picked
+  const [subcategories, picks] = await Promise.all([
+    db.from('category_subcategories').select('id, category_id, name').in('category_id', categoryIds).order('position', { ascending: true }).order('created_at', { ascending: true }),
+    db.from('category_subcategory_picks').select('category_id, participant_id, subcategory_id').in('category_id', categoryIds),
+  ])
+  if (subcategories.error) throw createError({ statusCode: 500, statusMessage: subcategories.error.message })
+  if (picks.error) throw createError({ statusCode: 500, statusMessage: picks.error.message })
+  const subcategoryNames = new Map((subcategories.data ?? []).map(subcategory => [subcategory.id, subcategory.name]))
+  const subcategoryOf = (look: LookRow): string | null =>
+    subcategoryNames.get((picks.data ?? []).find(pick => pick.category_id === look.category_id && pick.participant_id === look.participant_id)?.subcategory_id ?? '') ?? null
+
   const looksRows = (looks.data ?? []) as unknown as LookRow[]
   const juryRows = (juryLooks.data ?? []) as unknown as LookRow[]
 
@@ -121,6 +133,7 @@ export default defineEventHandler(async (event) => {
       title: category.title,
       type: category.kind,
       intro: category.intro_text,
+      subcategories: (subcategories.data ?? []).filter(subcategory => subcategory.category_id === category.id).map(subcategory => subcategory.name),
       groups: groupRows.filter(group => group.category_id === category.id).map(group => ({
         name: group.name,
         intro: group.intro,
@@ -130,7 +143,7 @@ export default defineEventHandler(async (event) => {
         }),
         members: memberRows.filter(member => member.group_id === group.id).map(member => member.participant?.drag_name ?? null),
       })),
-      looks: looksRows.filter(look => look.category_id === category.id).map(look => toLook(look, groupNameOf(look))),
+      looks: looksRows.filter(look => look.category_id === category.id).map(look => toLook(look, groupNameOf(look), subcategoryOf(look))),
       jury_looks: juryRows.filter(look => look.category_id === category.id).map(look => toLook(look)),
     })),
   }

@@ -113,6 +113,16 @@ export function useRunwayExport() {
       const groupOfQueen = new Map(memberRows.map(member => [member.participant_id, member.group_id]))
       const groupNames = new Map(groupRows.map(group => [group.id, group.name]))
 
+      // Sub-categories of the individual categories and the one each queen picked
+      const [subcategories, picks] = await Promise.all([
+        supabase.from('category_subcategories').select('id, category_id, name').in('category_id', categoryIds).order('position', { ascending: true }).order('created_at', { ascending: true }),
+        supabase.from('category_subcategory_picks').select('category_id, participant_id, subcategory_id').in('category_id', categoryIds),
+      ])
+      if (subcategories.error) throw subcategories.error
+      if (picks.error) throw picks.error
+      const subcategoryNames = new Map(subcategories.data.map(subcategory => [subcategory.id, subcategory.name]))
+      const subcategoryOf = new Map(picks.data.map(pick => [`${pick.category_id}:${pick.participant_id}`, subcategoryNames.get(pick.subcategory_id) ?? null]))
+
       const files: Record<string, Uint8Array> = {}
 
       /** Downloads a photo into the ZIP and returns its path; `base` has no extension */
@@ -124,7 +134,7 @@ export function useRunwayExport() {
         return file
       }
 
-      async function toLook(row: LookRow, folder: string) {
+      async function toLook(row: LookRow, folder: string, isJury = false) {
         const queen = row.participant?.drag_name ?? null
         const photos = await Promise.all(LOOK_SLOTS.flatMap((slot) => {
           const url = row[slot.key]
@@ -134,7 +144,14 @@ export function useRunwayExport() {
           const file = await addPhoto(photo.url, `${folder}/${slugify(queen ?? 'sin-nombre')}-${slugify(photo.label)}`)
           return { label: photo.label, file }
         }))
-        return { queen, group: groupNames.get(groupOfQueen.get(row.participant_id) ?? '') ?? null, intro: row.intro, photos }
+        return {
+          queen,
+          group: groupNames.get(groupOfQueen.get(row.participant_id) ?? '') ?? null,
+          // Only queens pick a sub-category (null for jury looks and when none was picked)
+          subcategory: isJury ? null : subcategoryOf.get(`${row.category_id}:${row.participant_id}`) ?? null,
+          intro: row.intro,
+          photos,
+        }
       }
 
       const payload = {
@@ -145,6 +162,7 @@ export function useRunwayExport() {
             title: category.title,
             type: category.kind,
             intro: category.intro_text,
+            subcategories: subcategories.data.filter(subcategory => subcategory.category_id === category.id).map(subcategory => subcategory.name),
             groups: await Promise.all(groupRows.filter(group => group.category_id === category.id).map(async (group) => {
               const row = photoRows.find(photo => photo.group_id === group.id)
               const urls = row ? [row.image_url, row.image2_url, row.image3_url, row.image4_url] : []
@@ -160,7 +178,7 @@ export function useRunwayExport() {
               }
             })),
             looks: await Promise.all(looksRows.filter(look => look.category_id === category.id).map(look => toLook(look, folder))),
-            jury_looks: await Promise.all(juryRows.filter(look => look.category_id === category.id).map(look => toLook(look, `${folder}/jury`))),
+            jury_looks: await Promise.all(juryRows.filter(look => look.category_id === category.id).map(look => toLook(look, `${folder}/jury`, true))),
           }
         })),
       }

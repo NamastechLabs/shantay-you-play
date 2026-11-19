@@ -636,6 +636,12 @@
     border-radius: var(--radius-pill);
   }
 
+  // Sub-category picked by the queen, between the photos and the intro
+  &__subcategory {
+    margin: 0;
+    color: var(--color-kicker);
+  }
+
   &__form {
     display: grid;
     gap: var(--space-3);

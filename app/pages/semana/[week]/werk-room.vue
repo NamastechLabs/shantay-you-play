@@ -29,6 +29,8 @@ interface WerkRoom {
   runway: Runway
   categories: Category[]
   looks: MyLook[]
+  /** Sub-category the queen picked, keyed by category id */
+  subcategories: Record<string, string>
   /** Keyed by category id; only group categories where the queen has a group */
   teams: Record<string, Team>
 }
@@ -105,7 +107,7 @@ const { data, error, refresh } = await useAsyncData(`werk-room-${route.params.we
 
   const participantId = participant.value?.id
   const categoryIds = categories.data.map(category => category.id)
-  if (!participantId || !categoryIds.length) return { runway: runway.data, categories: categories.data, looks: [], teams: {} }
+  if (!participantId || !categoryIds.length) return { runway: runway.data, categories: categories.data, looks: [], subcategories: {}, teams: {} }
 
   const looks = await supabase
     .from('looks')
@@ -114,10 +116,18 @@ const { data, error, refresh } = await useAsyncData(`werk-room-${route.params.we
     .in('category_id', categoryIds)
   if (looks.error) throw looks.error
 
+  const picks = await supabase
+    .from('category_subcategory_picks')
+    .select('category_id, subcategory:category_subcategories!category_subcategory_picks_subcategory_fkey(name)')
+    .eq('participant_id', participantId)
+    .in('category_id', categoryIds)
+  if (picks.error) throw picks.error
+
   return {
     runway: runway.data,
     categories: categories.data,
     looks: looks.data,
+    subcategories: Object.fromEntries(picks.data.flatMap(pick => (pick.subcategory ? [[pick.category_id, pick.subcategory.name]] : []))),
     teams: await loadTeams(participantId, categories.data.filter(category => category.kind === 'group').map(category => category.id)),
   }
 })
@@ -209,6 +219,7 @@ const multipleCategories = computed(() => (data.value?.categories.length ?? 0) >
               :contestant="participant!"
               :look="lookByCategory.get(category.id) ?? null"
               :title="multipleCategories ? category.title : undefined"
+              :subcategory="data.subcategories[category.id]"
               editable
               @changed="refresh()"
             />

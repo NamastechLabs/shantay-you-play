@@ -5,6 +5,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-11-19
+
+### Added
+
+- Sub-categories for individual categories: judges add them from the category ("Subcategorías", at least one per queen when there are any; group categories do not support them) and can assign or free the one of any queen. While the week is in the Werk Room each queen picks one of the remaining sub-categories on the homepage, in the order of the ranking of the previous week's runway (alphabetical by drag name for queens without a place). Each look has a `subcategory` and each category a `subcategories` list in the `GET /api/commentary/runway` response and in the ZIP `runway.json`. Adds a migration: tables `category_subcategories` and `category_subcategory_picks`, functions `subcategory_turn_order`, `pick_subcategory` and `assign_subcategory` (DRG-14)
+
 ## [0.13.0] - 2026-11-19
 
 ### Added
