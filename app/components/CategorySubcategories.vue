@@ -50,6 +50,14 @@ async function confirmPick(): Promise<void> {
   }
 }
 
+/** Once everybody has picked, the list follows the pick order (leftover sub-categories last); until then it keeps the admin's order */
+const allPicked = computed(() => queens.value.length > 0 && !nextQueen.value)
+const listed = computed(() => {
+  if (!allPicked.value) return subcategories.value
+  const turnOf = (id: string): number => queenOf(id)?.turn ?? Number.POSITIVE_INFINITY
+  return [...subcategories.value].sort((a, b) => turnOf(a.id) - turnOf(b.id))
+})
+
 const initial = (name: string): string => name.charAt(0).toUpperCase()
 </script>
 
@@ -93,7 +101,7 @@ const initial = (name: string): string => name.charAt(0).toUpperCase()
         Ver todas las subcategorías
       </summary>
       <ul class="subcats__list">
-        <li v-for="subcategory in subcategories" :key="subcategory.id">
+        <li v-for="subcategory in listed" :key="subcategory.id">
           <!-- Taken: who has it -->
           <div v-if="queenOf(subcategory.id)" class="subcats__item subcats__item--taken">
             <span class="subcats__name">{{ subcategory.name }}</span>
@@ -139,7 +147,7 @@ const initial = (name: string): string => name.charAt(0).toUpperCase()
       </ul>
     </component>
 
-    <details v-if="queens.length" class="subcats__order">
+    <details v-if="queens.length && !allPicked" class="subcats__order">
       <summary>Orden de elección</summary>
       <ol>
         <li v-for="queen in queens" :key="queen.id" :class="{ 'subcats__current': nextQueen?.id === queen.id }">
