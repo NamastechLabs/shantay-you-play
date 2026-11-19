@@ -1,6 +1,6 @@
 {
   "name": "shantay-you-play",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -20,10 +20,17 @@
   "dependencies": {
     "@jsquash/webp": "^1.5.0",
     "@nuxtjs/supabase": "^2.1.0",
+    "@vite-pwa/nuxt": "^2.0.2",
     "fflate": "^0.8.3",
     "nuxt": "^4.6.3",
     "vue": "^3.5.44",
-    "vue-router": "^5.4.0"
+    "vue-router": "^5.4.0",
+    "workbox-cacheable-response": "^7.4.1",
+    "workbox-core": "^7.4.1",
+    "workbox-expiration": "^7.4.1",
+    "workbox-precaching": "^7.4.1",
+    "workbox-routing": "^7.4.1",
+    "workbox-strategies": "^7.4.1"
   },
   "devDependencies": {
     "sass": "^1.107.1",

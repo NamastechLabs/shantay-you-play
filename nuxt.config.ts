@@ -3,7 +3,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
-  modules: ['@nuxtjs/supabase'],
+  modules: ['@nuxtjs/supabase', '@vite-pwa/nuxt'],
 
   css: ['~/assets/scss/main.scss'],
 
@@ -11,6 +11,9 @@ export default defineNuxtConfig({
     // These pages used to live at Spanish paths: keep old links working
     '/novedades': { redirect: { to: '/release-notes', statusCode: 301 } },
     '/votacion-bandas': { redirect: { to: '/band-voting', statusCode: 301 } },
+    // The service worker and the manifest must always be revalidated so new deploys reach installed apps
+    '/sw.js': { headers: { 'cache-control': 'public, max-age=0, must-revalidate' } },
+    '/manifest.webmanifest': { headers: { 'cache-control': 'public, max-age=0, must-revalidate' } },
   },
 
   app: {
@@ -20,7 +23,7 @@ export default defineNuxtConfig({
       meta: [{ name: 'description', content: 'Shantay You Play: la competencia semanal de looks, pasarela y votación.' }],
       link: [
         { rel: 'icon', type: 'image/png', href: '/favicon.png' },
-        { rel: 'apple-touch-icon', href: '/icon-192.png' },
+        { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         {
@@ -30,6 +33,41 @@ export default defineNuxtConfig({
         },
       ],
     },
+  },
+
+  // Installable app (DRG-18). Only static assets are cached (see service-worker/sw.ts); pages and data always use the network.
+  pwa: {
+    strategies: 'buildSW',
+    filename: 'sw.js',
+    registerType: 'autoUpdate',
+    manifest: {
+      name: 'Shantay You Play',
+      short_name: 'Shantay',
+      description: 'La competencia semanal de looks, pasarela y votación.',
+      lang: 'es',
+      id: '/',
+      start_url: '/',
+      scope: '/',
+      display: 'standalone',
+      // Default theme (Y2K Camp); the browser bar color follows the active theme at runtime (app.vue)
+      theme_color: '#eaf4ff',
+      background_color: '#eaf4ff',
+      icons: [
+        { src: '/pwa-192.png', sizes: '192x192', type: 'image/png' },
+        { src: '/pwa-512.png', sizes: '512x512', type: 'image/png' },
+        { src: '/pwa-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      ],
+    },
+    buildSW: {
+      swSrc: 'service-worker/sw.ts',
+      globPatterns: ['_nuxt/**/*.{js,css,woff2}', '*.png'],
+      globIgnores: ['_nuxt/builds/**'],
+      // The module also adds the Nuxt build-meta JSON, which we ignore on purpose (it must always come from the network)
+      globStrict: false,
+    },
+    client: { installPrompt: true },
+    // The service worker is off in `nuxt dev`; try it with `pnpm build && pnpm preview`
+    devOptions: { enabled: false },
   },
 
   // @nuxtjs/supabase reads SUPABASE_URL and SUPABASE_KEY (anon/publishable key) from .env

@@ -280,7 +280,8 @@ app/
 supabase/
   migrations/     SQL migrations (source of truth for the schema)
   config.toml     Supabase CLI config
-nuxt.config.ts    @nuxtjs/supabase config (auth redirects, types path)
+service-worker/   sw.ts: service worker of the installable app (see docs/pwa.md)
+nuxt.config.ts    @nuxtjs/supabase config (auth redirects, types path) and the PWA manifest
 ```
 
 Runway photos are resized to max 1600px and re-encoded as WebP in the browser before upload, then stored at `runway-looks/{category_id}/{participant_id}/{uuid}.webp`. Group photos use the same bucket under `runway-looks/{category_id}/{group_id}/{uuid}.webp`.

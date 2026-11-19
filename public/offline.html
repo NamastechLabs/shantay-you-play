@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Sin conexión · Shantay You Play</title>
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 1rem; padding: 1.5rem; box-sizing: border-box; text-align: center;
+      background: #eaf4ff; color: #1b1340;
+      font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    }
+    img { width: 96px; height: 96px; border-radius: 22px; }
+    h1 { margin: 0; font-size: 1.5rem; color: #6a4cff; }
+    p { margin: 0; max-width: 28rem; line-height: 1.5; color: #5c5688; }
+    button {
+      padding: 0.75rem 1.5rem; font: inherit; font-weight: 700; color: #1b1340;
+      background: #ff5fc8; border: 0; border-radius: 999px; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <img src="/pwa-192.png" alt="" width="96" height="96">
+  <h1>¡Sin conexión, reina!</h1>
+  <p>No hay internet y la pasarela necesita conexión para mostrar los looks y guardar tus votos. Revisa tu conexión e inténtalo de nuevo.</p>
+  <button type="button" onclick="location.reload()">Reintentar</button>
+</body>
+</html>
