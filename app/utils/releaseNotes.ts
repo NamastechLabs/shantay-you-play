@@ -18,6 +18,15 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.13.0',
+    date: '2026-11-19',
+    title: 'De invitada especial a concursante',
+    features: [
+      'El jurado puede pasar a una invitada especial a concursante desde «Participantes», sin perder nada: conserva sus invitaciones, sus looks y sus votos.',
+      'En «Mis looks» se ven por separado los looks como concursante y los looks como jurado o invitada especial.',
+    ],
+  },
+  {
     version: '0.12.0',
     date: '2026-11-19',
     title: 'Instala la app en tu móvil',
