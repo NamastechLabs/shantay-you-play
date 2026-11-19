@@ -18,6 +18,17 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.14.0',
+    date: '2026-11-19',
+    title: 'Subcategorías',
+    features: [
+      'Las categorías individuales pueden tener subcategorías: el jurado las añade (al menos una por reina) y, en el Werk Room, cada reina elige la suya por turnos, siguiendo la clasificación de la semana anterior.',
+      'En la página de inicio ves todas las subcategorías, quién ha elegido cada una y a quién le toca. Hasta que elijas la tuya no aparecen la cuenta atrás ni el botón para subir tu look.',
+      'Tu subcategoría aparece en tu look del Werk Room, entre las fotos y la intro.',
+      'El jurado puede asignar o liberar la subcategoría de cualquier reina.',
+    ],
+  },
+  {
     version: '0.13.0',
     date: '2026-11-19',
     title: 'De invitada especial a concursante',
