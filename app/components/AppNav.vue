@@ -10,6 +10,8 @@ const menuId = useId()
 const menuRoot = ref<HTMLElement | null>(null)
 const trigger = ref<HTMLButtonElement | null>(null)
 
+const { canInstall, install } = useInstallApp()
+
 const displayName = computed(() => participant.value?.drag_name ?? participant.value?.name ?? '')
 
 function closeMenu(options: { focusTrigger?: boolean } = {}): void {
@@ -49,6 +51,12 @@ const appItems = computed(() => [
   { to: '/help', label: 'Ayuda' },
   { to: '/release-notes', label: 'Novedades' },
 ])
+
+async function installApp(): Promise<void> {
+  closeMenu()
+  appDrawerOpen.value = false
+  await install()
+}
 
 async function signOut(): Promise<void> {
   closeMenu()
@@ -129,6 +137,11 @@ async function signOut(): Promise<void> {
               {{ item.label }}
             </NuxtLink>
           </li>
+          <li v-if="canInstall">
+            <button type="button" class="user-menu__item" @click="installApp">
+              {{ PWA_COPY.menuLabel }}
+            </button>
+          </li>
           <li class="user-menu__divider" role="separator" />
           <li>
             <button type="button" class="user-menu__item" @click="signOut">
@@ -140,6 +153,8 @@ async function signOut(): Promise<void> {
     </div>
 
     <template v-if="participant">
+      <InstallAppModal />
+
       <!-- App menu: places of the app and the theme -->
       <AppDrawer :open="appDrawerOpen" title="Menú" side="left" narrow @close="appDrawerOpen = false">
         <nav aria-label="Menú de la aplicación">
@@ -148,6 +163,11 @@ async function signOut(): Promise<void> {
               <NuxtLink :to="item.to" class="drawer-menu__item" @click="appDrawerOpen = false">
                 {{ item.label }}
               </NuxtLink>
+            </li>
+            <li v-if="canInstall">
+              <button type="button" class="drawer-menu__item" @click="installApp">
+                {{ PWA_COPY.menuLabel }}
+              </button>
             </li>
           </ul>
         </nav>

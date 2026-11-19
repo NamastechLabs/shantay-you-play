@@ -10,6 +10,7 @@ const sections = [
   { id: 'categorias-grupales', label: copy.groupTitle },
   { id: 'puntos', label: copy.scoringTitle },
   { id: 'seguridad', label: copy.securityTitle },
+  { id: 'instalar', label: copy.installTitle },
   { id: 'dudas', label: copy.faqTitle }
 ]
 
@@ -182,6 +183,22 @@ useSeoMeta({ robots: 'noindex' })
               <p>{{ copy.blockedText }}</p>
             </div>
           </PhoneCollapse>
+        </section>
+
+        <section class="help__section" aria-labelledby="instalar">
+          <h2 id="instalar">
+            {{ copy.installTitle }}
+          </h2>
+          <p>{{ copy.installIntro }}</p>
+          <ul class="help__grid">
+            <li v-for="item in copy.install" :key="item.title" class="card">
+              <h3>{{ item.title }}</h3>
+              <p>{{ item.text }}</p>
+            </li>
+          </ul>
+          <p class="hint">
+            {{ copy.installInApp }}
+          </p>
         </section>
 
         <section class="help__section" aria-labelledby="dudas">

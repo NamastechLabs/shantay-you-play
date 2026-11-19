@@ -18,6 +18,19 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.12.0',
+    date: '2026-11-19',
+    title: 'Instala la app en tu móvil',
+    features: [
+      'Ahora puedes instalar Shantay You Play en la pantalla de inicio de tu móvil y abrirla con un toque, sin barra del navegador y con su propio icono.',
+      'En el menú, «Instalar app» te lo pone fácil: en Android abre la instalación y en iPhone te enseña los pasos. Si ya la tienes instalada, no aparece.',
+      'La app se actualiza sola y, si te quedas sin conexión, te avisa para que puedas reintentar.',
+      'El color de la barra del móvil cambia con el tema que elijas.',
+      'En la página de votar, desde el móvil, el título de la semana tiene todo el ancho y el botón se ha convertido en «Enviar» con un icono, para que quepa mejor.',
+      'La Ayuda tiene una sección nueva, «Instala la app en tu móvil».',
+    ],
+  },
+  {
     version: '0.11.0',
     date: '2026-11-18',
     title: 'Pensada para el móvil',

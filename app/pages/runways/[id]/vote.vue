@@ -397,7 +397,12 @@ async function saveBallot(): Promise<void> {
               :disabled="!isComplete || saving"
               @click="saveBallot"
             >
-              {{ saving ? 'Guardando…' : ballotId ? 'Actualizar' : 'Votar' }}
+              <!-- Phones: a "send" icon and the short text "Enviar" instead of the long label -->
+              <svg class="ballot-bar__send" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 3 10 14M21 3l-7 18-4-7-7-4 18-7z" />
+              </svg>
+              <span class="ballot-bar__label">{{ saving ? 'Guardando…' : ballotId ? 'Actualizar' : 'Votar' }}</span>
+              <span class="ballot-bar__short" aria-hidden="true">Enviar</span>
             </button>
           </div>
         </div>
@@ -470,6 +475,25 @@ async function saveBallot(): Promise<void> {
 
 .page-header__actions {
   flex: none;
+}
+
+// Phones: the kicker ("Semana 7 · Los 7 pecados capitales") gets the full width on its own row,
+// and the title and the button share the row below it
+@media (max-width: 47.99rem) {
+  .page-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    column-gap: var(--space-3);
+  }
+
+  .page-header__titles {
+    display: contents;
+  }
+
+  .page-header__titles .kicker {
+    grid-column: 1 / -1;
+  }
 }
 
 // All the looks of a queen side by side, one per category (phones: only the first, with a "+N")
@@ -588,8 +612,20 @@ async function saveBallot(): Promise<void> {
 // Ballot bar: from tablets up the three picks have their name; on phones a photo with the rank,
 // next to the button, so the bar is one short row instead of a third of the screen
 .ballot-bar__num,
-.ballot-bar__thumb {
+.ballot-bar__thumb,
+.ballot-bar__send,
+.ballot-bar__short {
   display: none;
+}
+
+@media (max-width: 47.99rem) {
+  .ballot-bar__send {
+    display: block;
+  }
+
+  .ballot-bar__short {
+    display: inline;
+  }
 }
 
 @media (max-width: 47.99rem) {
@@ -609,8 +645,31 @@ async function saveBallot(): Promise<void> {
     justify-items: end;
   }
 
+  // "Votar" / "Actualizar" are replaced by a send icon and the shorter "Enviar" (the long text did not fit)
   .ballot-bar__actions .btn {
-    padding: var(--space-2) var(--space-5);
+    position: relative;
+    display: inline-flex;
+    gap: var(--space-2);
+    align-items: center;
+    justify-content: center;
+    min-height: 3rem;
+    padding: var(--space-2) var(--space-4);
+  }
+
+  .ballot-bar__send {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex: none;
+  }
+
+  // The real label ("Votar", "Actualizar", "Guardando…") stays for screen readers
+  .ballot-bar__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
   .ballot-bar__pick {
