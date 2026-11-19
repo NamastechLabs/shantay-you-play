@@ -5,6 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Judges can promote a special guest to contestant from Participantes ("Pasar a concursante"), through the new judge-only function `promote_guest_to_contestant`. Only `invitado` → `concursante` is allowed. Her guest invitations (`runway_guests`), jury looks (`jury_looks`, kept as jury looks) and ballots are preserved; her old guest ballots stop being anonymous. Adds a migration (DRG-21)
+
+### Fixed
+
+- "Mis looks" now reads both `looks` and `jury_looks`, and splits them into "Como concursante" and "Como jurado o invitada especial" sections, so the jury looks of a special guest who became a queen are not hidden (DRG-21)
+
 ## [0.12.0] - 2026-11-19
 
 ### Added

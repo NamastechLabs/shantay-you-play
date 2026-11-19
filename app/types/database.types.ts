@@ -433,6 +433,9 @@ isOneToOne: false
 "participant_is_guest":
 { Args: { "p_participant_id": string }; Returns: boolean
                            },
+"promote_guest_to_contestant":
+{ Args: { "p_participant_id": string }; Returns: undefined
+                           },
 "runway_has_status":
 { Args: { "p_runway_id": string,"p_statuses": (Database["public"]['Enums']["runway_status"])[] }; Returns: boolean
                            },

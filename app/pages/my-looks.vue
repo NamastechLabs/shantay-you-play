@@ -17,35 +17,42 @@ interface MyLook {
   totalPoints: number | null
 }
 
+interface MyLooks {
+  /** Looks on the runway as a queen (table looks): ranked */
+  queen: MyLook[]
+  /** Looks as a judge or special guest (table jury_looks): never ranked */
+  jury: MyLook[]
+}
+
 const supabase = useSupabaseClient()
 const { participant } = useCurrentParticipant()
 
-// The jury (judges and special guests) keeps its looks in jury_looks and is never ranked; queens use looks
+const JURY_LOOK_COLUMNS = 'id, image_url, image2_url, image3_url, image4_url, intro, category:categories!jury_looks_category_id_fkey(id, title, runway:runways!categories_runway_id_fkey(id, week_number, status))'
+const QUEEN_LOOK_COLUMNS = 'id, image_url, image2_url, image3_url, image4_url, intro, category:categories!looks_category_id_fkey(id, title, runway:runways!categories_runway_id_fkey(id, week_number, status))'
+
 const isJury = computed(() => participant.value?.role !== undefined && participant.value.role !== 'concursante')
 
+function newestWeekFirst(a: MyLook, b: MyLook): number {
+  return b.category.runway.week_number - a.category.runway.week_number
+}
+
+// A person can have rows in both tables (e.g. a special guest later promoted to queen), so both are read.
 // Only the signed-in participant's own looks; draft runways stay hidden by RLS for queens
-const { data, error } = await useAsyncData('my-looks', async (): Promise<MyLook[]> => {
+const { data, error } = await useAsyncData('my-looks', async (): Promise<MyLooks> => {
   const participantId = participant.value?.id
-  if (!participantId) return []
+  if (!participantId) return { queen: [], jury: [] }
 
-  if (isJury.value) {
-    const { data: juryRows, error: juryError } = await supabase
-      .from('jury_looks')
-      .select('id, image_url, image2_url, image3_url, image4_url, intro, category:categories!jury_looks_category_id_fkey(id, title, runway:runways!categories_runway_id_fkey(id, week_number, status))')
-      .eq('participant_id', participantId)
-    if (juryError) throw juryError
+  const [juryResult, queenResult] = await Promise.all([
+    supabase.from('jury_looks').select(JURY_LOOK_COLUMNS).eq('participant_id', participantId),
+    supabase.from('looks').select(QUEEN_LOOK_COLUMNS).eq('participant_id', participantId),
+  ])
+  if (juryResult.error) throw juryResult.error
+  if (queenResult.error) throw queenResult.error
 
-    return juryRows
-      .map(row => ({ ...row, place: null, totalPoints: null }))
-      .sort((a, b) => b.category.runway.week_number - a.category.runway.week_number)
-  }
-
-  const { data: rows, error: looksError } = await supabase
-    .from('looks')
-    .select('id, image_url, image2_url, image3_url, image4_url, intro, category:categories!looks_category_id_fkey(id, title, runway:runways!categories_runway_id_fkey(id, week_number, status))')
-    .eq('participant_id', participantId)
-
-  if (looksError) throw looksError
+  const jury = juryResult.data
+    .map(row => ({ ...row, place: null, totalPoints: null }))
+    .sort(newestWeekFirst)
+  const rows = queenResult.data
 
   // The ranking is public from 'reveal' (Top 3 only) and complete once 'closed'
   const rankedRunways = [...new Map(
@@ -63,16 +70,27 @@ const { data, error } = await useAsyncData('my-looks', async (): Promise<MyLook[
   }))
   const resultByRunway = new Map(rankings)
 
-  return rows
+  const queen = rows
     .map(row => ({
       ...row,
       place: resultByRunway.get(row.category.runway.id)?.place ?? null,
       totalPoints: resultByRunway.get(row.category.runway.id)?.total_points ?? null,
     }))
-    .sort((a, b) => b.category.runway.week_number - a.category.runway.week_number)
+    .sort(newestWeekFirst)
+
+  return { queen, jury }
 })
 
-const looks = computed(() => data.value ?? [])
+const queenLooks = computed(() => data.value?.queen ?? [])
+const juryLooks = computed(() => data.value?.jury ?? [])
+// Page order: queen looks first, then jury looks (the dialog steps through both)
+const looks = computed(() => [...queenLooks.value, ...juryLooks.value])
+const sections = computed(() => [
+  { key: 'queen', title: 'Como concursante', items: queenLooks.value, ranked: true },
+  { key: 'jury', title: isJury.value ? 'Looks de jurado' : 'Como jurado o invitada especial', items: juryLooks.value, ranked: false },
+].filter(section => section.items.length > 0))
+// A single section needs no heading
+const showSectionTitles = computed(() => sections.value.length > 1)
 const queenName = computed(() => participant.value?.drag_name ?? participant.value?.name ?? '')
 
 // --- Look dialog: every photo of a look ------------------------------------
@@ -115,38 +133,45 @@ function pendingLabel(look: MyLook): string {
       {{ toErrorMessage(error) }}
     </p>
 
-    <ul v-else-if="looks.length" class="gallery">
-      <li v-for="look in looks" :key="look.id">
-        <article class="look-card">
-          <span v-if="look.place" class="look-card__rank">{{ look.place }}</span>
-          <span v-if="look.place === 1" class="look-card__crown" role="img" aria-label="Ganadora">♛</span>
-          <!-- Only the photo opens the dialog; the title below goes to the runway -->
-          <button
-            type="button"
-            class="look-card__open"
-            :aria-label="`Ver mi look de la semana ${look.category.runway.week_number}`"
-            @click="fullLook = look"
-          >
-            <LookCardPhoto
-              :src="look.image_url"
-              :alt="`Mi look de la semana ${look.category.runway.week_number}`"
-              :count="lookPhotos(look).length"
-            />
-          </button>
-          <NuxtLink :to="`/runways/${look.category.runway.id}`" class="look-card__body look-card__link">
-            <span class="look-card__name">{{ look.category.title }}</span>
-            <span class="look-card__intro">
-              Semana {{ look.category.runway.week_number }} ·
-              <template v-if="look.place">
-                Puesto {{ look.place }}<template v-if="look.totalPoints !== null"> · {{ look.totalPoints }} pts</template> ·
-              </template>
-              <template v-else-if="!isJury">{{ pendingLabel(look) }} ·</template>
-              Ver pasarela →
-            </span>
-          </NuxtLink>
-        </article>
-      </li>
-    </ul>
+    <template v-else-if="looks.length">
+      <section v-for="section in sections" :key="section.key" class="section">
+        <h2 v-if="showSectionTitles">
+          {{ section.title }}
+        </h2>
+        <ul class="gallery">
+          <li v-for="look in section.items" :key="look.id">
+            <article class="look-card">
+              <span v-if="look.place" class="look-card__rank">{{ look.place }}</span>
+              <span v-if="look.place === 1" class="look-card__crown" role="img" aria-label="Ganadora">♛</span>
+              <!-- Only the photo opens the dialog; the title below goes to the runway -->
+              <button
+                type="button"
+                class="look-card__open"
+                :aria-label="`Ver mi look de la semana ${look.category.runway.week_number}`"
+                @click="fullLook = look"
+              >
+                <LookCardPhoto
+                  :src="look.image_url"
+                  :alt="`Mi look de la semana ${look.category.runway.week_number}`"
+                  :count="lookPhotos(look).length"
+                />
+              </button>
+              <NuxtLink :to="`/runways/${look.category.runway.id}`" class="look-card__body look-card__link">
+                <span class="look-card__name">{{ look.category.title }}</span>
+                <span class="look-card__intro">
+                  Semana {{ look.category.runway.week_number }} ·
+                  <template v-if="look.place">
+                    Puesto {{ look.place }}<template v-if="look.totalPoints !== null"> · {{ look.totalPoints }} pts</template> ·
+                  </template>
+                  <template v-else-if="section.ranked">{{ pendingLabel(look) }} ·</template>
+                  Ver pasarela →
+                </span>
+              </NuxtLink>
+            </article>
+          </li>
+        </ul>
+      </section>
+    </template>
 
     <p v-else class="empty">
       {{ isJury ? 'Todavía no tienes looks de jurado.' : 'Todavía no has desfilado en ninguna pasarela.' }}
