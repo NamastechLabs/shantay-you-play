@@ -178,13 +178,22 @@ export const HELP_COPY = {
   blockedTitle: '¿Qué pasa si no estoy en la lista?',
   blockedText: 'Verás el mensaje «Tu correo no está en la lista de participantes» y volverás al inicio de sesión, sin acceso a nada. Prueba con el correo con el que te registraron o pídele a una persona del jurado que te añada.',
 
+  installTitle: 'Instala la app en tu móvil',
+  installIntro: `${APP_NAME} funciona como una app: ponla en la pantalla de inicio de tu móvil y ábrela con un toque, sin barra del navegador. No ocupa casi espacio y no hace falta ninguna tienda de aplicaciones.`,
+  install: [
+    { title: 'En Android', text: 'Abre el menú (las tres rayas de arriba a la izquierda) y pulsa «Instalar app». Si no aparece, usa el menú de Chrome (los tres puntos) y elige «Instalar aplicación» o «Añadir a la pantalla de inicio».' },
+    { title: 'En iPhone y iPad', text: 'Abre el menú y pulsa «Instalar app» para ver los pasos, o hazlo a mano: pulsa «Compartir» (el cuadrado con una flecha), elige «Añadir a pantalla de inicio» y pulsa «Añadir». Funciona desde Safari; si no ves la opción, abre la página en Safari.' },
+    { title: 'Siempre al día', text: 'La app se actualiza sola cuando hay una versión nueva. Necesita conexión a internet para mostrar los looks y guardar tus votos: sin conexión verás un aviso para reintentar.' },
+  ] satisfies HelpFact[],
+  installInApp: 'Si ya la tienes instalada, no verás la opción «Instalar app».',
+
   faqTitle: 'Dudas frecuentes',
   faq: [
     { title: 'Entré con otro correo y me rechazó. ¿Qué hago?', text: 'Inicia sesión con el mismo correo con el que te registró el jurado. Si quieres usar otro, pídele que cambie tu correo en Participantes.' },
     { title: 'Mi sesión se queda en «Confirmando sesión…»', text: 'Suele pasar en el navegador interno de apps como Instagram o WhatsApp. Abre el enlace en Safari o Chrome e inténtalo de nuevo.' },
     { title: '¿Cómo comparto mi look en el grupo de WhatsApp?', text: 'Cuando la semana esté en la pasarela, pulsa «A desfilar» en la página de inicio desde tu móvil. Se abre el menú de compartir con todas las fotos de tu look y tu presentación: elige WhatsApp y el grupo. En el ordenador solo se copia el texto, así que usa el móvil para enviar las fotos. Si tu categoría es grupal, también verás «A desfilar con mi banda», que comparte del mismo modo la presentación y las fotos de tu banda (el jurado no lo tiene). Si hay varias fotos, WhatsApp puede mostrar la presentación solo en la primera, o no mostrarla.' },
     { title: 'Mi foto de grupo no se sube', text: 'Las fotos de grupo deben ser apaisadas, en formato 16:9 o 5:3. Recórtala con el editor de tu móvil y vuelve a subirla.' },
-    { title: '¿Dónde están «Mi perfil», «Mis looks» y «Salir»?', text: 'En el móvil, pulsa tu foto de arriba a la derecha: se abre un panel con tu nombre, «Mi perfil», «Mis looks» y «Salir». Las demás páginas (semanas pasadas, ayuda, novedades y las del jurado) y el cambio de tema están en el botón de las tres rayas de arriba a la izquierda. En pantallas grandes todo está en el menú con tu nombre, arriba a la derecha.' },
+    { title: '¿Dónde están «Mi perfil», «Mis looks» y «Salir»?', text: 'En el móvil, pulsa tu foto de arriba a la derecha: se abre un panel con tu nombre, «Mi perfil», «Mis looks» y «Salir». Las demás páginas (semanas pasadas, ayuda, novedades y las del jurado) el cambio de tema y «Instalar app» (si la app aún no está instalada) están en el botón de las tres rayas de arriba a la izquierda. En pantallas grandes todo está en el menú con tu nombre, arriba a la derecha.' },
     { title: '¿Puedo cambiar mi nombre drag?', text: 'Claro, en «Mi perfil». Es el nombre que verán todas en la pasarela y en el Top 3.' },
     { title: '¿Por qué no veo la semana nueva?', text: 'Porque sigue en borrador. Cuando el jurado la pase al Werk Room, aparecerá.' },
   ] satisfies HelpFact[],

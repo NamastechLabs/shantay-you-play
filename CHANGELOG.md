@@ -5,6 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- The app can be installed on the home screen of phones and tablets (PWA): web app manifest with name, icons (including a maskable one and an opaque Apple touch icon) and standalone display, a service worker that only caches the static build files, fonts and icons (pages, Supabase and `/api` always use the network and the theme cookie still renders on the server), automatic updates after each deploy and a Spanish offline page. An "Instalar app" item in the user menus opens the browser's install dialog on Android and Chrome, or the Share steps on iPhone and iPad, and is hidden when the app is already installed. The browser bar color follows the active theme. The help page has a new "Instala la app en tu móvil" section. No migration. Uses `@vite-pwa/nuxt` with the `buildSW` strategy (DRG-18)
+
+### Changed
+
+- Vote page on phones: the kicker ("Semana N · título") has the full width on its own row, with the title and "Ver la pasarela" below it, and the ballot button shows a send icon and "Enviar" instead of "Votar" / "Actualizar", which did not fit (DRG-18)
+
 ## [0.11.0] - 2026-11-18
 
 ### Changed
