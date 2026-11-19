@@ -1,6 +1,6 @@
 ---
 name: release
-description: Prepare a release of Shantay You Play (project key DRG). Use when the user says "release", "prepare the release", "create version 0.3.0", or invokes /release. Picks the semantic version, dates and closes the changelog, adds the in-app release notes entry, bumps package.json, sets the Jira fix version on every shipped ticket and lists what must happen before and after merging. Also used by work-on-ticket for its final commit. Leaves the edits uncommitted for review. Never commits, pushes, opens a PR, tags or releases the Jira version without being asked.
+description: Prepare a release of Shantay You Play (project key DRG). Use when the user says "release", "prepare the release", "create version 0.3.0", or invokes /release. Picks the semantic version, dates and closes the changelog, adds the in-app release notes entry, bumps package.json, and lists what must happen before and after merging. Also used by work-on-ticket for its final commit. Leaves the edits uncommitted for review. Never commits, pushes, opens a PR or tags without being asked. Jira fix versions are not used.
 ---
 
 # Prepare a release
@@ -26,7 +26,7 @@ Argument (optional): the version (`0.3.0`). If none is given, pick it in step 2.
 - **minor**: any new feature.
 - **major**: breaking changes (data or behavior people relied on).
 
-Ask if unsure. The tag, the Jira fix version, the changelog heading and `package.json` all use the same number (`0.3.0`; the tag adds a `v`).
+Ask if unsure. The tag, the changelog heading and `package.json` all use the same number (`0.3.0`; the tag adds a `v`).
 
 ## 3. Date
 
@@ -44,17 +44,11 @@ Use the day the release is planned to be **merged**, not necessarily today, in `
 
 **Do not commit yet.** Leave the edits in the working tree and show them (`git status --short`, `git diff --stat`) so the user can review and change them. Once the user approves, commit as `DRG-12 Release vX.Y.Z` on a ticket branch, or `Release vX.Y.Z` when there is no single ticket (several keys may be listed in the body).
 
-## 5. Jira fix version
-
-- The Jira version must be named exactly `X.Y.Z` (no `v`). The Atlassian MCP cannot create versions: if it does not exist, ask the user to create it (project `DRG` → Releases).
-- Then set `fixVersions` to that version on **every** ticket listed in step 1, with `editJiraIssue`. This is the only Jira write done without asking.
-- Never comment on a ticket, transition it or mark the Jira version as released unless the user asks.
-
-## 6. Report
+## 5. Report
 
 Say plainly what was done and what is left:
 
 - Version, date and the tickets in it.
 - **Migrations:** if any file under `supabase/migrations/` is part of this release, list it. It must be applied to Supabase **before** merging.
-- **Not done, on purpose:** commit (until the user reviews the diff), push, PR, tag, marking the Jira version as released.
-- **After merging:** tag the merge commit (`git tag vX.Y.Z <merge commit> && git push origin vX.Y.Z`), check the deploy, and mark the version as released in Jira. Offer to do the tag; do it only if asked.
+- **Not done, on purpose:** commit (until the user reviews the diff), push, PR, tag.
+- **After merging:** tag the merge commit (`git tag vX.Y.Z <merge commit> && git push origin vX.Y.Z`), and check the deploy. Offer to do the tag; do it only if asked.
