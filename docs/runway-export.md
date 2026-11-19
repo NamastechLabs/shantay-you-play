@@ -13,10 +13,10 @@ runway.json
 <category-slug>/jury/<queen>-foto-1.webp
 ```
 
-Each category has `type` (`individual` or `group`). For group categories it also has `groups[]` (`name`, `intro`, `photos`, `members` as drag names) and every queen's look has `group` (her group's name; `null` in individual categories and for jury looks). `runway.json` has the same shape as the endpoint (`runway`, `categories[].{title, intro, looks, jury_looks}`), except each photo has `file` (path inside the ZIP) instead of `url`.
+Each category has `subcategories` (names, empty when there are none) and every queen's look has `subcategory` (the one she picked; `null` for jury looks and when she has not picked). Each category has `type` (`individual` or `group`). For group categories it also has `groups[]` (`name`, `intro`, `photos`, `members` as drag names) and every queen's look has `group` (her group's name; `null` in individual categories and for jury looks). `runway.json` has the same shape as the endpoint (`runway`, `categories[].{title, intro, looks, jury_looks}`), except each photo has `file` (path inside the ZIP) instead of `url`.
 
 ## How it works
 
 - `app/composables/useRunwayExport.ts` reads the runway, categories, looks and jury looks with the signed-in judge's Supabase client (RLS applies; judges can read everything), fetches the public photo URLs and zips them in the browser with [`fflate`](https://github.com/101arrowz/fflate) (loaded on demand; photos are stored, not deflated).
 - No commentary token and no service role are involved. Any week can be downloaded, whatever its status.
-- No database changes.
+- No database changes of its own: it reads `category_subcategories` and `category_subcategory_picks` (see `docs/subcategories.md`).

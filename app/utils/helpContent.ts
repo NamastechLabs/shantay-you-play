@@ -70,7 +70,7 @@ export const HELP_COPY = {
   rolesTitle: 'Dos tipos de reina',
   roles: [
     { title: 'Concursante', text: 'Sube sus looks, desfila, vota y compite por la corona de la semana.' },
-    { title: 'Jurado', text: 'Gestiona semanas, categorías, grupos y participantes, sube el vídeo de introducción de la pasarela (vertical 9:16, MP4, máximo 50 MB; reemplaza al anterior) cambia la etapa de cada pasarela (para pasar del Werk Room a la Pasarela, cada grupo de una categoría grupal necesita al menos una foto) y descarga un ZIP de la semana (datos y fotos) para escribir los comentarios con una IA. También desfila, pero sus looks no se votan ni puntúan. Sus looks y presentaciones, igual que los de las invitadas especiales, están en «Mis looks». En las categorías grupales vota qué grupo gana.' },
+    { title: 'Jurado', text: 'Gestiona semanas, categorías, subcategorías (opcionales, solo en categorías individuales: al menos una por reina; puede asignar o liberar la de cualquier reina), grupos y participantes, sube el vídeo de introducción de la pasarela (vertical 9:16, MP4, máximo 50 MB; reemplaza al anterior) cambia la etapa de cada pasarela (para pasar del Werk Room a la Pasarela, cada grupo de una categoría grupal necesita al menos una foto) y descarga un ZIP de la semana (datos y fotos) para escribir los comentarios con una IA. También desfila, pero sus looks no se votan ni puntúan. Sus looks y presentaciones, igual que los de las invitadas especiales, están en «Mis looks». En las categorías grupales vota qué grupo gana.' },
   ] satisfies HelpFact[],
 
   stagesTitle: 'Las etapas de cada semana',
@@ -88,7 +88,7 @@ export const HELP_COPY = {
       title: 'Werk Room',
       who: 'Concursantes',
       roles: ['concursante', 'invitado'],
-      text: 'Hora de coser, pegar y brillar. Sube hasta 4 fotos de tu look y escribe tu presentación. La Foto 1 es obligatoria y puedes cambiarlo todo mientras el Werk Room siga abierto. Aquí solo ves tus propios looks (y, en una categoría grupal, los de tu grupo): ¡el misterio es parte del show! En la página de inicio, una cuenta atrás te dice cuánto falta para que abra la pasarela.',
+      text: 'Hora de coser, pegar y brillar. Sube hasta 4 fotos de tu look y escribe tu presentación. La Foto 1 es obligatoria y puedes cambiarlo todo mientras el Werk Room siga abierto. Aquí solo ves tus propios looks (y, en una categoría grupal, los de tu grupo): ¡el misterio es parte del show! En la página de inicio, una cuenta atrás te dice cuánto falta para que abra la pasarela. Si la categoría tiene subcategorías, las verás allí (y hasta que elijas la tuya no aparecerán la cuenta atrás ni el botón para subir tu look): las reinas eligen una, por turnos, siguiendo la clasificación de la semana anterior (la primera de la lista elige antes; si no hay clasificación, por orden alfabético). Solo puedes elegir entre las que quedan libres y, cuando elijas, no podrás cambiarla; si necesitas un cambio, díselo al jurado.',
     },
     {
       icon: '👠',

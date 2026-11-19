@@ -15,6 +15,8 @@ const props = defineProps<{
   concealed?: boolean
   /** Heading of the row; defaults to the queen's name (e.g. the category title on the queen's own page) */
   title?: string
+  /** Sub-category the queen picked for this category; shown between the photos and the intro */
+  subcategory?: string | null
 }>()
 
 const emit = defineEmits<{ changed: [] }>()
@@ -241,6 +243,9 @@ async function save(): Promise<void> {
       </li>
     </ul>
 
+    <p v-if="subcategory" class="look-slot__subcategory">
+      Subcategoría: <strong>{{ subcategory }}</strong>
+    </p>
 
     <form :id="formId" class="look-slot__form" @submit.prevent="save">
       <template v-if="editable">

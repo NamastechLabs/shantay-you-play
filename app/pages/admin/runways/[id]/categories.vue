@@ -187,6 +187,7 @@ async function createCategory(): Promise<void> {
           Eliminar
         </button>
         <AdminCategoryGroups v-if="category.kind === 'group'" :category="category" />
+        <AdminCategorySubcategories v-else-if="category.kind === 'individual'" :category="category" />
         <button type="submit" class="btn btn--primary" :disabled="!categoryChanged(category) || categorySavingId !== null || groupBlocked(category)">
           {{ categorySavingId === category.id ? 'Guardando…' : 'Guardar' }}
         </button>
