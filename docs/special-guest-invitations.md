@@ -2,6 +2,14 @@
 
 Status: **planned, not implemented.** This document records the analysis and the decisions taken, so the feature can be built later without redoing the discussion.
 
+## Promoting a special guest to contestant (DRG-21)
+
+A special guest (`role = 'invitado'`) can become a queen (`concursante`). Judges do it in **Participantes** (edit the person, "Pasar a concursante"), which calls the judge-only function `promote_guest_to_contestant(p_participant_id)` (migration `20261119000000_change_participant_role.sql`).
+
+- Only `invitado` → `concursante` is supported; any other change fails. The `role` column still has no client UPDATE grant.
+- Only the `role` column is updated, in one statement. Nothing is deleted, so the person keeps their `runway_guests` rows (invitation history), their `jury_looks` (they stay jury looks, they are not copied to `looks`) and their `votes`.
+- Side effects, accepted: their old guest ballots stop being anonymous after the change (`votes_select` only hides ballots of people who are currently guests), and they can no longer edit their old jury looks themselves (judges still can).
+
 ## Goal
 
 Special guests can attend some runways as voters without registering on the site. A judge creates an invitation link that expires after a few hours. The guest can only see the **current** category, nothing from past categories, and casts a Top 3 ballot like any participant.

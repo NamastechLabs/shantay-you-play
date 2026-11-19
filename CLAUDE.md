@@ -68,15 +68,14 @@
   | adds or changes a feature or a user flow | the technical docs (`docs/<feature>.md`, or the README for small things) **and** the in-app help (`app/utils/helpContent.ts`, `app/pages/help.vue`); fix any help text the change makes wrong |
   | changes the database | the migration, `app/types/database.types.ts` and the docs; the PR says it adds a migration |
   | has user-visible or developer-visible effect | an `Unreleased` line in `CHANGELOG.md`, ending with the issue key |
-  | is the release (last commit) | `CHANGELOG.md` version, `package.json`, `app/utils/releaseNotes.ts` and the Jira fix version, through the `release` skill |
+  | is the release (last commit) | `CHANGELOG.md` version, `package.json`, and `app/utils/releaseNotes.ts`, through the `release` skill |
 
 - **Releases:** merging to `main` deploys, so the version is decided in the PR, never in a later commit on `main`. Use semantic versioning (patch = fix, minor = feature, major = breaking). Releases are prepared with the `release` skill (`.claude/skills/release/`), which `work-on-ticket` also uses for its last commit. The release commit does all of this together:
   1. Renames `Unreleased` to `## [X.Y.Z] - date` in `CHANGELOG.md`, adds a fresh `Unreleased` and sets `version` in `package.json`. The date is the day the release is planned to be **merged**; if the merge happens another day, fix the date in `CHANGELOG.md` and `releaseNotes.ts` before merging.
   2. Adds the release to the in-app release notes (see below).
-  3. Names the Jira fix version after the version (see below).
 
   After merging, tag the merge commit `vX.Y.Z`. Changes made directly on `main` (docs, skills, chores) that need a release go through a `chore/release-X.Y.Z` PR, never a version bump committed on `main`.
-- **Jira fix version:** every release has a Jira version named exactly like the semantic version (`0.2.0`, no `v`), and every ticket shipped in it gets that fix version, so the Jira Releases view mirrors the changelog. The Atlassian MCP cannot create versions: ask the user to create the version in Jira (project `DRG` → Releases) if it does not exist, then set `fixVersions` on each ticket with `editJiraIssue`. Marking the version as released in Jira happens after the merge is deployed and is the user's call, like any other status change.
+- **No Jira fix versions:** the team is a single developer, so Jira versions are not used. The version lives in `CHANGELOG.md`, `package.json`, `releaseNotes.ts` and the `vX.Y.Z` git tag; never create Jira versions, set `fixVersions` or mark versions as released, and do not ask the user to.
 - **Release notes in the app:** users see what is new at `/release-notes` (link "Novedades" in the user menu). The content lives in `app/utils/releaseNotes.ts`, newest first, and **contains every version**: one entry per release with the version, the date it went live (`YYYY-MM-DD`, equal to the changelog date), a short title and one sentence per **functional** feature users will notice (what they can now do, in Spanish, no technical terms). A release with nothing users can see still gets an entry, with the single feature `Mejoras y correcciones internas.`. Technical details stay in `CHANGELOG.md`.
 - **Migrations:** a PR that adds a migration under `supabase/migrations/` must say so, and the migration is applied to Supabase before the PR is merged.
 - **When asked to work on a ticket** ("work on DRG-12"), use the `work-on-ticket` skill (`.claude/skills/work-on-ticket/`).

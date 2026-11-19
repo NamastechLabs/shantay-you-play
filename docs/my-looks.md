@@ -2,8 +2,9 @@
 
 `/my-looks` (`app/pages/my-looks.vue`) lists the signed-in participant's own looks, newest week first, with a gallery dialog for every photo and the intro.
 
-- **Queens** (`concursante`): read from `looks`, with their place and points once the runway reaches `reveal` (Top 3) or `closed` (full ranking, via `runway_top_three` / `runway_ranking`).
-- **Jury and special guests** (`jurado`, `invitado`): read from `jury_looks` (filtered by `participant_id`). They are never ranked, so no place or points are shown, and the card only links to the runway.
+- **Looks as a queen** (table `looks`): shown with their place and points once the runway reaches `reveal` (Top 3) or `closed` (full ranking, via `runway_top_three` / `runway_ranking`).
+- **Looks as jury or special guest** (table `jury_looks`, filtered by `participant_id`): never ranked, so no place or points are shown, and the card only links to the runway.
+- **Both tables are always read**, so someone who was a special guest and is now a queen (DRG-21) sees both: "Como concursante" and "Como jurado o invitada especial". With looks in only one table there is no section heading (judges and guests see their looks as "Looks de jurado" when they have both kinds, which only happens after a role change). The gallery dialog steps through both lists.
 
 Each card links to its runway. The empty state differs by role.
 

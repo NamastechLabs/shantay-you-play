@@ -23,7 +23,6 @@ Mark each box, or write `N/A: reason`.
 - [ ] Version decided (patch / minor / major) and set in `package.json`
 - [ ] `CHANGELOG.md`: `Unreleased` renamed to `## [X.Y.Z] - date` (date of the planned merge)
 - [ ] `app/utils/releaseNotes.ts`: entry for this version (every version has one; internal-only releases use `Mejoras y correcciones internas.`), same date as the changelog
-- [ ] Jira fix version `X.Y.Z` set on every ticket in the release
 - [ ] Not a release yet (say why)
 
 ## Test plan
@@ -33,4 +32,3 @@ Mark each box, or write `N/A: reason`.
 ## After merging
 
 - [ ] Tag the merge commit `vX.Y.Z` and check the deploy
-- [ ] Mark the version as released in Jira

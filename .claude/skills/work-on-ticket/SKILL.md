@@ -56,12 +56,12 @@ Otherwise, implement directly. Say in one line which path you chose and why.
 
 Do this after the feature commit is approved and made, as the last commit of the branch, with the **`release` skill** (`.claude/skills/release/`), so the version is decided in the PR and never edited on `main` afterwards. Skip it only if the user says the change should not be released yet.
 
-In short, the skill picks the semantic version, dates and closes the changelog, sets `package.json`, adds the entry to `app/utils/releaseNotes.ts` (every version gets one) and sets the Jira fix version on the ticket. Leave the release edits uncommitted for review like any other change, and commit as `DRG-12 Release vX.Y.Z` only when the user approves.
+In short, the skill picks the semantic version, dates and closes the changelog, sets `package.json`, adds the entry to `app/utils/releaseNotes.ts` (every version gets one). Leave the release edits uncommitted for review like any other change, and commit as `DRG-12 Release vX.Y.Z` only when the user approves.
 
 If the branch adds a migration under `supabase/migrations/`, say so explicitly: it must be applied to Supabase **before** merging, because the merge deploys.
 
 ## 8. Stop and report
 
 - Summarize what changed, how it was verified, the branch name and the release version.
-- **Do not commit without review, push, open a PR, comment on the ticket or transition its status** unless the user asks (setting the fix version in step 7 is the only Jira write done by default). Offer these as next steps.
-- After the PR is merged, remind the user to tag the merge commit (`git tag vX.Y.Z && git push origin vX.Y.Z`) and to mark the version as released in Jira once it is deployed. Only do either if asked.
+- **Do not commit without review, push, open a PR, comment on the ticket or transition its status** unless the user asks (Jira fix versions are not used). Offer these as next steps.
+- After the PR is merged, remind the user to tag the merge commit (`git tag vX.Y.Z && git push origin vX.Y.Z`) once it is deployed. Only do it if asked.

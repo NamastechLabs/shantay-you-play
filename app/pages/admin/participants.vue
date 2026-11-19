@@ -107,6 +107,32 @@ async function submit(): Promise<void> {
   }
 }
 
+// --- Promote a special guest to queen -------------------------------------
+const promoting = ref(false)
+
+async function promoteToContestant(participant: ParticipantRow): Promise<void> {
+  const confirmed = window.confirm(
+    `¿Pasar a ${participant.drag_name ?? participant.name} de invitada especial a concursante? Conservará sus invitaciones, sus looks de jurado y sus votos.`,
+  )
+  if (!confirmed || promoting.value) return
+
+  promoting.value = true
+  errorMessage.value = null
+  try {
+    const { error } = await supabase.rpc('promote_guest_to_contestant', { p_participant_id: participant.id })
+    if (error) throw error
+
+    modalOpen.value = false
+    await refresh()
+  }
+  catch (error) {
+    errorMessage.value = toErrorMessage(error)
+  }
+  finally {
+    promoting.value = false
+  }
+}
+
 // --- Remove (only people who haven't signed in yet) -----------------------
 const removeError = ref<string | null>(null)
 
@@ -195,10 +221,10 @@ async function removeParticipant(participant: ParticipantRow): Promise<void> {
         Cuando esta persona inicie sesión con Google o Microsoft usando este correo, quedará vinculada automáticamente.
       </p>
       <p v-else-if="editing.user_id" class="hint">
-        Esta persona ya inició sesión: el correo y el rol no se pueden cambiar.
+        Esta persona ya inició sesión: el correo no se puede cambiar.
       </p>
       <p v-else class="hint">
-        Mientras no inicie sesión puedes corregir el correo. El rol no se puede cambiar.
+        Mientras no inicie sesión puedes corregir el correo.
       </p>
 
       <form class="form" @submit.prevent="submit">
@@ -246,6 +272,20 @@ async function removeParticipant(participant: ParticipantRow): Promise<void> {
               {{ label }}
             </option>
           </select>
+        </div>
+
+        <div v-if="editing?.role === 'invitado'" class="field">
+          <p class="hint">
+            Si ya es parte de las concursantes, puedes cambiar su rol. Conserva sus invitaciones, sus looks de jurado y sus votos.
+          </p>
+          <button
+            type="button"
+            class="btn btn--secondary btn--block"
+            :disabled="promoting"
+            @click="promoteToContestant(editing)"
+          >
+            {{ promoting ? 'Cambiando…' : 'Pasar de invitada especial a concursante' }}
+          </button>
         </div>
 
         <p v-if="errorMessage" class="form-error" role="alert">
