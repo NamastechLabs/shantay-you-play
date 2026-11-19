@@ -70,19 +70,25 @@ export function formatRunwayTime(timestamp: string): string {
 
 const pad2 = (value: number): string => String(value).padStart(2, '0')
 
-/**
- * Time left until a runway, as a countdown:
- * more than 24 h -> "2 días 03:04:05", more than 1 h -> "03:04:05", more than 1 min -> "04:05", else "05".
- */
-export function formatCountdown(milliseconds: number): string {
+export interface CountdownUnit {
+  /** Two digits, e.g. "05" */
+  value: string
+  /** "día" / "días", "hora" / "horas"... */
+  label: string
+}
+
+/** Time left until a runway, split into days, hours, minutes and seconds (always the four of them) */
+export function splitCountdown(milliseconds: number): CountdownUnit[] {
   const total = Math.max(0, Math.floor(milliseconds / 1000))
   const days = Math.floor(total / 86_400)
   const hours = Math.floor((total % 86_400) / 3600)
   const minutes = Math.floor((total % 3600) / 60)
   const seconds = total % 60
 
-  if (total > 86_400) return `${days} ${days === 1 ? 'día' : 'días'} ${pad2(hours)}:${pad2(minutes)}:${pad2(seconds)}`
-  if (total > 3600) return `${pad2(hours)}:${pad2(minutes)}:${pad2(seconds)}`
-  if (total > 60) return `${pad2(minutes)}:${pad2(seconds)}`
-  return pad2(seconds)
+  return [
+    { value: pad2(days), label: days === 1 ? 'Día' : 'Días' },
+    { value: pad2(hours), label: hours === 1 ? 'Hora' : 'Horas' },
+    { value: pad2(minutes), label: minutes === 1 ? 'Minuto' : 'Minutos' },
+    { value: pad2(seconds), label: seconds === 1 ? 'Segundo' : 'Segundos' },
+  ]
 }

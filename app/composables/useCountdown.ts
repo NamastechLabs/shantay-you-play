@@ -18,7 +18,7 @@ export function useCountdown(target: MaybeRefOrGetter<string | null | undefined>
     if (!at || now.value === null) return null
     return new Date(at).getTime() - now.value
   })
-  const label = computed(() => (remaining.value === null ? '' : formatCountdown(remaining.value)))
+  const units = computed(() => (remaining.value === null ? [] : splitCountdown(remaining.value)))
 
-  return { remaining, label }
+  return { remaining, units }
 }

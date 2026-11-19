@@ -17,14 +17,7 @@ Status: **implemented** (DRG-13). Designs: Figma `drag-race-game`, frames "Homep
 
 ## Werk Room countdown
 
-While the week is in `werk_room`, the card counts down to the runway's `runway_date` (`useCountdown`, ticking once a second on the client only, so server and client markup match). Format (`formatCountdown` in `app/utils/runwayFormat.ts`):
-
-| Time left | Example |
-|---|---|
-| more than 24 h | `2 días 03:04:05` (`1 día …` for one day) |
-| more than 60 min | `03:04:05` |
-| more than 1 min | `04:05` |
-| otherwise | `05` |
+While the week is in `werk_room`, the card counts down to the runway's `runway_date` (`useCountdown`, ticking once a second on the client only, so server and client markup match). It is shown as four flip-clock tiles (days, hours, minutes, seconds, two digits each, label underneath) in the theme's primary color. `splitCountdown` in `app/utils/runwayFormat.ts` returns the four units; all four are always shown, even when days or hours are `00`.
 
 At zero it shows "¡La pasarela está a punto de abrir!" until a jury member opens the runway (the realtime refresh then changes the card).
 

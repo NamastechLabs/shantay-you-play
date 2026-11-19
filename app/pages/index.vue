@@ -246,7 +246,7 @@ async function revealTopThree(): Promise<void> {
   await refresh()
 }
 // Werk Room: counts down to the runway's date
-const { remaining: countdownRemaining, label: countdownLabel } = useCountdown(
+const { remaining: countdownRemaining, units: countdownUnits } = useCountdown(
   () => (weekRunway.value?.status === 'werk_room' ? weekRunway.value.runway_date : null),
 )
 // Whether the signed-in person already cast a ballot in the week's runway (voting only)
@@ -415,9 +415,12 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
           <p class="kicker">
             La pasarela abre en
           </p>
-          <p class="countdown__time" role="timer">
-            {{ countdownLabel }}
-          </p>
+          <div class="countdown__units" role="timer">
+            <div v-for="unit in countdownUnits" :key="unit.label.slice(0, 2)" class="countdown__unit">
+              <span class="countdown__tile">{{ unit.value }}</span>
+              <span class="countdown__label">{{ unit.label }}</span>
+            </div>
+          </div>
         </template>
         <p v-else class="countdown__time countdown__time--soon">
           ¡La pasarela está a punto de abrir!
@@ -655,14 +658,61 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
 
 .countdown__time {
   font-family: var(--font-display);
-  font-size: 1.75rem;
+  font-size: 1.125rem;
   line-height: 1.2;
   color: var(--color-title);
-  font-variant-numeric: tabular-nums;
+}
 
-  &--soon {
-    font-size: 1.125rem;
+// Flip-clock tiles: days, hours, minutes and seconds, each with its label underneath
+.countdown__units {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 5rem));
+  gap: var(--space-2);
+  justify-content: start;
+  justify-items: center;
+}
+
+.countdown__unit {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: center;
+  width: 100%;
+  max-width: 5rem;
+}
+
+.countdown__tile {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1;
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 1rem + 3vw, 2.25rem);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-on-primary);
+  background-color: var(--color-primary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card), var(--glow-primary);
+
+  // The thin line across the middle of the tile, like a flip clock
+  &::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    top: 50%;
+    height: 1px;
+    background-color: color-mix(in srgb, var(--color-on-primary) 35%, transparent);
   }
+}
+
+.countdown__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
 }
 
 // Kicker, date and status badge: one line each, so nothing wraps awkwardly on a phone

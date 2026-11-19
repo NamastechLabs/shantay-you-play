@@ -5,6 +5,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-11-19
+
+### Changed
+
+- The Werk Room countdown on the homepage is now four flip-clock tiles (days, hours, minutes, seconds) instead of a line of text.
+
 ## [0.14.0] - 2026-11-19
 
 ### Added

@@ -18,6 +18,14 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.14.1',
+    date: '2026-11-19',
+    title: 'Nueva cuenta atrás',
+    features: [
+      'La cuenta atrás de la pasarela tiene un diseño nuevo: días, horas, minutos y segundos en cuatro casillas.',
+    ],
+  },
+  {
     version: '0.14.0',
     date: '2026-11-19',
     title: 'Subcategorías',
