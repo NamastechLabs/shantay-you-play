@@ -673,6 +673,7 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
 }
 
 .countdown__unit {
+  min-width: 0;
   display: grid;
   gap: var(--space-2);
   justify-items: center;
@@ -687,7 +688,7 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
   width: 100%;
   aspect-ratio: 1;
   font-family: var(--font-display);
-  font-size: clamp(1.5rem, 1rem + 3vw, 2.25rem);
+  font-size: clamp(1.25rem, 0.9rem + 2.5vw, 2rem);
   font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -708,11 +709,19 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
 }
 
 .countdown__label {
-  font-size: 0.75rem;
+  max-width: 100%;
+  // Phones: small enough for "SEGUNDOS" to fit under its tile, so all four columns stay the same width
+  font-size: 0.625rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
+  white-space: nowrap;
   color: var(--color-text-muted);
+
+  @media (min-width: 48rem) {
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+  }
 }
 
 // Kicker, date and status badge: one line each, so nothing wraps awkwardly on a phone
