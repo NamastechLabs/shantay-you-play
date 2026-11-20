@@ -18,6 +18,18 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.16.1',
+    date: '2026-11-20',
+    title: 'Panel del jurado más cómodo en el móvil',
+    features: [
+      'En el iPhone, al tocar una semana del panel se abre la semana correcta y no siempre la primera.',
+      'Las pantallas del panel del jurado se ven más compactas en el móvil: las semanas aparecen como tarjetas y los pasos del estado ya no se cortan.',
+      'Los botones de cada categoría están mejor ordenados: Guardar arriba y, debajo, Subcategorías y Eliminar.',
+      'La pantalla de subcategorías es más cómoda y la lista de elección de las reinas se lee completa.',
+      'Tu perfil ocupa menos espacio en el móvil.',
+    ],
+  },
+  {
     version: '0.16.0',
     date: '2026-11-20',
     title: 'Avisos en pantalla',

@@ -192,7 +192,7 @@ async function deleteGroups(): Promise<void> {
 
   <!-- Teleported: the panel must not live inside the category <form> -->
   <Teleport to="body">
-    <AppDrawer :open="open" :title="category.title" @close="open = false">
+    <AppDrawer class="drawer--admin" :open="open" :title="category.title" @close="open = false">
       <p v-if="loading" class="hint" role="status">
         Cargando…
       </p>

@@ -169,11 +169,11 @@ async function createCategory(): Promise<void> {
       <p v-if="groupBlocked(category)" class="form-error" role="alert">
         {{ GROUP_NEEDS_EMPTY_RUNWAY }}
       </p>
-      <div class="form-actions">
+      <div class="form-actions form-actions--stack">
         <button
           v-if="canEditLooks(runway.status)"
           type="button"
-          class="btn btn--ghost"
+          class="btn btn--danger"
           :disabled="categorySavingId !== null"
           @click="deleteCategory(category)"
         >
@@ -181,7 +181,7 @@ async function createCategory(): Promise<void> {
         </button>
         <AdminCategoryGroups v-if="category.kind === 'group'" :category="category" />
         <AdminCategorySubcategories v-else-if="category.kind === 'individual'" :category="category" />
-        <button type="submit" class="btn btn--primary" :disabled="!categoryChanged(category) || categorySavingId !== null || groupBlocked(category)">
+        <button type="submit" class="btn btn--primary form-actions__primary" :disabled="!categoryChanged(category) || categorySavingId !== null || groupBlocked(category)">
           {{ categorySavingId === category.id ? 'Guardando…' : 'Guardar' }}
         </button>
       </div>

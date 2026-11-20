@@ -5,6 +5,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.16.1] - 2026-11-20
+
+### Changed
+
+- On phones the admin pages use smaller type, buttons, inputs and spacing on the 8px grid (DRG-22)
+- On phones the admin weeks table shows each week as a stacked card, and the participants rows use the full width (DRG-22)
+- On phones the runway status steps show in two columns instead of being cut off (DRG-22)
+- On phones the category actions put Guardar full width first, with Subcategorías and a red Eliminar side by side below (DRG-22)
+- The sub-categories drawer is compact on phones and each queen's pick is a full-width select (DRG-22)
+- The profile page on phones has a smaller avatar beside its photo button and a full-width save button (DRG-22)
+
+### Fixed
+
+- On iPhone, tapping a week in the admin table always opened the first week; the whole row is now clickable without an overlay that iOS Safari stretched over the table (DRG-22)
+- The admin categories tab no longer scrolls sideways on phones (DRG-22)
+
 ## [0.16.0] - 2026-11-20
 
 ### Added

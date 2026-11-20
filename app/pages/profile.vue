@@ -115,7 +115,7 @@ async function submit(): Promise<void> {
         </span>
 
         <div class="profile__avatar-actions">
-          <label class="btn btn--ghost">
+          <label class="btn btn--secondary">
             {{ currentAvatar ? 'Cambiar foto' : 'Subir foto' }}
             <input type="file" accept="image/*" class="sr-only" @change="onFilePicked">
           </label>
