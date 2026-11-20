@@ -15,7 +15,7 @@ interface ShowOptions {
 }
 
 /** Success and info messages close after this long; errors stay until dismissed */
-export const SNACKBAR_DURATION = 4000
+export const SNACKBAR_DURATION = 3000
 
 let timer: ReturnType<typeof setTimeout> | undefined
 

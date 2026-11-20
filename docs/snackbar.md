@@ -23,7 +23,7 @@ snackbar.dismiss()
 | | |
 |---|---|
 | **Queue** | **Replace**: a new message replaces the current one, so there is never more than one snackbar and no backlog of stale messages. |
-| **Closing** | `success` and `info` close after 4 s (`SNACKBAR_DURATION`). `error` stays until dismissed with its close button (or replaced by the next message). `duration` overrides it. |
+| **Closing** | `success` and `info` close after 3 s (`SNACKBAR_DURATION`). `error` stays until dismissed with its close button (or replaced by the next message). `duration` overrides it. |
 | **Position** | Phones: bottom center. Desktop (from 48rem): bottom left. `max-width: 28rem`, clear of the safe area (`env(safe-area-inset-bottom)`). |
 | **Pinned bars** | `useSnackbarOffset(el)` keeps it above a pinned element: the vote page passes the ballot bar, and the offset follows its height (`--snackbar-offset`). |
 | **Modals** | A modal `<dialog>` makes everything outside it inert, so while one is open `AppSnackbar` moves its element inside the dialog (and back to `<body>` when it closes). Errors raised from a form in a modal are therefore visible and dismissible. |
