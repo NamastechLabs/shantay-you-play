@@ -19,7 +19,7 @@ const { saveGroupPhotos, saving } = useGroupPhotos()
 const files = ref<Partial<Record<GroupPhotoSlot, File>>>({})
 const removed = ref<Set<GroupPhotoSlot>>(new Set())
 const previews = ref<Partial<Record<GroupPhotoSlot, string>>>({})
-const errorMessage = ref<string | null>(null)
+const snackbar = useSnackbar()
 // Bumping the key remounts the file inputs, which is the only way to clear them
 const inputKey = ref(0)
 
@@ -33,7 +33,6 @@ function reset(): void {
   revokePreviews()
   files.value = {}
   removed.value = new Set()
-  errorMessage.value = null
   inputKey.value++
 }
 
@@ -57,12 +56,11 @@ async function onFileChange(slot: GroupPhotoSlot, event: Event): Promise<void> {
   const file = input.files?.[0]
   if (!file) return
 
-  errorMessage.value = null
   try {
     await assertGroupPhotoRatio(file)
   }
   catch (error) {
-    errorMessage.value = toErrorMessage(error)
+    snackbar.error(toErrorMessage(error))
     input.value = ''
     return
   }
@@ -86,7 +84,6 @@ function removeSlot(slot: GroupPhotoSlot): void {
 
 async function save(): Promise<void> {
   if (!changed.value || saving.value) return
-  errorMessage.value = null
   try {
     await saveGroupPhotos({
       photos: props.photos,
@@ -96,9 +93,10 @@ async function save(): Promise<void> {
       removed: [...removed.value],
     })
     emit('changed')
+    snackbar.success('Fotos guardadas.')
   }
   catch (error) {
-    errorMessage.value = toErrorMessage(error)
+    snackbar.error(toErrorMessage(error))
   }
 }
 </script>
@@ -169,9 +167,6 @@ async function save(): Promise<void> {
         </li>
       </ul>
 
-      <p v-if="errorMessage" class="form-error" role="alert">
-        {{ errorMessage }}
-      </p>
       <div class="group-photos__footer">
         <button type="button" class="btn btn--ghost" :disabled="!changed || saving" @click="reset">
           Descartar

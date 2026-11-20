@@ -27,7 +27,7 @@ const files = ref<Partial<Record<LookSlot, File>>>({})
 const removed = ref<Set<LookSlot>>(new Set())
 const intro = ref(props.look?.intro ?? '')
 const saving = ref(false)
-const errorMessage = ref<string | null>(null)
+const snackbar = useSnackbar()
 // Bumping the key remounts the file inputs, which is the only way to clear them
 const inputKey = ref(0)
 
@@ -48,7 +48,6 @@ function reset(): void {
   files.value = {}
   removed.value = new Set()
   intro.value = props.look?.intro ?? ''
-  pickNotice.value = null
   inputKey.value++
 }
 
@@ -76,16 +75,13 @@ function onFileChange(slot: LookSlot, event: Event): void {
 // The photos that are shown, and the slots still free (the first free one is the front until it is set)
 const filledSlots = computed(() => LOOK_SLOTS.filter(slot => srcFor(slot.key)))
 const freeSlots = computed(() => LOOK_SLOTS.filter(slot => !srcFor(slot.key)))
-const pickNotice = ref<string | null>(null)
 
 // The file dialog allows several files, but cannot cap them: extra ones are dropped here
 function onFilesAdded(event: Event): void {
   const picked = Array.from((event.target as HTMLInputElement).files ?? [])
   const free = freeSlots.value
   picked.slice(0, free.length).forEach((file, index) => setFile(free[index]!.key, file))
-  pickNotice.value = picked.length > free.length
-    ? `Solo caben ${LOOK_SLOTS.length} fotos por look: se usaron las primeras ${free.length}.`
-    : null
+  if (picked.length > free.length) snackbar.info(`Solo caben ${LOOK_SLOTS.length} fotos por look: se usaron las primeras ${free.length}.`)
   inputKey.value++
 }
 
@@ -113,13 +109,13 @@ async function resetLook(): Promise<void> {
   if (!window.confirm(`¿Borrar las fotos y la intro del look de ${displayName.value}?`)) return
 
   saving.value = true
-  errorMessage.value = null
   try {
     await deleteLook(props.look)
     emit('changed')
+    snackbar.success('Look borrado.')
   }
   catch (error) {
-    errorMessage.value = toErrorMessage(error)
+    snackbar.error(toErrorMessage(error))
   }
   finally {
     saving.value = false
@@ -130,7 +126,6 @@ async function save(): Promise<void> {
   if (!canSave.value || saving.value) return
 
   saving.value = true
-  errorMessage.value = null
   try {
     await saveLook({
       look: props.look,
@@ -141,9 +136,10 @@ async function save(): Promise<void> {
       intro: normalizedIntro.value,
     })
     emit('changed')
+    snackbar.success('Look guardado.')
   }
   catch (error) {
-    errorMessage.value = toErrorMessage(error)
+    snackbar.error(toErrorMessage(error))
   }
   finally {
     saving.value = false
@@ -206,9 +202,6 @@ async function save(): Promise<void> {
         </label>
       </li>
     </ul>
-    <p v-if="pickNotice" class="hint" role="status">
-      {{ pickNotice }}
-    </p>
 
     <!-- Tablet landscape and larger: the four slots side by side, each with its own placeholder -->
     <ul class="look-slot__grid look-slot__grid--slots" :aria-label="`Fotos del look de ${displayName}`">
@@ -266,9 +259,6 @@ async function save(): Promise<void> {
         Sin look
       </p>
 
-      <p v-if="errorMessage" class="form-error" role="alert">
-        {{ errorMessage }}
-      </p>
     </form>
 
     <div v-if="editable" class="form-actions">

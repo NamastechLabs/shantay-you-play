@@ -43,13 +43,12 @@ const invitable = computed(() => {
 
 const selectedId = ref('')
 const saving = ref(false)
-const errorMessage = ref<string | null>(null)
+const snackbar = useSnackbar()
 
 async function invite(): Promise<void> {
   if (!selectedId.value || saving.value) return
 
   saving.value = true
-  errorMessage.value = null
   try {
     const { error } = await supabase
       .from('runway_guests')
@@ -62,7 +61,7 @@ async function invite(): Promise<void> {
     await refresh()
   }
   catch (error) {
-    errorMessage.value = toErrorMessage(error)
+    snackbar.error(toErrorMessage(error))
   }
   finally {
     saving.value = false
@@ -72,14 +71,13 @@ async function invite(): Promise<void> {
 async function revoke(invitation: Invitation): Promise<void> {
   if (!window.confirm(`¿Quitar la invitación de ${guestName(invitation.guest)}? Perderá el acceso a esta semana.`)) return
 
-  errorMessage.value = null
   try {
     const { error } = await supabase.from('runway_guests').delete().eq('id', invitation.id)
     if (error) throw error
     await refresh()
   }
   catch (error) {
-    errorMessage.value = toErrorMessage(error)
+    snackbar.error(toErrorMessage(error))
   }
 }
 </script>
@@ -125,9 +123,6 @@ async function revoke(invitation: Invitation): Promise<void> {
       <NuxtLink to="/admin/participants" class="link">Participantes</NuxtLink>.
     </p>
 
-    <p v-if="errorMessage" class="form-error" role="alert">
-      {{ errorMessage }}
-    </p>
 
     <ul v-if="data?.invitations.length" class="row-list">
       <li v-for="invitation in data.invitations" :key="invitation.id" class="row">

@@ -4,7 +4,7 @@ const { participant, setDragName } = useCurrentParticipant()
 
 const dragName = ref('')
 const saving = ref(false)
-const errorMessage = ref<string | null>(null)
+const snackbar = useSnackbar()
 
 const trimmed = computed(() => dragName.value.trim())
 const isValid = computed(() => trimmed.value.length >= 2 && trimmed.value.length <= 50)
@@ -18,13 +18,12 @@ async function submit(): Promise<void> {
   if (!isValid.value || saving.value) return
 
   saving.value = true
-  errorMessage.value = null
   try {
     await setDragName(trimmed.value)
     await navigateTo(safeRedirect(route.query.redirect), { replace: true })
   }
   catch (error) {
-    errorMessage.value = toErrorMessage(error)
+    snackbar.error(toErrorMessage(error))
   }
   finally {
     saving.value = false
@@ -71,9 +70,6 @@ async function submit(): Promise<void> {
         </button>
       </form>
 
-      <p v-if="errorMessage" class="form-error" role="alert">
-        {{ errorMessage }}
-      </p>
     </div>
   </main>
 </template>

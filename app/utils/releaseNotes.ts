@@ -18,6 +18,16 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.16.0',
+    date: '2026-11-20',
+    title: 'Avisos en pantalla',
+    features: [
+      'Los mensajes de «guardado» y los errores ahora aparecen en un aviso flotante que desaparece solo, sin mover el resto de la pantalla.',
+      'Al votar, el aviso «¡Voto guardado!» ya no hace más alta la barra de tu Top 3.',
+      'Las acciones de administración confirman cuando se han guardado, por ejemplo al cambiar el estado de la pasarela o guardar un look.',
+    ],
+  },
+  {
     version: '0.15.0',
     date: '2026-11-20',
     title: 'Subcategorías secretas',

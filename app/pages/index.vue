@@ -208,7 +208,7 @@ const bandRevealDone = ref(false)
 /** The Top 3 reveal has finished playing: the "Ver la pasarela" button appears */
 const topThreeRevealDone = ref(false)
 const revealingTopThree = ref(false)
-const revealError = ref('')
+const snackbar = useSnackbar()
 
 // A new band stage (another runway, or a reopened reveal) plays its animation again
 watch(() => [weekRunway.value?.id, inBandStage.value], () => { bandRevealDone.value = false })
@@ -236,14 +236,14 @@ watch(inBandStage, () => {
 async function revealTopThree(): Promise<void> {
   if (!weekRunway.value) return
   revealingTopThree.value = true
-  revealError.value = ''
   const { error: revealFailure } = await supabase.rpc('reveal_runway_top_three', { p_runway_id: weekRunway.value.id })
   revealingTopThree.value = false
   if (revealFailure) {
-    revealError.value = toErrorMessage(revealFailure)
+    snackbar.error(toErrorMessage(revealFailure))
     return
   }
   await refresh()
+  snackbar.success('Top 3 revelado.')
 }
 // Werk Room: counts down to the runway's date
 const { remaining: countdownRemaining, units: countdownUnits } = useCountdown(
@@ -273,8 +273,6 @@ const groupSharePayload = computed(() => ({
 }))
 
 const { sharing, prefetch, share } = useShareLooks()
-const shareMessage = ref('')
-const shareError = ref('')
 
 // Download the images while the page is idle so the share sheet opens right on tap
 watch([sharePayload, groupSharePayload], ([look, group]) => {
@@ -287,15 +285,13 @@ const shareMyLook = () => runShare(sharePayload.value, 'look')
 const shareMyGroup = () => runShare(groupSharePayload.value, 'group')
 
 async function runShare(payload: typeof sharePayload.value, target: 'look' | 'group') {
-  shareMessage.value = ''
-  shareError.value = ''
   sharingTarget.value = target
   try {
     const result = await share(payload)
-    if (result === 'copied') shareMessage.value = 'Texto copiado. Tu navegador no permite compartir imágenes desde aquí.'
+    if (result === 'copied') snackbar.info('Texto copiado. Tu navegador no permite compartir imágenes desde aquí.')
   }
   catch (error) {
-    shareError.value = toErrorMessage(error)
+    snackbar.error(toErrorMessage(error))
   }
   finally {
     sharingTarget.value = null
@@ -467,9 +463,6 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
         <p v-else-if="participant?.role !== 'jurado' && (bandRevealDone || !revealBands.length)" class="muted" role="status">
           El jurado revelará enseguida el Top 3 de la semana.
         </p>
-        <p v-if="revealError" class="form-error" role="alert">
-          {{ revealError }}
-        </p>
       </template>
 
       <!-- Once the reveal has finished, everyone can go and see the runway (as while voting) -->
@@ -513,12 +506,6 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
           </svg>
           {{ sharing && sharingTarget === 'group' ? 'Preparando…' : 'A desfilar con mi banda' }}
         </button>
-        <p v-if="shareMessage" class="muted" role="status">
-          {{ shareMessage }}
-        </p>
-        <p v-if="shareError" class="form-error" role="alert">
-          {{ shareError }}
-        </p>
       </div>
 
       <div v-if="weekRunway.status === 'runway'" class="actions">

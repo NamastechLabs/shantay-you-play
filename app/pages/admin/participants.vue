@@ -37,7 +37,7 @@ const email = ref('')
 const dragName = ref('')
 const role = ref<Role>('concursante')
 const saving = ref(false)
-const errorMessage = ref<string | null>(null)
+const snackbar = useSnackbar()
 
 const modalTitle = computed(() => (editing.value ? 'Editar participante' : 'Registrar participante'))
 const canSubmit = computed(() => name.value.trim().length > 0 && (editing.value?.user_id != null || email.value.includes('@')))
@@ -48,7 +48,6 @@ function openCreate(): void {
   email.value = ''
   dragName.value = ''
   role.value = 'concursante'
-  errorMessage.value = null
   modalOpen.value = true
 }
 
@@ -58,7 +57,6 @@ function openEdit(participant: ParticipantRow): void {
   email.value = participant.email
   dragName.value = participant.drag_name ?? ''
   role.value = participant.role
-  errorMessage.value = null
   modalOpen.value = true
 }
 
@@ -70,7 +68,6 @@ async function submit(): Promise<void> {
   if (!canSubmit.value || saving.value) return
 
   saving.value = true
-  errorMessage.value = null
   try {
     const current = editing.value
     const { error } = current
@@ -100,7 +97,7 @@ async function submit(): Promise<void> {
     await refresh()
   }
   catch (error) {
-    errorMessage.value = toErrorMessage(error)
+    snackbar.error(toErrorMessage(error))
   }
   finally {
     saving.value = false
@@ -117,7 +114,6 @@ async function promoteToContestant(participant: ParticipantRow): Promise<void> {
   if (!confirmed || promoting.value) return
 
   promoting.value = true
-  errorMessage.value = null
   try {
     const { error } = await supabase.rpc('promote_guest_to_contestant', { p_participant_id: participant.id })
     if (error) throw error
@@ -126,7 +122,7 @@ async function promoteToContestant(participant: ParticipantRow): Promise<void> {
     await refresh()
   }
   catch (error) {
-    errorMessage.value = toErrorMessage(error)
+    snackbar.error(toErrorMessage(error))
   }
   finally {
     promoting.value = false
@@ -134,7 +130,6 @@ async function promoteToContestant(participant: ParticipantRow): Promise<void> {
 }
 
 // --- Remove (only people who haven't signed in yet) -----------------------
-const removeError = ref<string | null>(null)
 
 async function removeParticipant(participant: ParticipantRow): Promise<void> {
   const confirmed = window.confirm(
@@ -142,7 +137,6 @@ async function removeParticipant(participant: ParticipantRow): Promise<void> {
   )
   if (!confirmed) return
 
-  removeError.value = null
   try {
     // The looks cascade with the row; list their files first so they can be removed from Storage
     const files = await listParticipantFiles(participant.id)
@@ -160,7 +154,7 @@ async function removeParticipant(participant: ParticipantRow): Promise<void> {
     await refresh()
   }
   catch (error) {
-    removeError.value = toErrorMessage(error)
+    snackbar.error(toErrorMessage(error))
   }
 }
 </script>
@@ -188,9 +182,6 @@ async function removeParticipant(participant: ParticipantRow): Promise<void> {
 
       <p v-if="loadError" class="form-error" role="alert">
         {{ toErrorMessage(loadError) }}
-      </p>
-      <p v-if="removeError" class="form-error" role="alert">
-        {{ removeError }}
       </p>
 
       <ul v-if="participants?.length" class="row-list">
@@ -288,9 +279,6 @@ async function removeParticipant(participant: ParticipantRow): Promise<void> {
           </button>
         </div>
 
-        <p v-if="errorMessage" class="form-error" role="alert">
-          {{ errorMessage }}
-        </p>
         <div class="form-actions">
           <button
             v-if="editing && !editing.user_id"

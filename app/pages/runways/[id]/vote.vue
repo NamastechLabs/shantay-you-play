@@ -154,8 +154,10 @@ const picks = ref<string[]>(
     : [],
 )
 const saving = ref(false)
-const saveError = ref('')
-const saved = ref(false)
+const snackbar = useSnackbar()
+const ballotBar = ref<HTMLElement | null>(null)
+// Feedback messages stay above the pinned ballot bar
+useSnackbarOffset(ballotBar)
 
 // The jury's Top 3 is proposed from the first three queens of their ranking (they can change it)
 const prefillCandidates = computed(() => (groupProgress.value?.rankingIds ?? [])
@@ -166,8 +168,6 @@ const lastPrefill = ref<string[]>([])
 function prefillFromRanking(): void {
   picks.value = [...prefillCandidates.value]
   lastPrefill.value = [...prefillCandidates.value]
-  saved.value = false
-  saveError.value = ''
 }
 
 // On the Top 3 step, propose the ranking unless the jury already saved or changed their picks
@@ -208,8 +208,6 @@ function pickName(index: number): string {
 
 /** Tapping a queen adds her to the next free rank; tapping her again removes her and moves the rest up. */
 function togglePick(queen: Queen): void {
-  saved.value = false
-  saveError.value = ''
   if (picks.value.includes(queen.id)) {
     picks.value = picks.value.filter(id => id !== queen.id)
   }
@@ -223,8 +221,6 @@ async function saveBallot(): Promise<void> {
   if (!top1 || !top2 || !top3 || !participant.value) return
 
   saving.value = true
-  saveError.value = ''
-  saved.value = false
 
   const picksPayload = { top_1_participant_id: top1, top_2_participant_id: top2, top_3_participant_id: top3 }
 
@@ -240,14 +236,14 @@ async function saveBallot(): Promise<void> {
   saving.value = false
 
   if (error) {
-    saveError.value = error.code === RLS_VIOLATION || error.code === NO_ROWS
+    snackbar.error(error.code === RLS_VIOLATION || error.code === NO_ROWS
       ? 'No se pudo guardar: la votación ya no está abierta.'
-      : toErrorMessage(error)
+      : toErrorMessage(error))
     return
   }
 
   ballotId.value = row.id
-  saved.value = true
+  snackbar.success('¡Voto guardado!')
 }
 </script>
 
@@ -369,7 +365,7 @@ async function saveBallot(): Promise<void> {
           </li>
         </ul>
 
-        <div v-if="votableCount >= BALLOT_SIZE" class="ballot-bar">
+        <div v-if="votableCount >= BALLOT_SIZE" ref="ballotBar" class="ballot-bar">
           <ol class="ballot-bar__picks" aria-label="Tu Top 3">
             <li
               v-for="(label, index) in RANK_LABELS"
@@ -385,12 +381,6 @@ async function saveBallot(): Promise<void> {
             </li>
           </ol>
           <div class="ballot-bar__actions">
-            <p v-if="saveError" class="form-error" role="alert">
-              {{ saveError }}
-            </p>
-            <p v-else-if="saved" class="ballot-bar__saved" role="status">
-              ¡Voto guardado!
-            </p>
             <button
               type="button"
               class="btn btn--primary"

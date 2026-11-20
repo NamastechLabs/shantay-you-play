@@ -22,11 +22,10 @@ export function useAuth() {
   const origin = useRequestURL().origin
 
   const loadingProvider = ref<AuthProvider | null>(null)
-  const errorMessage = ref<string | null>(null)
+  const snackbar = useSnackbar()
 
   async function signInWith(provider: AuthProvider): Promise<void> {
     loadingProvider.value = provider
-    errorMessage.value = null
 
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -41,7 +40,7 @@ export function useAuth() {
       // On success the browser navigates to the provider, so loading stays on
     }
     catch (error) {
-      errorMessage.value = toErrorMessage(error)
+      snackbar.error(toErrorMessage(error))
       loadingProvider.value = null
     }
   }
@@ -49,7 +48,7 @@ export function useAuth() {
   async function signOut(): Promise<void> {
     const { error } = await supabase.auth.signOut()
     if (error) {
-      errorMessage.value = toErrorMessage(error)
+      snackbar.error(toErrorMessage(error))
       return
     }
     useCurrentParticipant().clear()
@@ -58,7 +57,6 @@ export function useAuth() {
 
   return {
     loadingProvider: readonly(loadingProvider),
-    errorMessage: readonly(errorMessage),
     signInWithGoogle: () => signInWith('google'),
     signInWithMicrosoft: () => signInWith('azure'),
     signOut,

@@ -38,7 +38,7 @@ const now = (): string => toDatetimeLocal(new Date().toISOString())
 const weekNumber = ref<number>(nextWeek.value)
 const runwayDate = ref(now())
 const saving = ref(false)
-const errorMessage = ref<string | null>(null)
+const snackbar = useSnackbar()
 const modalOpen = ref(false)
 
 const canCreate = computed(() => weekNumber.value > 0 && runwayDate.value !== '')
@@ -46,7 +46,6 @@ const canCreate = computed(() => weekNumber.value > 0 && runwayDate.value !== ''
 function openModal(): void {
   weekNumber.value = nextWeek.value
   runwayDate.value = now()
-  errorMessage.value = null
   modalOpen.value = true
 }
 
@@ -54,7 +53,6 @@ async function createRunway(): Promise<void> {
   if (!canCreate.value || saving.value) return
 
   saving.value = true
-  errorMessage.value = null
   try {
     const { data, error } = await supabase
       .from('runways')
@@ -69,7 +67,7 @@ async function createRunway(): Promise<void> {
     await navigateTo(`/admin/runways/${data.id}`)
   }
   catch (error) {
-    errorMessage.value = toErrorMessage(error)
+    snackbar.error(toErrorMessage(error))
   }
   finally {
     saving.value = false
@@ -197,9 +195,6 @@ async function createRunway(): Promise<void> {
         </div>
         <p class="hint">
           Después podrás añadir una o varias categorías a la semana.
-        </p>
-        <p v-if="errorMessage" class="form-error" role="alert">
-          {{ errorMessage }}
         </p>
         <div class="form-actions">
           <button type="button" class="btn btn--ghost" @click="modalOpen = false">

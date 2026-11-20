@@ -14,7 +14,7 @@ const { subcategories, queens, loading, error: loadError, queenOf, init, assign,
 
 const open = ref(false)
 const saving = ref(false)
-const error = ref('')
+const snackbar = useSnackbar()
 
 // The draft being edited: nothing is stored until "Guardar"
 const draft = ref<DraftItem[]>([])
@@ -34,7 +34,6 @@ function resetDraft(): void {
 
 async function openPanel(): Promise<void> {
   open.value = true
-  error.value = ''
   await init()
   resetDraft()
 }
@@ -56,7 +55,6 @@ async function save(): Promise<void> {
   if (withPick.length && !window.confirm(`Se borrarán ${withPick.length} subcategoría(s) ya elegidas por una reina. ¿Continuar?`)) return
 
   saving.value = true
-  error.value = ''
   try {
     // 1. Removed ones first (their picks cascade)
     if (removing.length) {
@@ -89,7 +87,7 @@ async function save(): Promise<void> {
     // Show what is really stored, so a partial save is not hidden
     await init()
     resetDraft()
-    error.value = message
+    snackbar.error(message)
   }
   finally {
     saving.value = false
@@ -102,12 +100,11 @@ const assigning = ref<string | null>(null)
 async function assignTo(participantId: string, subcategoryId: string): Promise<void> {
   if (!subcategoryId || assigning.value) return
   assigning.value = participantId
-  error.value = ''
   try {
     await assign(subcategoryId, participantId)
   }
   catch (caught) {
-    error.value = toErrorMessage(caught)
+    snackbar.error(toErrorMessage(caught))
   }
   finally {
     assigning.value = null
@@ -117,12 +114,11 @@ async function assignTo(participantId: string, subcategoryId: string): Promise<v
 async function freeFrom(participantId: string): Promise<void> {
   if (assigning.value) return
   assigning.value = participantId
-  error.value = ''
   try {
     await free(participantId)
   }
   catch (caught) {
-    error.value = toErrorMessage(caught)
+    snackbar.error(toErrorMessage(caught))
   }
   finally {
     assigning.value = null
@@ -223,8 +219,8 @@ const nameOf = (subcategoryId: string | null): string => subcategories.value.fin
           </div>
         </fieldset>
 
-        <p v-if="error || loadError" class="form-error" role="alert">
-          {{ error || loadError }}
+        <p v-if="loadError" class="form-error" role="alert">
+          {{ loadError }}
         </p>
       </template>
 

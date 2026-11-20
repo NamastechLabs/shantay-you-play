@@ -19,6 +19,7 @@ const open = ref(false)
 const loading = ref(false)
 const saving = ref(false)
 const error = ref('')
+const snackbar = useSnackbar()
 
 // What is stored in the database
 const groups = ref<Group[]>([])
@@ -111,7 +112,6 @@ function removeMember(participantId: string): void {
 async function save(): Promise<void> {
   if (saving.value || loading.value || !namesValid.value || !changed.value) return
   saving.value = true
-  error.value = ''
   try {
     // 1. The groups: create both the first time, rename afterwards
     let current = groups.value
@@ -158,7 +158,7 @@ async function save(): Promise<void> {
     const message = toErrorMessage(caught)
     // Show what is really stored, so a partial save is not hidden
     await load()
-    error.value = message
+    snackbar.error(message)
   }
   finally {
     saving.value = false
@@ -168,7 +168,6 @@ async function save(): Promise<void> {
 async function deleteGroups(): Promise<void> {
   if (saving.value || !window.confirm('¿Eliminar los dos grupos? También se borrarán sus integrantes, fotos y votos.')) return
   saving.value = true
-  error.value = ''
   try {
     // The photo rows cascade with the groups; list their files first so they can be removed from Storage
     const files = await listGroupPhotoFiles(props.category.id)
@@ -178,7 +177,7 @@ async function deleteGroups(): Promise<void> {
     open.value = false
   }
   catch (caught) {
-    error.value = toErrorMessage(caught)
+    snackbar.error(toErrorMessage(caught))
   }
   finally {
     saving.value = false
