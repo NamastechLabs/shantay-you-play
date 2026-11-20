@@ -82,7 +82,9 @@ defineProps<{
   background-size: 20%;
   display: block;
   width: 100%;
-  height: 100%;
+  // Not 100%: with an aspect-ratio, iOS Safari resolves a percentage height against the grid
+  // area differently and paints the photo over the text below it
+  height: auto;
   min-height: 0;
   aspect-ratio: 16 / 9;
   max-height: 14rem;
@@ -91,6 +93,7 @@ defineProps<{
 
   @media (min-width: 48rem) {
     aspect-ratio: auto;
+    height: 100%;
     min-height: 10rem;
   }
 

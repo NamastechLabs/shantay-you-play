@@ -3,7 +3,11 @@
 All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [0.15.1] - 2026-11-20
+
+### Fixed
+
+- On iPhone the winner's photo in the past-week card was painted over the week, title and winner text; the photo now takes its own height so the text stays below it
 
 ## [0.15.0] - 2026-11-20
 
