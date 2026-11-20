@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.16.1] - 2026-11-20
+
 ### Changed
 
 - On phones the admin pages use smaller type, buttons, inputs and spacing on the 8px grid (DRG-22)
