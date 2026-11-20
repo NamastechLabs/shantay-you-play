@@ -135,7 +135,7 @@ const nameOf = (subcategoryId: string | null): string => subcategories.value.fin
 
   <!-- Teleported: the panel must not live inside the category <form> -->
   <Teleport to="body">
-    <AppDrawer :open="open" :title="`Subcategorías · ${category.title}`" @close="open = false">
+    <AppDrawer class="drawer--admin" :open="open" :title="`Subcategorías · ${category.title}`" @close="open = false">
       <p v-if="loading" class="hint" role="status">
         Cargando…
       </p>
@@ -239,8 +239,8 @@ const nameOf = (subcategoryId: string | null): string => subcategories.value.fin
 <style scoped lang="scss">
 .subcats {
   display: grid;
-  gap: var(--space-3);
-  padding: var(--space-3);
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3) var(--space-3);
   margin: 0;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -267,5 +267,30 @@ const nameOf = (subcategoryId: string | null): string => subcategories.value.fin
   flex: 0 1 8rem;
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+// Phones: the name and "Liberar" share a line and the select gets the full width below,
+// so the sub-category name is readable (it was cut to two letters)
+@media (max-width: 39.99rem) {
+  .subcats__queen {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-1) var(--space-2);
+
+    .subcats__who {
+      grid-column: 1;
+      grid-row: 1;
+    }
+
+    select {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+
+    .btn {
+      grid-column: 2;
+      grid-row: 1;
+    }
+  }
 }
 </style>

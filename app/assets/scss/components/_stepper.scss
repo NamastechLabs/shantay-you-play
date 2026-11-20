@@ -133,6 +133,18 @@
   }
 }
 
+// Admin workflow on phones: six labelled steps do not fit on one line, so they stack
+@media (max-width: 39.99rem) {
+  .stepper:not(.stepper--free) {
+    grid-auto-flow: row;
+    gap: var(--space-2);
+
+    &::before {
+      display: none;
+    }
+  }
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;

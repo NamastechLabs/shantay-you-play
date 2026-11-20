@@ -151,6 +151,8 @@ h3 {
 // --- Page layout --------------------------------------------------------------
 .page {
   display: grid;
+  // minmax(0, ...): an auto column grows to the widest child's min-content and widens the page on phones
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-5);
   width: min(100%, 82rem);
   margin-inline: auto;
@@ -184,6 +186,7 @@ h3 {
 
 .section {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
 }
 

@@ -49,6 +49,10 @@ function openModal(): void {
   modalOpen.value = true
 }
 
+function openRunway(id: string): void {
+  void navigateTo(`/admin/runways/${id}`)
+}
+
 async function createRunway(): Promise<void> {
   if (!canCreate.value || saving.value) return
 
@@ -76,7 +80,7 @@ async function createRunway(): Promise<void> {
 </script>
 
 <template>
-  <main class="page">
+  <main class="page page--admin">
     <AppNav />
     <AppBreadcrumb :items="[{ label: 'Inicio', to: '/' }, { label: 'Panel del jurado' }]" />
 
@@ -131,7 +135,7 @@ async function createRunway(): Promise<void> {
         </button>
       </p>
       <div v-else-if="runways?.length" class="table-card">
-        <table class="table">
+        <table class="table table--stack">
           <thead>
             <tr>
               <th scope="col">
@@ -149,7 +153,12 @@ async function createRunway(): Promise<void> {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="runway in runways" :key="runway.id">
+            <tr
+              v-for="runway in runways"
+              :key="runway.id"
+              class="table__row--link"
+              @click="openRunway(runway.id)"
+            >
               <td>
                 <NuxtLink :to="`/admin/runways/${runway.id}`" class="table__link">
                   Semana {{ runway.week_number }}

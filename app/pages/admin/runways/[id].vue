@@ -50,7 +50,7 @@ const isActive = (section: { to: string, exact: boolean }): boolean =>
 </script>
 
 <template>
-  <main v-if="runway" class="page">
+  <main v-if="runway" class="page page--admin">
     <AppNav />
     <AppBreadcrumb
       :items="[
@@ -81,7 +81,7 @@ const isActive = (section: { to: string, exact: boolean }): boolean =>
     <NuxtPage />
   </main>
 
-  <main v-else class="page">
+  <main v-else class="page page--admin">
     <AppNav />
     <AppBreadcrumb :items="[{ label: 'Inicio', to: '/' }, { label: 'Panel del jurado', to: '/admin' }]" />
     <p class="form-error" role="alert">

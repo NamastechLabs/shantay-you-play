@@ -160,7 +160,7 @@ async function removeParticipant(participant: ParticipantRow): Promise<void> {
 </script>
 
 <template>
-  <main class="page">
+  <main class="page page--admin">
     <AppNav />
     <AppBreadcrumb
       :items="[{ label: 'Inicio', to: '/' }, { label: 'Panel del jurado', to: '/admin' }, { label: 'Participantes' }]"

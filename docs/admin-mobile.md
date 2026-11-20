@@ -1,0 +1,12 @@
+# Admin pages on phones (DRG-22)
+
+- **Weeks table** (`app/pages/admin/index.vue`, `app/assets/scss/components/_table.scss`): below 40rem (`.table--stack`) each row is a stacked card (week, theme, date and status badge) instead of a horizontally scrolling table.
+- **Clickable rows**: a row (`.table__row--link`) navigates on click with `navigateTo`; the "Semana N" anchor stays for keyboard and screen readers. The previous approach stretched an `::after` over the row from a `position: relative` `<tr>`. iOS Safari does not make a `<tr>` a containing block, so the overlay covered the whole table and every tap opened the first week. Do not reintroduce overlays based on `position` on table rows.
+- **List rows** (`.row__aside` in `_card.scss`, used by Participantes): below 40rem the badges and the "Editar" button take the full width on their own line.
+- Forms for creating and editing stay in `AppModal`, which is a bottom sheet on phones.
+- **Status stepper** (`_stepper.scss`): below 40rem the six runway steps stack vertically (they were clipped on one line). The free-navigation voting stepper is unchanged.
+- **No sideways scroll**: `.page`, `.section`, `.form` and `.field` use `grid-template-columns: minmax(0, 1fr)`. An auto column grows to the widest child and made the categories tab wider than the phone.
+- **Compact scale** (`app/assets/scss/components/_admin-compact.scss`): the admin `<main>` elements carry `page--admin`; below 40rem that class shrinks headings (h1 24px, h2 18px), buttons (40px high, 14px text), inputs (40px high; text stays 16px so iOS does not zoom), cards, rows and tabs, with spacing limited to 8/16/24/32px tokens. The status stepper shows two columns, and `.form-actions` wraps instead of overflowing. Public pages are unchanged.
+- **Admin drawers** (sub-categories, groups) carry `drawer--admin` because they are teleported to `<body>` outside `.page--admin`; the same compact sizes apply. In the sub-categories drawer each queen's row is a name + "Liberar" line over a full-width select (it was squeezed to two letters).
+- **Category actions** (`.form-actions--stack` in `_field.scss`, used in `categories.vue`): below 40rem Guardar is full width on top, and Subcategorías / Grupos and Eliminar (red outline, `btn--danger`) share the line below in halves. Add `form-actions__primary` to the primary button of any form that uses it.
+- **Profile page** (`_profile.scss`): below 40rem the card is tighter, the avatar is 80px next to the (outlined) photo button, and "Guardar cambios" spans the card.

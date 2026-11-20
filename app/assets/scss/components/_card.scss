@@ -55,6 +55,12 @@
     flex-wrap: wrap;
     gap: var(--space-2);
     align-items: center;
+
+    // On phones the badges and the action get their own line, with the action pushed to the end
+    @media (max-width: 39.99rem) {
+      justify-content: space-between;
+      width: 100%;
+    }
   }
 }
 
