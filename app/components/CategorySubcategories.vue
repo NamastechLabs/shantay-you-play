@@ -19,9 +19,9 @@ const me = computed(() => queens.value.find(queen => queen.id === participant.va
 const myTurn = computed(() => !!me.value && nextQueen.value?.id === me.value.id)
 const mySubcategory = computed(() => subcategories.value.find(subcategory => subcategory.id === me.value?.subcategoryId) ?? null)
 /** Queens that pick before me and have not picked yet */
-const waitingBefore = computed(() => (me.value ? queens.value.filter(queen => queen.turn < me.value!.turn && !queen.subcategoryId) : []))
+const waitingBefore = computed(() => (me.value ? queens.value.filter(queen => queen.turn < me.value!.turn && !queen.hasPicked) : []))
 
-const pending = computed(() => !!me.value && subcategories.value.length > 0 && !me.value.subcategoryId)
+const pending = computed(() => !!me.value && subcategories.value.length > 0 && !me.value.hasPicked)
 watch(pending, value => emit('pending', props.category.id, value), { immediate: true })
 onBeforeUnmount(() => emit('pending', props.category.id, false))
 
@@ -95,11 +95,8 @@ const initial = (name: string): string => name.charAt(0).toUpperCase()
       Todas las reinas han elegido.
     </p>
 
-    <!-- Once I have mine, the list folds away -->
-    <component :is="mySubcategory ? 'details' : 'div'" class="subcats__all">
-      <summary v-if="mySubcategory">
-        Ver todas las subcategorías
-      </summary>
+    <!-- Queens do not see what the others took, so once I have mine there is nothing else to show -->
+    <div v-if="!mySubcategory" class="subcats__all">
       <ul class="subcats__list">
         <li v-for="subcategory in listed" :key="subcategory.id">
           <!-- Taken: who has it -->
@@ -145,14 +142,14 @@ const initial = (name: string): string => name.charAt(0).toUpperCase()
           </div>
         </li>
       </ul>
-    </component>
+    </div>
 
     <details v-if="queens.length && !allPicked" class="subcats__order">
       <summary>Orden de elección</summary>
       <ol>
         <li v-for="queen in queens" :key="queen.id" :class="{ 'subcats__current': nextQueen?.id === queen.id }">
           {{ queen.name }}
-          <span v-if="queen.subcategoryId" class="muted"> · ya ha elegido</span>
+          <span v-if="queen.hasPicked" class="muted"> · ya ha elegido</span>
           <span v-else-if="nextQueen?.id === queen.id" class="muted"> · elige ahora</span>
         </li>
       </ol>
@@ -188,11 +185,6 @@ const initial = (name: string): string => name.charAt(0).toUpperCase()
     font-weight: 700;
     color: var(--color-kicker);
   }
-}
-
-.subcats__all > summary {
-  margin-bottom: var(--space-2);
-  cursor: pointer;
 }
 
 .subcats__list {

@@ -5,6 +5,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-11-20
+
+### Changed
+
+- Queens no longer see the sub-categories other queens already took: taken ones disappear from their list and they only see their own once they pick. Judges still see every sub-category and who took it. `subcategory_turn_order` now returns `has_picked`, and the homepage also refreshes every 8 s. Adds a migration: new RLS policies on `category_subcategories` and `category_subcategory_picks` and function `subcategory_visible_to_me`
+
 ## [0.14.1] - 2026-11-19
 
 ### Changed

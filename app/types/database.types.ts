@@ -488,8 +488,11 @@ isOneToOne: false
                            },
 "subcategory_turn_order":
 { Args: { "p_category_id": string }; Returns: {
-              "participant_id": string,"turn": number
+              "participant_id": string,"turn": number,"has_picked": boolean
             }[]
+                           },
+"subcategory_visible_to_me":
+{ Args: { "p_subcategory_id": string }; Returns: boolean
                            },
 "promote_guest_to_contestant":
 { Args: { "p_participant_id": string }; Returns: undefined

@@ -2,20 +2,24 @@ import type { Tables } from '~/types/database.types'
 
 export type Subcategory = Pick<Tables<'category_subcategories'>, 'id' | 'name' | 'position'>
 
-/** A queen in pick order, with the sub-category she took (if any) */
+/** A queen in pick order, with the sub-category she took (if visible to the current user) */
 export interface SubcategoryQueen {
   id: string
   name: string
   avatarUrl: string | null
   /** 1 picks first */
   turn: number
+  /** Whether she has already picked. Queens do not see what the others took */
+  hasPicked: boolean
+  /** The sub-category she took: only known for yourself (and for judges, who see all) */
   subcategoryId: string | null
 }
 
 /**
  * Sub-categories of an individual category, who took each one, and whose turn it is.
  * The turn order comes from the database (ranking of the previous week's runway,
- * then alphabetical), so the app never recomputes it.
+ * then alphabetical), so the app never recomputes it. Queens only get the free sub-categories
+ * and their own; judges get everything.
  *
  * @param options.realtime refetch whenever somebody picks or the admin edits the list (client only)
  */
@@ -28,7 +32,7 @@ export function useCategorySubcategories(categoryId: MaybeRefOrGetter<string>, o
   const error = ref('')
 
   /** The queen who has to pick now: the first in the order without a sub-category */
-  const nextQueen = computed(() => queens.value.find(queen => !queen.subcategoryId) ?? null)
+  const nextQueen = computed(() => queens.value.find(queen => !queen.hasPicked) ?? null)
   const takenIds = computed(() => new Set(queens.value.flatMap(queen => (queen.subcategoryId ? [queen.subcategoryId] : []))))
   const available = computed(() => subcategories.value.filter(subcategory => !takenIds.value.has(subcategory.id)))
   const queenOf = (subcategoryId: string): SubcategoryQueen | undefined =>
@@ -58,6 +62,7 @@ export function useCategorySubcategories(categoryId: MaybeRefOrGetter<string>, o
           name: found.drag_name ?? found.name,
           avatarUrl: found.avatar_url,
           turn: row.turn,
+          hasPicked: row.has_picked,
           subcategoryId: pickOf.get(row.participant_id) ?? null,
         }]
       })
@@ -107,6 +112,10 @@ export function useCategorySubcategories(categoryId: MaybeRefOrGetter<string>, o
     }
 
     onMounted(() => {
+      // Queens cannot read other queens' picks, so realtime does not tell them whose turn it is: poll too
+      const poll = setInterval(() => {
+        if (document.visibilityState === 'visible') void load()
+      }, 8000)
       const id = toValue(categoryId)
       const filter = `category_id=eq.${id}`
       const channel = supabase
@@ -121,6 +130,7 @@ export function useCategorySubcategories(categoryId: MaybeRefOrGetter<string>, o
 
       onBeforeUnmount(() => {
         clearTimeout(timer)
+        clearInterval(poll)
         supabase.removeChannel(channel)
       })
     })

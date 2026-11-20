@@ -18,6 +18,14 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.15.0',
+    date: '2026-11-20',
+    title: 'Subcategorías secretas',
+    features: [
+      'Las reinas ya no ven las subcategorías que han elegido las demás: solo ven las libres y la suya.',
+    ],
+  },
+  {
     version: '0.14.1',
     date: '2026-11-19',
     title: 'Nueva cuenta atrás',
