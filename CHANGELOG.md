@@ -3,6 +3,12 @@
 All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- Snackbar for feedback messages: `<AppSnackbar>` and `useSnackbar()` show saved confirmations (e.g. "¡Voto guardado!") and action errors over the content, above the ballot bar on phones, instead of inline text that made the bar taller. Errors stay until dismissed and are announced to screen readers; field validation and page-level states stay inline. Admin actions with no visible result (runway details, status change, category and look saves, export, Top 3 reveal) also confirm with a success message (DRG-20)
+
 ## [0.15.1] - 2026-11-20
 
 ### Fixed

@@ -28,21 +28,20 @@ onBeforeUnmount(() => emit('pending', props.category.id, false))
 // --- Picking: tap a free row, confirm in a sheet ---------------------------------------
 const selected = ref<Subcategory | null>(null)
 const picking = ref(false)
-const pickError = ref('')
+const snackbar = useSnackbar()
 /** Shown right after picking */
 const justPicked = ref(false)
 
 async function confirmPick(): Promise<void> {
   if (!selected.value || picking.value) return
   picking.value = true
-  pickError.value = ''
   try {
     await pick(selected.value.id)
     justPicked.value = true
     selected.value = null
   }
   catch (caught) {
-    pickError.value = toErrorMessage(caught)
+    snackbar.error(toErrorMessage(caught))
     selected.value = null
   }
   finally {
@@ -155,9 +154,6 @@ const initial = (name: string): string => name.charAt(0).toUpperCase()
       </ol>
     </details>
 
-    <p v-if="pickError" class="form-error" role="alert">
-      {{ pickError }}
-    </p>
     <p v-if="loadError && !loading" class="form-error" role="alert">
       {{ loadError }}
     </p>

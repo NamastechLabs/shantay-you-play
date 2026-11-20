@@ -20,6 +20,8 @@ const isDev = import.meta.dev
   <!-- Adds <link rel="manifest"> (DRG-18) -->
   <NuxtPwaAssets />
   <NuxtPage />
+  <!-- Feedback messages (DRG-20) -->
+  <AppSnackbar />
   <!-- Debugging helper: not part of production builds -->
   <DevImpersonate v-if="isDev" />
 </template>

@@ -101,7 +101,7 @@ const pasteCategoryId = ref('')
 const pasteTargetId = ref('')
 const pasteSlot = ref<LookSlot>('image_url')
 const pasteSaving = ref(false)
-const pasteError = ref<string | null>(null)
+const snackbar = useSnackbar()
 
 // Composables need the Nuxt context, so it is created here rather than on paste
 const { saveLook, saveJuryLook } = useLookUpload()
@@ -130,7 +130,6 @@ watch(pastedFile, (next) => {
   pasteCategoryId.value = categoryId.value
   pasteTargetId.value = ''
   pasteSlot.value = 'image_url'
-  pasteError.value = null
 })
 
 // Picking a queen / judge preselects the first empty slot of the look (a new look starts at the front)
@@ -160,7 +159,6 @@ async function savePasted(): Promise<void> {
   if (!file || !target || !pasteCategoryId.value || pasteTargetBlocked.value || pasteSaving.value) return
 
   pasteSaving.value = true
-  pasteError.value = null
   try {
     if (pasteIsJury.value) {
       // Never null: a new jury look is blocked (it needs an intro), so only existing ones get here
@@ -187,9 +185,10 @@ async function savePasted(): Promise<void> {
     }
     pastedFile.value = null
     await refreshAll()
+    snackbar.success('Foto guardada.')
   }
   catch (error) {
-    pasteError.value = toErrorMessage(error)
+    snackbar.error(toErrorMessage(error))
   }
   finally {
     pasteSaving.value = false
@@ -402,9 +401,6 @@ async function savePasted(): Promise<void> {
       </p>
       <p v-else-if="pasteSlotLocked && pasteTargetId" class="hint">
         Un look nuevo empieza con la Foto 1.
-      </p>
-      <p v-if="pasteError" class="form-error" role="alert">
-        {{ pasteError }}
       </p>
       <div>
         <button type="submit" class="btn btn--primary" :disabled="!pasteTargetId || pasteTargetBlocked || pasteSaving">

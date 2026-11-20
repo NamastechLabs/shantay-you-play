@@ -119,13 +119,10 @@ const rankOf = (candidate: Candidate): number | null => {
 const candidateName = (id: string): string => candidates.value.find(candidate => candidate.id === id)?.name ?? '—'
 
 const saving = ref(false)
-const saved = ref(false)
-const saveError = ref('')
+const snackbar = useSnackbar()
 
 /** Tapping adds the contestant to the next free rank; tapping again removes her and moves the rest up. */
 function togglePick(candidate: Candidate): void {
-  saved.value = false
-  saveError.value = ''
   picks.value = picks.value.includes(candidate.id)
     ? picks.value.filter(id => id !== candidate.id)
     : [...picks.value, candidate.id]
@@ -134,8 +131,6 @@ function togglePick(candidate: Candidate): void {
 async function saveRanking(): Promise<void> {
   if (!isComplete.value) return
   saving.value = true
-  saved.value = false
-  saveError.value = ''
 
   const { error } = await supabase.rpc('submit_ranking_ballot', {
     p_category_id: props.category.id,
@@ -145,24 +140,22 @@ async function saveRanking(): Promise<void> {
   saving.value = false
 
   if (error) {
-    saveError.value = error.code === RLS_VIOLATION
+    snackbar.error(error.code === RLS_VIOLATION
       ? 'No se pudo guardar: la votación ya no está abierta o no te corresponde votar aquí.'
       : error.code === INVALID_BALLOT
         ? 'Tu voto debe ordenar a todas las concursantes, una sola vez cada una.'
-        : toErrorMessage(error)
+        : toErrorMessage(error))
     return
   }
   hasBallot.value = true
   savedRankingIds.value = [...picks.value]
-  saved.value = true
+  snackbar.success('¡Voto guardado!')
 }
 
 async function saveGroupVote(): Promise<void> {
   const groupId = pickedGroupId.value
   if (!groupId || !participant.value) return
   saving.value = true
-  saved.value = false
-  saveError.value = ''
 
   const { data: row, error } = await (groupVoteId.value
     ? supabase.from('category_group_votes').update({ group_id: groupId }).eq('id', groupVoteId.value).select('id').single()
@@ -170,20 +163,14 @@ async function saveGroupVote(): Promise<void> {
   saving.value = false
 
   if (error) {
-    saveError.value = error.code === RLS_VIOLATION || error.code === NO_ROWS
+    snackbar.error(error.code === RLS_VIOLATION || error.code === NO_ROWS
       ? 'No se pudo guardar: la votación ya no está abierta.'
-      : toErrorMessage(error)
+      : toErrorMessage(error))
     return
   }
   groupVoteId.value = row.id
-  saved.value = true
+  snackbar.success('¡Voto guardado!')
 }
-
-// A message belongs to the step where it happened
-watch(() => props.step, () => {
-  saved.value = false
-  saveError.value = ''
-})
 
 watch(
   [ownGroupId, groupVoteId, hasBallot, savedRankingIds, groups],
@@ -234,7 +221,7 @@ watch(
             :class="pickedGroupId === group.id ? 'btn--primary' : 'btn--secondary'"
             role="radio"
             :aria-checked="pickedGroupId === group.id"
-            @click="pickedGroupId = group.id; saved = false"
+            @click="pickedGroupId = group.id"
           >
             {{ group.name }}
           </button>
@@ -311,13 +298,6 @@ watch(
         </template>
       </form>
 
-      <p v-if="saveError" class="form-error" role="alert">
-        {{ saveError }}
-      </p>
-      <p v-else-if="saved" class="group-vote__saved" role="status">
-        ¡Voto guardado!
-      </p>
-
       <p v-if="!isJury && !ownGroupId && step === 'ranking'" class="empty">
         Esta categoría la votan el jurado y las reinas de las dos bandas.
       </p>
@@ -355,10 +335,6 @@ watch(
   flex-wrap: wrap;
   gap: var(--space-2);
   align-items: center;
-}
-
-.group-vote__saved {
-  color: var(--color-success);
 }
 
 .group-vote__photos {

@@ -11,8 +11,7 @@ const previewUrl = ref<string | null>(null)
 const removeAvatar = ref(false)
 
 const saving = ref(false)
-const saved = ref(false)
-const errorMessage = ref<string | null>(null)
+const snackbar = useSnackbar()
 
 const currentAvatar = computed(() => (removeAvatar.value ? null : previewUrl.value ?? participant.value?.avatar_url ?? null))
 const initial = computed(() => (dragName.value || name.value || '?').trim().charAt(0).toUpperCase())
@@ -46,14 +45,12 @@ function onFilePicked(event: Event): void {
   newFile.value = file
   previewUrl.value = URL.createObjectURL(file)
   removeAvatar.value = false
-  saved.value = false
 }
 
 function clearAvatar(): void {
   revokePreview()
   newFile.value = null
   removeAvatar.value = true
-  saved.value = false
 }
 
 async function submit(): Promise<void> {
@@ -61,8 +58,6 @@ async function submit(): Promise<void> {
   if (!current || !isValid.value || saving.value) return
 
   saving.value = true
-  saved.value = false
-  errorMessage.value = null
 
   const previousAvatar = current.avatar_url
   let uploaded: { path: string, publicUrl: string } | null = null
@@ -85,12 +80,12 @@ async function submit(): Promise<void> {
     revokePreview()
     newFile.value = null
     removeAvatar.value = false
-    saved.value = true
+    snackbar.success('¡Perfil actualizado!')
   }
   catch (error) {
     // Don't leave an orphaned file behind if the row couldn't be written
     if (uploaded) await removeByUrl(uploaded.publicUrl)
-    errorMessage.value = toErrorMessage(error)
+    snackbar.error(toErrorMessage(error))
   }
   finally {
     saving.value = false
@@ -161,13 +156,6 @@ async function submit(): Promise<void> {
             placeholder="Ej. Miss Fierce"
           >
         </div>
-
-        <p v-if="errorMessage" class="form-error" role="alert">
-          {{ errorMessage }}
-        </p>
-        <p v-else-if="saved" class="hint" role="status">
-          ¡Perfil actualizado!
-        </p>
 
         <div class="form-actions">
           <button type="submit" class="btn btn--primary" :disabled="!isValid || !isDirty || saving">

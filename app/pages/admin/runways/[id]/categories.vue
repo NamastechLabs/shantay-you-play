@@ -17,7 +17,7 @@ watch(categories, (list) => {
 }, { immediate: true })
 
 const categorySavingId = ref<string | null>(null)
-const categoryErrors = reactive<Record<string, string>>({})
+const snackbar = useSnackbar()
 
 const categoryChanged = (category: AdminCategory): boolean => {
   const draft = categoryDrafts[category.id]
@@ -37,7 +37,6 @@ async function saveCategory(category: AdminCategory): Promise<void> {
   if (!draft || !categoryChanged(category) || !draft.title.trim() || categorySavingId.value || groupBlocked(category)) return
 
   categorySavingId.value = category.id
-  delete categoryErrors[category.id]
   try {
     const { error } = await supabase
       .from('categories')
@@ -45,9 +44,10 @@ async function saveCategory(category: AdminCategory): Promise<void> {
       .eq('id', category.id)
     if (error) throw error
     await refresh()
+    snackbar.success('Categoría guardada.')
   }
   catch (error) {
-    categoryErrors[category.id] = toErrorMessage(error)
+    snackbar.error(toErrorMessage(error))
   }
   finally {
     categorySavingId.value = null
@@ -59,7 +59,6 @@ async function deleteCategory(category: AdminCategory): Promise<void> {
   if (!window.confirm(`¿Eliminar la categoría «${category.title}»? También se borrarán sus looks.`)) return
 
   categorySavingId.value = category.id
-  delete categoryErrors[category.id]
   try {
     // The looks cascade with the row; list their files first so they can be removed from Storage
     const files = await listCategoryFiles(category.id)
@@ -69,7 +68,7 @@ async function deleteCategory(category: AdminCategory): Promise<void> {
     await refresh()
   }
   catch (error) {
-    categoryErrors[category.id] = toErrorMessage(error)
+    snackbar.error(toErrorMessage(error))
   }
   finally {
     categorySavingId.value = null
@@ -82,14 +81,12 @@ const newTitle = ref('')
 const newIntro = ref('')
 const newKind = ref<CategoryKind>('individual')
 const newCategorySaving = ref(false)
-const newCategoryError = ref<string | null>(null)
 const newGroupBlocked = computed(() => newKind.value === 'group' && categories.value.length > 0)
 
 function openNewCategory(): void {
   newTitle.value = ''
   newIntro.value = ''
   newKind.value = 'individual'
-  newCategoryError.value = null
   newCategoryOpen.value = true
 }
 
@@ -97,7 +94,6 @@ async function createCategory(): Promise<void> {
   if (!newTitle.value.trim() || newCategorySaving.value || newGroupBlocked.value) return
 
   newCategorySaving.value = true
-  newCategoryError.value = null
   try {
     const { error } = await supabase
       .from('categories')
@@ -107,7 +103,7 @@ async function createCategory(): Promise<void> {
     await refresh()
   }
   catch (error) {
-    newCategoryError.value = toErrorMessage(error)
+    snackbar.error(toErrorMessage(error))
   }
   finally {
     newCategorySaving.value = false
@@ -173,9 +169,6 @@ async function createCategory(): Promise<void> {
       <p v-if="groupBlocked(category)" class="form-error" role="alert">
         {{ GROUP_NEEDS_EMPTY_RUNWAY }}
       </p>
-      <p v-if="categoryErrors[category.id]" class="form-error" role="alert">
-        {{ categoryErrors[category.id] }}
-      </p>
       <div class="form-actions">
         <button
           v-if="canEditLooks(runway.status)"
@@ -233,9 +226,6 @@ async function createCategory(): Promise<void> {
       </div>
       <p v-if="newGroupBlocked" class="form-error" role="alert">
         {{ GROUP_NEEDS_EMPTY_RUNWAY }}
-      </p>
-      <p v-if="newCategoryError" class="form-error" role="alert">
-        {{ newCategoryError }}
       </p>
       <div class="form-actions">
         <button type="button" class="btn btn--ghost" @click="newCategoryOpen = false">

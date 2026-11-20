@@ -16,8 +16,7 @@ const bucket = useRuntimeConfig().public.runwayIntroBucket
 
 const inputId = useId()
 const uploading = ref(false)
-const errorMessage = ref<string | null>(null)
-const uploaded = ref(false)
+const snackbar = useSnackbar()
 // Busts the cache of the preview after each upload
 const version = ref(Date.now())
 const hasVideo = ref(true)
@@ -63,8 +62,6 @@ async function onChange(event: Event): Promise<void> {
   if (!file || uploading.value) return
 
   uploading.value = true
-  uploaded.value = false
-  errorMessage.value = null
   try {
     await validate(file)
     const { error } = await supabase.storage.from(bucket).upload(FILE_NAME, file, {
@@ -76,10 +73,10 @@ async function onChange(event: Event): Promise<void> {
     if (error) throw error
     version.value = Date.now()
     hasVideo.value = true
-    uploaded.value = true
+    snackbar.success('Vídeo subido. Ya reemplaza al anterior.')
   }
   catch (error) {
-    errorMessage.value = toErrorMessage(error)
+    snackbar.error(toErrorMessage(error))
   }
   finally {
     uploading.value = false
@@ -178,13 +175,6 @@ async function onChange(event: Event): Promise<void> {
             Selecciona un archivo MP4 de hasta {{ MAX_MB }} MB.
           </p>
         </div>
-
-        <p v-if="uploaded" class="hint" role="status">
-          Vídeo subido. Ya reemplaza al anterior.
-        </p>
-        <p v-if="errorMessage" class="form-error" role="alert">
-          {{ errorMessage }}
-        </p>
       </div>
     </div>
   </section>

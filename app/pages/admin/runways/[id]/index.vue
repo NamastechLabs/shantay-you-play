@@ -43,16 +43,16 @@ const groupPhotosMessage = computed(() => {
 
 // --- Download for the commentary ----------------------------------------------
 const { exporting, download: downloadRunway } = useRunwayExport()
-const exportError = ref<string | null>(null)
+const snackbar = useSnackbar()
 
 async function exportRunway(): Promise<void> {
   if (exporting.value) return
-  exportError.value = null
   try {
     await downloadRunway(runway.value.id)
+    snackbar.success('Pasarela exportada.')
   }
   catch (error) {
-    exportError.value = toErrorMessage(error)
+    snackbar.error(toErrorMessage(error))
   }
 }
 
@@ -64,7 +64,6 @@ const currentStatusIndex = computed(() => RUNWAY_STATUSES.indexOf(runway.value.s
 const weekNumber = ref(runway.value.week_number)
 const runwayDate = ref(toDatetimeLocal(runway.value.runway_date))
 const runwayDetailsSaving = ref(false)
-const runwayDetailsError = ref<string | null>(null)
 
 const runwayDetailsChanged = computed(
   () => weekNumber.value !== runway.value.week_number || runwayDate.value !== toDatetimeLocal(runway.value.runway_date),
@@ -74,7 +73,6 @@ async function saveRunwayDetails(): Promise<void> {
   if (!runwayDetailsChanged.value || !(weekNumber.value > 0) || !runwayDate.value || runwayDetailsSaving.value) return
 
   runwayDetailsSaving.value = true
-  runwayDetailsError.value = null
   try {
     const { error } = await supabase
       .from('runways')
@@ -85,9 +83,10 @@ async function saveRunwayDetails(): Promise<void> {
       throw error
     }
     await refresh()
+    snackbar.success('Semana actualizada.')
   }
   catch (error) {
-    runwayDetailsError.value = toErrorMessage(error)
+    snackbar.error(toErrorMessage(error))
   }
   finally {
     runwayDetailsSaving.value = false
@@ -96,14 +95,13 @@ async function saveRunwayDetails(): Promise<void> {
 
 // --- Status changes -------------------------------------------------------
 const statusSaving = ref(false)
-const statusError = ref<string | null>(null)
 
 async function changeStatus(status: RunwayStatus): Promise<void> {
   if (statusSaving.value) return
 
   await Promise.all([refreshLookCounts(), refreshGroupsWithoutPhotos()])
   if (status === 'runway' && blockedByGroupPhotos.value) {
-    statusError.value = groupPhotosMessage.value
+    snackbar.error(groupPhotosMessage.value)
     return
   }
   const confirmation = status === 'voting' && missingQueenLooks.value > 0
@@ -116,14 +114,14 @@ async function changeStatus(status: RunwayStatus): Promise<void> {
   if (confirmation && !window.confirm(confirmation)) return
 
   statusSaving.value = true
-  statusError.value = null
   try {
     const { error } = await supabase.from('runways').update({ status }).eq('id', runway.value.id)
     if (error) throw error
     await refresh()
+    snackbar.success(`Estado cambiado a «${RUNWAY_STATUS_LABELS[status]}».`)
   }
   catch (error) {
-    statusError.value = toErrorMessage(error)
+    snackbar.error(toErrorMessage(error))
   }
   finally {
     statusSaving.value = false
@@ -163,11 +161,8 @@ async function changeStatus(status: RunwayStatus): Promise<void> {
         </span>
       </li>
     </ol>
-    <p v-if="blockedByGroupPhotos && !statusError" class="muted" role="status">
+    <p v-if="blockedByGroupPhotos" class="muted" role="status">
       {{ groupPhotosMessage }}
-    </p>
-    <p v-if="statusError" class="form-error" role="alert">
-      {{ statusError }}
     </p>
   </section>
 
@@ -184,9 +179,6 @@ async function changeStatus(status: RunwayStatus): Promise<void> {
         <label for="detail-date" class="field__label">Fecha y hora de la pasarela</label>
         <input id="detail-date" v-model="runwayDate" class="field__input" type="datetime-local" required>
       </div>
-      <p v-if="runwayDetailsError" class="form-error" role="alert">
-        {{ runwayDetailsError }}
-      </p>
       <div>
         <button type="submit" class="btn btn--primary" :disabled="!runwayDetailsChanged || runwayDetailsSaving">
           {{ runwayDetailsSaving ? 'Guardando…' : 'Guardar' }}
@@ -228,9 +220,6 @@ async function changeStatus(status: RunwayStatus): Promise<void> {
     <div class="card form">
       <p class="muted">
         Descarga un ZIP con los datos de la semana (categorías, intros y looks de las reinas y del jurado) en <code>runway.json</code> y todas las fotos, listo para subirlo a la IA que escribe los comentarios.
-      </p>
-      <p v-if="exportError" class="form-error" role="alert">
-        {{ exportError }}
       </p>
       <button type="button" class="btn btn--secondary" :disabled="exporting" @click="exportRunway">
         {{ exporting ? 'Preparando ZIP…' : 'Descargar ZIP de la semana' }}

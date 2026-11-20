@@ -1,0 +1,116 @@
+// Feedback messages (DRG-20): one small message over the content: bottom center on phones, bottom left on desktop (from 48rem).
+// Colors come from the semantic tokens only. `--snackbar-offset` lifts it above a pinned bar (set by useSnackbarOffset).
+.snackbar-host {
+  position: fixed;
+  right: 0;
+  bottom: calc(var(--space-4) + var(--snackbar-offset, 0px) + env(safe-area-inset-bottom, 0px));
+  left: 0;
+  z-index: 60; // over the ballot bar and menus, under native dialogs (top layer)
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-inline: var(--space-4);
+  pointer-events: none; // only the message itself takes clicks
+
+  // Desktop: bottom left
+  @media (min-width: 48rem) {
+    align-items: flex-start;
+    padding-inline: var(--space-5);
+  }
+}
+
+.snackbar-region {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+
+  @media (min-width: 48rem) {
+    justify-content: flex-start;
+  }
+}
+
+.snackbar {
+  --snackbar-accent: var(--color-text);
+
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  width: min(100%, 28rem);
+  padding: var(--space-3) var(--space-4);
+  pointer-events: auto;
+  background-color: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-inline-start: 4px solid var(--snackbar-accent);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-raised);
+
+  &--success {
+    --snackbar-accent: var(--color-success);
+  }
+
+  &--error {
+    --snackbar-accent: var(--color-danger);
+  }
+
+  &__icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    color: var(--color-text);
+    background-color: color-mix(in srgb, var(--snackbar-accent) 30%, var(--color-surface-raised));
+    border: 2px solid var(--snackbar-accent);
+    border-radius: var(--radius-pill);
+  }
+
+  &__text {
+    flex: 1;
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.4;
+    color: var(--color-text);
+    overflow-wrap: anywhere;
+  }
+
+  &__close {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-inline-end: calc(var(--space-2) * -1);
+    color: var(--color-text);
+    cursor: pointer;
+    background: none;
+    border: 0;
+    border-radius: var(--radius-pill);
+
+    &:hover {
+      background-color: color-mix(in srgb, var(--color-text) 12%, transparent);
+    }
+  }
+}
+
+.snackbar-enter-active,
+.snackbar-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.snackbar-enter-from,
+.snackbar-leave-to {
+  opacity: 0;
+  transform: translateY(var(--space-3));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .snackbar-enter-active,
+  .snackbar-leave-active {
+    transition: opacity 0.01s;
+  }
+
+  .snackbar-enter-from,
+  .snackbar-leave-to {
+    transform: none;
+  }
+}
