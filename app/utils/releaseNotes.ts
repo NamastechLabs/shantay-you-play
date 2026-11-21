@@ -18,6 +18,16 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.17.0',
+    date: '2026-11-21',
+    title: 'Resumen animado de la votación',
+    features: [
+      'Cuando se abre la votación, la página de inicio reproduce un resumen animado de la semana: primero las bandas (si las hay) y después cada reina con sus looks.',
+      'Si llegas más tarde, pulsa «Ver el resumen de la votación» para verlo cuando quieras; puedes saltarlo en cualquier momento.',
+      'Al final del resumen, un botón te lleva directo a votar tu Top 3.',
+    ],
+  },
+  {
     version: '0.16.1',
     date: '2026-11-20',
     title: 'Panel del jurado más cómodo en el móvil',
