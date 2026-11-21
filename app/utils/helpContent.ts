@@ -109,7 +109,7 @@ export const HELP_COPY = {
       title: 'Revelación',
       who: 'Todas',
       roles: ['concursante', 'jurado', 'invitado'],
-      text: 'Se cierran las urnas y se revela el Top 3 de la semana con todo el dramatismo que merece. Si hay una categoría grupal, primero se revela la banda ganadora y, cuando el jurado lo decide, el Top 3. Los votos individuales siguen siendo privados hasta que se cierra la semana.',
+      text: 'Se cierran las urnas y se revela el Top 3 de la semana con todo el dramatismo que merece: pantalla en negro, focos, suspense y la ganadora al final. Si hay una categoría grupal, primero se revela la banda ganadora y, cuando el jurado lo decide, el Top 3. Los votos individuales siguen siendo privados hasta que se cierra la semana.',
     },
     {
       icon: '👑',
@@ -131,7 +131,7 @@ export const HELP_COPY = {
     { title: 'Fase 2: tu voto cruzado', text: 'Ordenas a todas las reinas de la banda rival, de mejor a peor. El voto debe estar completo y puedes cambiarlo mientras la votación siga abierta. No puedes votar a tu propia banda.' },
     { title: 'Fase 3: la pasarela del jurado', text: 'Cada juez ordena a todas las concursantes según su look individual. Se hace la media de sus notas.' },
     { title: 'El Top 3 también cuenta', text: 'En una semana con categoría grupal hay una sola clasificación: la nota final es la mitad de la nota de bandas (fases 2 y 3 más el regalo) y la otra mitad la nota del Top 3 de la semana. Esa nota es los puntos de la reina entre el máximo posible, contando solo las papeletas que se han entregado.' },
-    { title: 'La revelación', text: 'En la revelación primero aparece la banda ganadora, con su efecto de ruleta y confeti. Después una persona del jurado pulsa «Revelar el Top 3 de la semana» y se revela a la ganadora para todas a la vez. El podio sale de la misma clasificación que la tabla de resultados. Hasta ese momento nadie puede ver el Top 3, ni siquiera mirando otras páginas.' },
+    { title: 'La revelación', text: 'La revelación ocupa toda la pantalla, con focos y suspense: primero se descubre la banda ganadora y, si quieres, puedes saltarla con «Saltar». Después una persona del jurado pulsa «Revelar el Top 3 de la semana» y a todas a la vez se les descubre el Top 3 en orden aleatorio, hasta que llega la ganadora con su «¡Felicidragues!» y confeti, y por último la segunda y la tercera. Cada revelación se ve una vez en tu dispositivo y puedes repetirla con «Ver la revelación de nuevo». El podio sale de la misma clasificación que la tabla de resultados. Hasta ese momento nadie puede ver el Top 3, ni siquiera mirando otras páginas.' },
     { title: 'Los resultados', text: 'Cuando el jurado revela el Top 3, el botón «Ver resultados» de la página de la semana abre la clasificación final con la nota de cada fase, el regalo, la nota del Top 3 y la nota final de cada reina.' },
   ] satisfies HelpFact[],
 

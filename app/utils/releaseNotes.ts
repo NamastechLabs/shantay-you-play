@@ -18,6 +18,16 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.18.0',
+    date: '2026-11-22',
+    title: 'Una revelación a pantalla completa, con focos y suspense',
+    features: [
+      'La revelación de la banda ganadora y del Top 3 ocupa toda la pantalla: se apagan las luces, aparecen los focos y se descubre a cada candidata una a una, en orden aleatorio y con efectos distintos.',
+      'Después llega el suspense, «La reina de la semana es…», y la ganadora aparece a lo grande con confeti y el «¡Felicidragues!»; al final se muestran la segunda y la tercera.',
+      'La revelación empieza sola para todas a la vez, puedes saltarla y, cuando termine, volver a verla con «Ver la revelación de nuevo».',
+    ],
+  },
+  {
     version: '0.17.1',
     date: '2026-11-22',
     title: 'Un resumen de la votación más cómodo de ver',
