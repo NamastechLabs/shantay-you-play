@@ -1,18 +1,18 @@
 <script lang="ts">
-/** A band (group category team) with its landscape photos */
+/** A band (group category team): its first photo */
 export interface SummaryBand {
   id: string
   name: string
-  urls: string[]
+  url: string
 }
 
-/** A queen with the photos of her looks (up to 4) */
+/** A queen: the first photo of her first look */
 export interface SummaryQueen {
   id: string
   name: string
   /** Category of her look; null when the week has a single category (nothing to tell apart) */
   categoryTitle: string | null
-  urls: string[]
+  url: string
 }
 </script>
 
@@ -21,6 +21,8 @@ export interface SummaryQueen {
  * Full-screen, video-style summary of the week shown when the runway opens for voting:
  * a title card, the bands (when there is a group category), every queen and a closing
  * card that sends people to vote. It is built from live data, not from a video file.
+ * Every band and queen gets one photo for a couple of seconds, with a random entrance
+ * and exit effect; all the looks are on the vote page and the runway.
  * Emits `close` when the viewer leaves it.
  */
 type Scene
@@ -40,43 +42,25 @@ const props = defineProps<{
 const emit = defineEmits<{ close: [] }>()
 
 const TITLE_MS = 3200
-const BAND_MS = 3800
-const QUEEN_MS = 3000
-/** With a big cast every queen gets a bit less time, so the summary stays short */
-const BIG_CAST = 8
-const BIG_CAST_QUEEN_MS = 2200
+/** Every band and queen stays this long: the photo comes in, stays, and goes out */
+const PHOTO_SCENE_MS = 3500
+const PHOTO_IN_S = 0.55
+const PHOTO_OUT_S = 0.55
+/** The name fades in once the photo has finished coming in */
+const NAME_FADE_IN_S = 0.4
 /** The backdrop comes in first, then the first scene */
 const BACKDROP_MS = 500
 const SPARKLES = 7
 
 const reduced = import.meta.client && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-/** Phones: the photos of a queen (or band) are a carousel, one at a time at full size; bigger screens show them side by side */
-const carousel = !reduced && import.meta.client && window.matchMedia('(max-width: 640px)').matches
 
-// Carousel timing: every scene lasts the same, whatever its number of photos. The first photo slides in after
-// CAROUSEL_START_S, the last one stays for CAROUSEL_HOLD_MS, and the time in between is shared by the photos
-// (the previous one slides out as the next arrives), so fewer photos stay longer each.
-const CAROUSEL_START_S = 0.3
-const CAROUSEL_SLIDE_S = 0.6
-const CAROUSEL_HOLD_MS = 1300
-const CAROUSEL_SCENE_MS = 5000
-/** With a big cast every scene is shorter (at 4 photos each step is still longer than a slide) */
-const CAROUSEL_BIG_CAST_SCENE_MS = 4200
-const carouselSceneMs = computed(() => (props.queens.length > BIG_CAST ? CAROUSEL_BIG_CAST_SCENE_MS : CAROUSEL_SCENE_MS))
-/** Seconds between one slide arriving and the next one arriving, for a carousel of `photos` slides */
-const carouselStepS = (photos: number): number =>
-  photos > 1 ? (carouselSceneMs.value - (CAROUSEL_START_S + CAROUSEL_SLIDE_S) * 1000 - CAROUSEL_HOLD_MS) / (photos - 1) / 1000 : 0
-
-const scenes = computed<Scene[]>(() => {
-  const queenMs = props.queens.length > BIG_CAST ? BIG_CAST_QUEEN_MS : QUEEN_MS
-  return [
-    { key: 'title', kind: 'title', ms: TITLE_MS },
-    ...props.bands.map((band): Scene => ({ key: `band-${band.id}`, kind: 'band', ms: carousel ? carouselSceneMs.value : BAND_MS, band })),
-    ...props.queens.map((queen): Scene => ({ key: `queen-${queen.id}`, kind: 'queen', ms: carousel ? carouselSceneMs.value : queenMs, queen })),
-    // The closing card waits for the viewer
-    { key: 'outro', kind: 'outro', ms: 0 },
-  ]
-})
+const scenes = computed<Scene[]>(() => [
+  { key: 'title', kind: 'title', ms: TITLE_MS },
+  ...props.bands.map((band): Scene => ({ key: `band-${band.id}`, kind: 'band', ms: PHOTO_SCENE_MS, band })),
+  ...props.queens.map((queen): Scene => ({ key: `queen-${queen.id}`, kind: 'queen', ms: PHOTO_SCENE_MS, queen })),
+  // The closing card waits for the viewer
+  { key: 'outro', kind: 'outro', ms: 0 },
+])
 
 const started = ref(false)
 const index = ref(0)
@@ -106,6 +90,9 @@ function previous(): void {
 function replay(): void {
   index.value = 0
   run.value += 1
+  // Every replay draws new effects
+  photoMotions.clear()
+  nameMotions.clear()
   schedule()
 }
 
@@ -121,8 +108,7 @@ function onKeydown(event: KeyboardEvent): void {
 
 /** Download every photo up front so scenes never pop in half loaded */
 function preload(): void {
-  const urls = [...props.bands.flatMap(band => band.urls), ...props.queens.flatMap(queen => queen.urls)]
-  for (const url of urls) new Image().src = url
+  for (const url of [...props.bands.map(band => band.url), ...props.queens.map(queen => queen.url)]) new Image().src = url
 }
 
 const closeButton = ref<HTMLButtonElement | null>(null)
@@ -156,54 +142,95 @@ function enter(delay = 0) {
   }
 }
 
-/** Photos land one after the other, each with its own small tilt */
-function photoEnter(position: number, delay = 0.25) {
-  const tilt = position % 2 === 0 ? -3 : 3
-  return {
-    initial: reduced ? false : { opacity: 0, y: 70, scale: 0.85, rotate: tilt * 3 },
-    animate: { opacity: 1, y: 0, scale: 1, rotate: reduced ? 0 : tilt },
-    transition: { type: 'spring' as const, stiffness: 90, damping: 13, delay: delay + position * 0.18 },
-  }
-}
+// --- Photo effects ------------------------------------------------------------------------
+// A photo is one animation of four keyframes: out of place (and invisible) -> in place -> in place -> out of
+// place (and invisible). The way in and the way out are drawn at random, each from its own list, so scenes
+// do not look alike. Every property keeps one unit (vw, vh, deg), or the browser cannot interpolate it.
 
-/**
- * Phones: slide `position` of a carousel of `count` slides. It comes in from the right at full size, stays until
- * the next slide arrives and leaves to the left; the last slide stays. Same unit (%) in every keyframe, or the
- * browser cannot interpolate it.
- */
-function slideEnter(position: number, count: number) {
-  const isLast = position === count - 1
-  const step = carouselStepS(count)
-  const total = isLast ? CAROUSEL_SLIDE_S : step + CAROUSEL_SLIDE_S
+const REST = { x: '0vw', y: '0vh', scale: 1, rotate: 0, rotateY: 0 } as const
+type PoseKey = keyof typeof REST
+/** What changes from the resting pose; everything else stays at rest */
+type Pose = Partial<Record<PoseKey, string | number>>
+
+const IN_EFFECTS: Pose[] = [
+  { x: '70vw' }, // slides in from the right
+  { x: '-70vw' }, // slides in from the left
+  { y: '70vh' }, // rises from the bottom
+  { y: '-70vh', rotate: 8 }, // drops from above, tilted
+  { scale: 0.2 }, // zooms in from a dot
+  { scale: 0.4, rotate: -35 }, // spins in
+  { rotateY: 90 }, // flips in like a card
+  { scale: 2.2 }, // lands from close to the camera
+]
+
+const OUT_EFFECTS: Pose[] = [
+  { x: '-70vw' }, // slides out to the left
+  { x: '70vw' }, // slides out to the right
+  { y: '-70vh' }, // flies up
+  { y: '70vh', rotate: -8 }, // falls down, tilted
+  { scale: 0.2 }, // shrinks to a dot
+  { scale: 0.4, rotate: 35 }, // spins out
+  { rotateY: -90 }, // flips away like a card
+  { scale: 2.2 }, // flies past the camera
+]
+
+const pickRandom = <T,>(items: T[]): T => items[Math.floor(Math.random() * items.length)]!
+
+function buildPhotoMotion() {
+  const rest = { ...REST, opacity: 1 }
+  // With reduced motion the photo is simply there
+  if (reduced) return { initial: false as const, animate: rest }
+
+  const from = { ...REST, ...pickRandom(IN_EFFECTS), opacity: 0 }
+  const to = { ...REST, ...pickRandom(OUT_EFFECTS), opacity: 0 }
+  const keys = [...Object.keys(REST), 'opacity'] as (PoseKey | 'opacity')[]
+  const duration = PHOTO_SCENE_MS / 1000
+
   return {
-    initial: { x: '115%', opacity: 0 },
-    animate: isLast
-      ? { x: ['115%', '0%'], opacity: [0, 1] }
-      : { x: ['115%', '0%', '0%', '-115%'], opacity: [0, 1, 1, 0] },
+    initial: from,
+    animate: Object.fromEntries(keys.map(key => [key, [from[key], rest[key], rest[key], to[key]]])),
     transition: {
-      duration: total,
-      times: isLast ? [0, 1] : [0, CAROUSEL_SLIDE_S / total, step / total, 1],
-      ease: 'easeInOut' as const,
-      delay: CAROUSEL_START_S + position * step,
+      duration,
+      times: [0, PHOTO_IN_S / duration, 1 - PHOTO_OUT_S / duration, 1],
+      ease: ['easeOut', 'linear', 'easeIn'] as ('easeOut' | 'linear' | 'easeIn')[],
     },
   }
 }
 
-/** The dot of the slide on screen lights up while it is there (the last one stays lit) */
-function dotEnter(position: number, count: number) {
-  const isLast = position === count - 1
-  const step = carouselStepS(count)
+/** One draw per scene, kept until the next replay: the template runs again on every refresh and must not redraw */
+const photoMotions = new Map<string, ReturnType<typeof buildPhotoMotion>>()
+function photoMotion(sceneKey: string) {
+  let motion = photoMotions.get(sceneKey)
+  if (!motion) {
+    motion = buildPhotoMotion()
+    photoMotions.set(sceneKey, motion)
+  }
+  return motion
+}
+
+/** The name stays hidden while the photo comes in, fades in right after, and fades out with the photo */
+function buildNameMotion() {
+  const duration = PHOTO_SCENE_MS / 1000
   return {
-    initial: { opacity: 0.3, scale: 1 },
-    animate: isLast
-      ? { opacity: [0.3, 1], scale: [1, 1.5] }
-      : { opacity: [0.3, 1, 1, 0.3], scale: [1, 1.5, 1.5, 1] },
+    initial: { opacity: 0, y: 28 },
+    animate: { opacity: [0, 0, 1, 1, 0], y: [28, 28, 0, 0, -12] },
     transition: {
-      duration: isLast ? CAROUSEL_SLIDE_S : step + CAROUSEL_SLIDE_S,
-      times: isLast ? [0, 1] : [0, CAROUSEL_SLIDE_S / (step + CAROUSEL_SLIDE_S), step / (step + CAROUSEL_SLIDE_S), 1],
-      delay: CAROUSEL_START_S + position * step,
+      duration,
+      times: [0, PHOTO_IN_S / duration, (PHOTO_IN_S + NAME_FADE_IN_S) / duration, 1 - PHOTO_OUT_S / duration, 1],
+      ease: ['linear', 'easeOut', 'linear', 'easeIn'] as ('linear' | 'easeOut' | 'easeIn')[],
     },
   }
+}
+
+/** One per scene, like the photo's: the animation library works on these objects, so they are never shared */
+const nameMotions = new Map<string, ReturnType<typeof buildNameMotion>>()
+function nameMotion(sceneKey: string) {
+  let motion = nameMotions.get(sceneKey)
+  if (!motion) {
+    motion = buildNameMotion()
+    nameMotions.set(sceneKey, motion)
+  }
+  return motion
 }
 </script>
 
@@ -257,15 +284,12 @@ function dotEnter(position: number, count: number) {
           <Motion as="p" class="kicker" v-bind="enter()">
             {{ bands.length > 1 ? 'Las bandas' : 'La banda' }}
           </Motion>
-          <ul class="scene__photos scene__photos--band" :class="{ 'scene__photos--many': scene.band.urls.length > 1, 'scene__photos--carousel': carousel }">
-            <Motion v-for="(url, position) in scene.band.urls" :key="url" as="li" class="scene__photo" v-bind="carousel ? slideEnter(position, scene.band.urls.length) : photoEnter(position)">
-              <img :src="url" :alt="`Foto de la banda ${scene.band.name}`" draggable="false">
+          <div class="scene__frame scene__frame--band">
+            <Motion as="div" class="scene__photo" v-bind="photoMotion(scene.key)">
+              <img :src="scene.band.url" :alt="`Foto de la banda ${scene.band.name}`" draggable="false">
             </Motion>
-          </ul>
-          <ol v-if="carousel && scene.band.urls.length > 1" class="scene__dots" aria-hidden="true">
-            <Motion v-for="(url, position) in scene.band.urls" :key="url" as="li" class="scene__dot" v-bind="dotEnter(position, scene.band.urls.length)" />
-          </ol>
-          <Motion as="h2" class="display scene__name" v-bind="enter(0.2)">
+          </div>
+          <Motion as="h2" class="display scene__name" v-bind="reduced ? enter() : nameMotion(scene.key)">
             {{ scene.band.name }}
           </Motion>
         </template>
@@ -274,15 +298,12 @@ function dotEnter(position: number, count: number) {
           <Motion v-if="scene.queen.categoryTitle" as="p" class="kicker" v-bind="enter()">
             {{ scene.queen.categoryTitle }}
           </Motion>
-          <ul class="scene__photos scene__photos--queen" :class="{ 'scene__photos--many': scene.queen.urls.length > 1, 'scene__photos--carousel': carousel }">
-            <Motion v-for="(url, position) in scene.queen.urls" :key="url" as="li" class="scene__photo" v-bind="carousel ? slideEnter(position, scene.queen.urls.length) : photoEnter(position)">
-              <img :src="url" :alt="`Look de ${scene.queen.name}`" draggable="false">
+          <div class="scene__frame scene__frame--queen">
+            <Motion as="div" class="scene__photo" v-bind="photoMotion(scene.key)">
+              <img :src="scene.queen.url" :alt="`Look de ${scene.queen.name}`" draggable="false">
             </Motion>
-          </ul>
-          <ol v-if="carousel && scene.queen.urls.length > 1" class="scene__dots" aria-hidden="true">
-            <Motion v-for="(url, position) in scene.queen.urls" :key="url" as="li" class="scene__dot" v-bind="dotEnter(position, scene.queen.urls.length)" />
-          </ol>
-          <Motion as="h2" class="display scene__name" v-bind="enter(0.2)">
+          </div>
+          <Motion as="h2" class="display scene__name" v-bind="reduced ? enter() : nameMotion(scene.key)">
             {{ scene.queen.name }}
           </Motion>
         </template>
@@ -388,6 +409,11 @@ function dotEnter(position: number, count: number) {
   text-align: center;
 }
 
+.scene--queen,
+.scene--band {
+  max-width: min(92vw, 44rem);
+}
+
 .summary--static .scene {
   margin-block: var(--space-5);
 }
@@ -416,59 +442,38 @@ function dotEnter(position: number, count: number) {
   justify-content: center;
 }
 
-.scene__photos {
+// The photo box has a fixed size, so the name never moves. The photo keeps its own proportions (never cropped)
+// and the frame goes on the image itself, so it hugs the photo. The perspective is for the flip effect.
+.scene__frame {
+  --photo-max-height: min(54dvh, 32rem);
+
   display: grid;
-  gap: var(--space-3);
-  justify-content: center;
+  place-items: center;
   width: 100%;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  height: var(--photo-max-height);
+  perspective: 900px;
+}
+
+// Bands are landscape and need less height
+.scene__frame--band {
+  --photo-max-height: min(34dvh, 22rem);
 }
 
 .scene__photo {
-  overflow: hidden;
-  border: 3px solid var(--color-surface);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-raised), var(--glow-primary);
+  display: grid;
+  place-items: center;
 
   img {
     display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    width: auto;
+    height: auto;
+    max-width: min(92vw, 44rem);
+    max-height: var(--photo-max-height);
+    border: 3px solid var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-raised), var(--glow-primary);
     user-select: none;
   }
-}
-
-// Queens: portrait photos, one big or a small grid
-.scene__photos--queen {
-  grid-template-columns: min(100%, 17rem);
-
-  .scene__photo {
-    aspect-ratio: 3 / 4;
-  }
-}
-
-.scene__photos--queen.scene__photos--many {
-  grid-template-columns: repeat(2, minmax(0, 11rem));
-
-  .scene__photo {
-    aspect-ratio: 1;
-  }
-}
-
-// Bands: landscape photos, one big or a small grid
-.scene__photos--band {
-  grid-template-columns: minmax(0, 28rem);
-
-  .scene__photo {
-    aspect-ratio: 16 / 9;
-  }
-}
-
-.scene__photos--band.scene__photos--many {
-  grid-template-columns: repeat(2, minmax(0, 13.5rem));
 }
 
 // Fixed spots (top, left) so the sparkles are spread over the screen but never move around
@@ -479,61 +484,6 @@ $sparkle-spots: (8%, 12%), (18%, 82%), (34%, 6%), (46%, 90%), (62%, 14%), (74%, 
     top: nth(nth($sparkle-spots, $spot), 1);
     left: nth(nth($sparkle-spots, $spot), 2);
   }
-}
-
-// Phones: the photos are slides of a carousel in one box, each at its original proportions (never cropped);
-// the frame goes on the image itself so it hugs the photo
-.scene__photos--carousel {
-  position: relative;
-  display: block;
-  grid-template-columns: none;
-  width: min(86vw, 22rem);
-  height: min(58dvh, 28rem);
-
-  .scene__photo {
-    position: absolute;
-    inset: 0;
-    // Flex, not grid: the image's percentage max-size resolves against this box
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    aspect-ratio: auto;
-    overflow: visible;
-    border: 0;
-    box-shadow: none;
-
-    img {
-      width: auto;
-      height: auto;
-      max-width: 100%;
-      max-height: 100%;
-      border: 3px solid var(--color-surface);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-raised), var(--glow-primary);
-    }
-  }
-}
-
-.scene__photos--band.scene__photos--carousel {
-  height: auto;
-  aspect-ratio: 16 / 9;
-  width: min(92vw, 28rem);
-}
-
-.scene__dots {
-  display: flex;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.scene__dot {
-  width: 8px;
-  height: 8px;
-  background: var(--color-primary);
-  border-radius: var(--radius-pill);
-  box-shadow: var(--glow-primary);
 }
 
 .summary__sparkle {

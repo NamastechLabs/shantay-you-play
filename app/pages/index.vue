@@ -46,9 +46,6 @@ interface RunwayAction {
   label: string
 }
 
-/** A queen shows at most this many photos in her scene of the voting summary */
-const SUMMARY_MAX_PHOTOS = 4
-
 const RUNWAY_COLUMNS ='id, week_number, runway_date, status, top_three_revealed, categories(id, title, intro_text, kind)'
 
 const supabase = useSupabaseClient()
@@ -102,7 +99,7 @@ async function loadVotingSummary(runway: OpenRunway): Promise<HomeData['votingSu
   const [looks, groups, photos] = await Promise.all([
     supabase
       .from('looks')
-      .select('category_id, image_url, image2_url, image3_url, image4_url, participant:participants!looks_participant_id_fkey(id, name, drag_name), category:categories!looks_category_id_fkey!inner(runway_id)')
+      .select('category_id, image_url, participant:participants!looks_participant_id_fkey(id, name, drag_name), category:categories!looks_category_id_fkey!inner(runway_id)')
       .eq('category.runway_id', runway.id)
       .order('created_at', { ascending: true }),
     groupCategoryIds.length
@@ -116,23 +113,27 @@ async function loadVotingSummary(runway: OpenRunway): Promise<HomeData['votingSu
   if (groups.error) throw groups.error
   if (photos.error) throw photos.error
 
-  const bands = groups.data
-    .map(group => ({ id: group.id, name: group.name, urls: groupPhotoUrls(photos.data.find(row => row.group_id === group.id)) }))
-    .filter(band => band.urls.length > 0)
+  // One photo per band and queen: the first one. All the looks are on the vote page and the runway.
+  const bands = groups.data.flatMap((group) => {
+    const url = groupPhotoUrls(photos.data.find(row => row.group_id === group.id))[0]
+    return url ? [{ id: group.id, name: group.name, url }] : []
+  })
 
-  // Queens in the order of their first look; the category only matters when there is more than one
+  // Queens in the order of their first look (her first look is the one shown); the category only matters
+  // when there is more than one
   const titleByCategory = new Map(runway.categories.map(category => [category.id, category.title]))
   const byQueen = new Map<string, SummaryQueen>()
   for (const look of looks.data) {
-    const queen = byQueen.get(look.participant.id)
-      ?? { id: look.participant.id, name: look.participant.drag_name ?? look.participant.name, categoryTitle: null, urls: [] }
-    queen.urls.push(...lookPhotos(look).map(photo => photo.url))
-    if (individualCategories.length > 1 && !queen.categoryTitle) queen.categoryTitle = titleByCategory.get(look.category_id) ?? null
-    byQueen.set(look.participant.id, queen)
+    if (byQueen.has(look.participant.id)) continue
+    byQueen.set(look.participant.id, {
+      id: look.participant.id,
+      name: look.participant.drag_name ?? look.participant.name,
+      categoryTitle: individualCategories.length > 1 ? titleByCategory.get(look.category_id) ?? null : null,
+      url: look.image_url,
+    })
   }
-  const queens = [...byQueen.values()].map(queen => ({ ...queen, urls: queen.urls.slice(0, SUMMARY_MAX_PHOTOS) }))
 
-  return { bands, queens }
+  return { bands, queens: [...byQueen.values()] }
 }
 
 async function loadMyLooks(runway: OpenRunway): Promise<MyLook[]> {

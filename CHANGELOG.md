@@ -5,6 +5,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.17.1] - 2026-11-22
+
+### Changed
+
+- The voting summary shows only the first photo of each queen and band, for 5 seconds each (the same on phones and bigger screens), and every photo comes in and goes out with a random effect (slide, rise, drop, zoom, spin, flip...); the name fades in once the photo has come in. It replaces the photo carousel: all the looks are on the vote page and the runway (DRG-23)
+
 ## [0.17.0] - 2026-11-21
 
 ### Added
