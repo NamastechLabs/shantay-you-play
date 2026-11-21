@@ -18,6 +18,16 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.17.1',
+    date: '2026-11-22',
+    title: 'Un resumen de la votación más cómodo de ver',
+    features: [
+      'En el resumen animado de la votación, cada reina y cada banda muestra su primera foto durante cinco segundos, para que te dé tiempo a verla; todos los looks siguen en la pantalla de votar y en la pasarela.',
+      'Cada foto entra y sale con un efecto distinto, elegido al azar.',
+      'El nombre aparece cuando la foto ya ha terminado de entrar.',
+    ],
+  },
+  {
     version: '0.17.0',
     date: '2026-11-21',
     title: 'Resumen animado de la votación',
