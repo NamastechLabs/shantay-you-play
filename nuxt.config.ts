@@ -3,7 +3,8 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
-  modules: ['@nuxtjs/supabase', '@vite-pwa/nuxt'],
+  // motion-v/nuxt auto-imports <Motion>, used by the animated voting summary (DRG-23)
+  modules: ['@nuxtjs/supabase', '@vite-pwa/nuxt', 'motion-v/nuxt'],
 
   css: ['~/assets/scss/main.scss'],
 

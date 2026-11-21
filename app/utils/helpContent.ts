@@ -102,7 +102,7 @@ export const HELP_COPY = {
       title: 'Votación',
       who: 'Todas',
       roles: ['concursante', 'jurado', 'invitado'],
-      text: 'Eliges tu Top 3 de reinas (no de looks sueltos): la primera que toques será tu Top 1. No puedes votarte a ti misma, y puedes cambiar tu voto las veces que quieras mientras la votación siga abierta. Los votos de cada persona son secretos hasta que la semana se cierra. Si hay una categoría grupal, también se vota por grupos: lo cuenta la sección «Categorías grupales».',
+      text: 'Eliges tu Top 3 de reinas (no de looks sueltos): la primera que toques será tu Top 1. No puedes votarte a ti misma, y puedes cambiar tu voto las veces que quieras mientras la votación siga abierta. Los votos de cada persona son secretos hasta que la semana se cierra. Si hay una categoría grupal, también se vota por grupos: lo cuenta la sección «Categorías grupales». Cuando la votación se abre, en la página de inicio se reproduce un resumen animado de la semana (primero las bandas, si las hay, y después cada reina) que puedes saltar; si llegas más tarde, pulsa «Ver el resumen de la votación» para verlo cuando quieras.',
     },
     {
       icon: '🎭',

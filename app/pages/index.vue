@@ -3,6 +3,7 @@ import type { Tables } from '~/types/database.types'
 import type { JuryMember } from '~/components/JuryLooks.vue'
 import type { SharePhoto } from '~/composables/useShareLooks'
 import type { RevealBand } from '~/composables/useRunwayResults'
+import type { SummaryBand, SummaryQueen } from '~/components/RunwayVotingSummary.vue'
 
 interface OpenRunway extends Pick<Tables<'runways'>, 'id' | 'week_number' | 'runway_date' | 'status' | 'top_three_revealed'> {
   categories: Pick<Tables<'categories'>, 'id' | 'title' | 'intro_text' | 'kind'>[]
@@ -36,6 +37,8 @@ interface HomeData {
   myGroup: MyGroup | null
   /** Most recent closed runway with its winner (null when none has closed yet) */
   previousWeek: { runway: OpenRunway, winner: RunwayQueen | null } | null
+  /** Bands and queens of the week's runway while it is in voting, for the animated summary */
+  votingSummary: { bands: SummaryBand[], queens: SummaryQueen[] }
 }
 
 interface RunwayAction {
@@ -43,7 +46,10 @@ interface RunwayAction {
   label: string
 }
 
-const RUNWAY_COLUMNS = 'id, week_number, runway_date, status, top_three_revealed, categories(id, title, intro_text, kind)'
+/** A queen shows at most this many photos in her scene of the voting summary */
+const SUMMARY_MAX_PHOTOS = 4
+
+const RUNWAY_COLUMNS ='id, week_number, runway_date, status, top_three_revealed, categories(id, title, intro_text, kind)'
 
 const supabase = useSupabaseClient()
 const { loadTopThree, loadWinners, loadBandResult } = useRunwayResults()
@@ -71,7 +77,7 @@ const { data, error, refresh } = await useAsyncData('home', async (): Promise<Ho
   const revealRunway = runways.find(runway => runway.status === 'reveal')
   const revealGroup = revealRunway?.categories.find(category => category.kind === 'group')
   const featured = pickWeekRunway(runways)
-  const [topThree, bands, votedRunwayIds, jury, myLooks, myGroup, previousWeek] = await Promise.all([
+  const [topThree, bands, votedRunwayIds, jury, myLooks, myGroup, previousWeek, votingSummary] = await Promise.all([
     // The database returns nothing until the jury reveals the Top 3 of a runway with a group category
     revealRunway ? loadTopThree(revealRunway.id) : [],
     revealGroup ? loadBandResult(revealGroup.id) : [],
@@ -81,10 +87,53 @@ const { data, error, refresh } = await useAsyncData('home', async (): Promise<Ho
     featured?.status === 'runway' ? loadMyGroup(featured) : null,
     // Last week only fills the page while this one has not started (Werk Room) or there is none: from the runway on it is noise
     !featured || featured.status === 'werk_room' ? loadPreviousWeek() : null,
+    // Loaded together with the status, so the summary has its data the moment the runway opens for voting
+    featured?.status === 'voting' ? loadVotingSummary(featured) : { bands: [], queens: [] },
   ])
 
-  return { runways, votedRunwayIds, topThree, bands, jury, myLooks, myGroup, previousWeek }
+  return { runways, votedRunwayIds, topThree, bands, jury, myLooks, myGroup, previousWeek, votingSummary }
 })
+
+/** Looks are readable from voting on (RLS), and so are the photos of the bands */
+async function loadVotingSummary(runway: OpenRunway): Promise<HomeData['votingSummary']> {
+  const groupCategoryIds = runway.categories.filter(category => category.kind === 'group').map(category => category.id)
+  const individualCategories = runway.categories.filter(category => category.kind === 'individual')
+
+  const [looks, groups, photos] = await Promise.all([
+    supabase
+      .from('looks')
+      .select('category_id, image_url, image2_url, image3_url, image4_url, participant:participants!looks_participant_id_fkey(id, name, drag_name), category:categories!looks_category_id_fkey!inner(runway_id)')
+      .eq('category.runway_id', runway.id)
+      .order('created_at', { ascending: true }),
+    groupCategoryIds.length
+      ? supabase.from('category_groups').select('id, name').in('category_id', groupCategoryIds).order('position')
+      : { data: [], error: null },
+    groupCategoryIds.length
+      ? supabase.from('category_group_photos').select('group_id, image_url, image2_url, image3_url, image4_url').in('category_id', groupCategoryIds)
+      : { data: [], error: null },
+  ])
+  if (looks.error) throw looks.error
+  if (groups.error) throw groups.error
+  if (photos.error) throw photos.error
+
+  const bands = groups.data
+    .map(group => ({ id: group.id, name: group.name, urls: groupPhotoUrls(photos.data.find(row => row.group_id === group.id)) }))
+    .filter(band => band.urls.length > 0)
+
+  // Queens in the order of their first look; the category only matters when there is more than one
+  const titleByCategory = new Map(runway.categories.map(category => [category.id, category.title]))
+  const byQueen = new Map<string, SummaryQueen>()
+  for (const look of looks.data) {
+    const queen = byQueen.get(look.participant.id)
+      ?? { id: look.participant.id, name: look.participant.drag_name ?? look.participant.name, categoryTitle: null, urls: [] }
+    queen.urls.push(...lookPhotos(look).map(photo => photo.url))
+    if (individualCategories.length > 1 && !queen.categoryTitle) queen.categoryTitle = titleByCategory.get(look.category_id) ?? null
+    byQueen.set(look.participant.id, queen)
+  }
+  const queens = [...byQueen.values()].map(queen => ({ ...queen, urls: queen.urls.slice(0, SUMMARY_MAX_PHOTOS) }))
+
+  return { bands, queens }
+}
 
 async function loadMyLooks(runway: OpenRunway): Promise<MyLook[]> {
   const categoryIds = runway.categories.map(category => category.id)
@@ -310,16 +359,11 @@ const introVideoSrc = computed(() => {
 const FADE_OUT_MS = 700
 const introOpen = ref(false)
 const contentFading = ref(false)
-let introTimer: ReturnType<typeof setTimeout> | undefined
+let overlayTimer: ReturnType<typeof setTimeout> | undefined
 
 function playIntro(): void {
-  clearTimeout(introTimer)
+  clearTimeout(overlayTimer)
   introOpen.value = true
-}
-
-function playIntroAfterFade(): void {
-  contentFading.value = true
-  introTimer = setTimeout(playIntro, FADE_OUT_MS)
 }
 
 function closeIntro(): void {
@@ -327,16 +371,42 @@ function closeIntro(): void {
   contentFading.value = false
 }
 
+// Animated summary of the week, played when the runway opens for voting (same pattern as the intro)
+const votingSummary = computed(() => (weekRunway.value?.status === 'voting' ? data.value?.votingSummary ?? null : null))
+const hasVotingSummary = computed(() => !!votingSummary.value && (votingSummary.value.bands.length > 0 || votingSummary.value.queens.length > 0))
+const summaryOpen = ref(false)
+
+function playSummary(): void {
+  clearTimeout(overlayTimer)
+  summaryOpen.value = true
+}
+
+function closeSummary(): void {
+  summaryOpen.value = false
+  contentFading.value = false
+}
+
+// Voting ended (or the runway changed) while the summary was open: leave it and show the page again
+watch(votingSummary, (summary) => {
+  if (!summary && summaryOpen.value) closeSummary()
+})
+
+/** Content fades out first, then the overlay comes in over a clean page */
+function playAfterFade(play: () => void): void {
+  contentFading.value = true
+  overlayTimer = setTimeout(play, FADE_OUT_MS)
+}
+
 watch(
   () => weekRunway.value && { id: weekRunway.value.id, status: weekRunway.value.status },
   (current, previous) => {
-    if (previous?.status === 'werk_room' && current?.status === 'runway' && current.id === previous.id) {
-      playIntroAfterFade()
-    }
+    if (!previous || !current || current.id !== previous.id) return
+    if (previous.status === 'werk_room' && current.status === 'runway') playAfterFade(playIntro)
+    else if (previous.status === 'runway' && current.status === 'voting' && hasVotingSummary.value) playAfterFade(playSummary)
   },
 )
 
-onBeforeUnmount(() => clearTimeout(introTimer))
+onBeforeUnmount(() => clearTimeout(overlayTimer))
 
 const STATUS_HINTS:Record<OpenRunway['status'], string> = {
   draft: '',
@@ -360,6 +430,15 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
     <!-- Outside the faded content: teleported so it does not inherit the page's opacity -->
     <Teleport to="body">
       <RunwayIntro v-if="introOpen" :src="introVideoSrc" @close="closeIntro" />
+      <RunwayVotingSummary
+        v-if="summaryOpen && votingSummary && weekRunway && primaryAction(weekRunway)"
+        :week-number="weekRunway.week_number"
+        :bands="votingSummary.bands"
+        :queens="votingSummary.queens"
+        :vote-to="primaryAction(weekRunway)!.to"
+        :vote-label="primaryAction(weekRunway)!.label"
+        @close="closeSummary"
+      />
     </Teleport>
 
     <AppNav />
@@ -521,6 +600,9 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
         <NuxtLink :to="`/runways/${weekRunway.id}`" class="btn btn--secondary">
           Ver la pasarela
         </NuxtLink>
+        <button v-if="hasVotingSummary" type="button" class="btn btn--secondary" @click="playSummary">
+          Ver el resumen de la votación
+        </button>
       </div>
 
       <!-- The challenge text is only useful until the runway opens: from the voting on it is gone.

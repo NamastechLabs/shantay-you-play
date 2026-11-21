@@ -175,6 +175,8 @@ A **runway** is one week (date and time + status) with one or more **categories*
 
 **Runway intro video:** judges upload the weekly 9:16 MP4 (max 50 MB) from the admin home; it always overwrites `intro.mp4` in the `runway-intro` bucket. See [docs/runway-intro-video.md](docs/runway-intro-video.md).
 
+**Voting summary:** when a runway moves to `voting` the homepage plays an animated, full-screen summary of the week (bands first when there is a group category, then every queen), built from live data with motion-v; late visitors get a **Ver el resumen de la votación** button. See [docs/runway-voting-summary.md](docs/runway-voting-summary.md).
+
 **Sharing your look ("A desfilar"):** while a runway is in `runway` (pasarela), each `concursante` sees an **A desfilar** button in the homepage hero card. It shares her own look for the week (all its photos, front/back/reveal/extra, plus the intro) through the native share sheet so she can post it in the WhatsApp group where everyone comments. If the week has several categories, each intro is prefixed with its category title. A `concursante` in a group category also gets **A desfilar con mi banda**, which shares her own band's name, intro and photos the same way (not shown to the jury). Implemented in [`useShareLooks`](app/composables/useShareLooks.ts) with the Web Share API (level 2, files):
 
 - Needs **HTTPS** (or `localhost`) and a user tap. Supported in Chrome on Android and Safari on iOS.
