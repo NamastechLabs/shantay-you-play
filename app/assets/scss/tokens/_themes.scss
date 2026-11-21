@@ -43,11 +43,13 @@ $y2k-camp: (
   'shadow-card': 0 8px 24px rgb(106 76 255 / 18%),
   'shadow-raised': 0 16px 40px rgb(27 19 64 / 28%),
   'glow-primary': 0 0 24px rgb(255 95 200 / 55%),
-  // 20% stronger than glow-primary (radius and opacity), for the reveal roulette
-  'glow-primary-strong': 0 0 29px rgb(255 95 200 / 66%),
   'glow-accent': 0 0 20px rgb(109 227 255 / 70%),
   'page-backdrop': unquote('radial-gradient(60rem 40rem at 90% -10%, rgb(255 95 200 / 22%), transparent 60%), radial-gradient(50rem 36rem at -10% 20%, rgb(109 227 255 / 35%), transparent 60%)'),
   'scrim': rgb(27 19 64 / 70%),
+  // Reveal stage: a near-black stage, light text and the spotlight beam color
+  'reveal-stage': #0b0618,
+  'reveal-text': #fff8ff,
+  'spotlight-beam': rgb(255 200 240 / 55%),
 );
 
 // Soft, dusty palette: blush pink, sage mint, rose, taupe and champagne
@@ -86,10 +88,12 @@ $retro-glam: (
   'shadow-card': 0 8px 24px rgb(140 85 95 / 16%),
   'shadow-raised': 0 16px 40px rgb(90 55 65 / 26%),
   'glow-primary': 0 0 24px rgb(191 77 101 / 35%),
-  'glow-primary-strong': 0 0 29px rgb(191 77 101 / 42%),
   'glow-accent': 0 0 20px rgb(143 190 172 / 60%),
   'page-backdrop': unquote('radial-gradient(60rem 40rem at 90% -10%, rgb(233 170 178 / 30%), transparent 60%), radial-gradient(50rem 36rem at -10% 20%, rgb(169 203 189 / 35%), transparent 60%)'),
   'scrim': rgb(59 47 51 / 55%),
+  'reveal-stage': #120a0d,
+  'reveal-text': #fff6f2,
+  'spotlight-beam': rgb(255 226 214 / 50%),
 );
 
 // Black case with pure neon pigments: magenta, orange, yellow, green, blue and purple
@@ -127,10 +131,12 @@ $neon-nightclub: (
   'shadow-card': 0 8px 24px rgb(0 0 0 / 55%),
   'shadow-raised': 0 16px 40px rgb(0 0 0 / 70%),
   'glow-primary': 0 0 28px rgb(255 31 169 / 60%),
-  'glow-primary-strong': 0 0 34px rgb(255 31 169 / 72%),
   'glow-accent': 0 0 24px rgb(255 138 31 / 55%),
   'page-backdrop': unquote('radial-gradient(50rem 30rem at 85% -10%, rgb(122 59 184 / 35%), transparent 60%), radial-gradient(40rem 26rem at -10% 30%, rgb(42 168 255 / 18%), transparent 60%)'),
   'scrim': rgb(0 0 0 / 80%),
+  'reveal-stage': #000,
+  'reveal-text': #fff,
+  'spotlight-beam': rgb(255 79 200 / 50%),
 );
 
 :root,

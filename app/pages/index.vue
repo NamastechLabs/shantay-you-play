@@ -3,6 +3,7 @@ import type { Tables } from '~/types/database.types'
 import type { JuryMember } from '~/components/JuryLooks.vue'
 import type { SharePhoto } from '~/composables/useShareLooks'
 import type { RevealBand } from '~/composables/useRunwayResults'
+import type { RevealItem } from '~/components/RevealStage.vue'
 import type { SummaryBand, SummaryQueen } from '~/components/RunwayVotingSummary.vue'
 
 interface OpenRunway extends Pick<Tables<'runways'>, 'id' | 'week_number' | 'runway_date' | 'status' | 'top_three_revealed'> {
@@ -254,34 +255,82 @@ const revealedTopThree = computed(() => (weekRunway.value?.status === 'reveal' ?
 const hasGroupReveal = computed(() => weekRunway.value?.status === 'reveal' && weekRunway.value.categories.some(category => category.kind === 'group'))
 const revealBands = computed(() => (hasGroupReveal.value ? data.value?.bands ?? [] : []))
 const inBandStage = computed(() => hasGroupReveal.value && !weekRunway.value?.top_three_revealed)
-const bandRevealDone = ref(false)
-/** The Top 3 reveal has finished playing: the "Ver la pasarela" button appears */
-const topThreeRevealDone = ref(false)
 const revealingTopThree = ref(false)
 const snackbar = useSnackbar()
 
-// A new band stage (another runway, or a reopened reveal) plays its animation again
-watch(() => [weekRunway.value?.id, inBandStage.value], () => { bandRevealDone.value = false })
-watch(() => [weekRunway.value?.id, weekRunway.value?.status, revealedTopThree.value.length], () => { topThreeRevealDone.value = false })
+// --- The reveal plays full screen (RevealStage) for everyone on the page when it happens: first the bands, then the
+// Top 3. Each one plays once per device (remembered in localStorage); "Ver la revelación de nuevo" plays it again.
+// Until it has played, its result is not on the page, so nobody sees it before the reveal.
+type RevealPhase = 'bands' | 'queens'
+const SEEN_REVEALS_KEY = 'seen-reveals'
+const seenReveals = ref<string[]>([])
+/** localStorage is only read on the client, so until then every reveal counts as pending (server and client markup match) */
+const revealStorageReady = ref(false)
+const stagePhase = ref<RevealPhase | null>(null)
 
-// Soft move: when the Top 3 appears above the band, the band slides down to its new place instead of
-// jumping there (FLIP: note where it was, then animate from there to where it ended up)
-const SLIDE_MS = 800
-const bandSection = ref<HTMLElement | null>(null)
-let bandTopBefore: number | null = null
+const bandsRevealPending = computed(() => hasGroupReveal.value && revealBands.value.length > 0 && !hasSeenReveal('bands'))
+const queensRevealPending = computed(() => revealedTopThree.value.length > 0 && !hasSeenReveal('queens'))
+const nextPendingPhase = computed<RevealPhase | null>(() => (bandsRevealPending.value ? 'bands' : queensRevealPending.value ? 'queens' : null))
+/** The result of the phase is on the page (not still waiting for its reveal) */
+const bandsRevealed = computed(() => !bandsRevealPending.value)
+const queensRevealed = computed(() => !queensRevealPending.value)
+const hasRevealToReplay = computed(() => weekRunway.value?.status === 'reveal' && !stagePhase.value && (revealedTopThree.value.length > 0 || (hasGroupReveal.value && revealBands.value.length > 0)))
 
-watch(inBandStage, (stage, wasStage) => {
-  bandTopBefore = wasStage && !stage ? bandSection.value?.getBoundingClientRect().top ?? null : null
-}, { flush: 'pre' })
+function revealKey(phase: RevealPhase): string {
+  return `${weekRunway.value?.id}:${phase}`
+}
 
-watch(inBandStage, () => {
-  const element = bandSection.value
-  if (bandTopBefore === null || !element) return
-  const distance = bandTopBefore - element.getBoundingClientRect().top
-  bandTopBefore = null
-  if (!distance || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-  element.animate([{ transform: `translateY(${distance}px)` }, { transform: 'none' }], { duration: SLIDE_MS, easing: 'ease-in-out' })
-}, { flush: 'post' })
+function hasSeenReveal(phase: RevealPhase): boolean {
+  return revealStorageReady.value && seenReveals.value.includes(revealKey(phase))
+}
+
+function markRevealSeen(phase: RevealPhase): void {
+  const key = revealKey(phase)
+  if (seenReveals.value.includes(key)) return
+  seenReveals.value = [...seenReveals.value, key]
+  try {
+    localStorage.setItem(SEEN_REVEALS_KEY, JSON.stringify(seenReveals.value))
+  }
+  catch {
+    // Storage blocked: it is remembered until the page reloads
+  }
+}
+
+const stageItems = computed<RevealItem[]>(() => {
+  if (stagePhase.value === 'bands') return revealBands.value.map(band => ({ id: band.id, name: band.name, url: band.image_url, place: band.place }))
+  if (stagePhase.value === 'queens') return revealedTopThree.value.map(queen => ({ id: queen.id, name: queen.name, url: queen.image_url, place: queen.place }))
+  return []
+})
+
+function closeRevealStage(): void {
+  if (stagePhase.value) markRevealSeen(stagePhase.value)
+  stagePhase.value = null
+}
+
+function replayReveal(): void {
+  stagePhase.value = revealedTopThree.value.length ? 'queens' : 'bands'
+}
+
+onMounted(() => {
+  try {
+    const stored = JSON.parse(localStorage.getItem(SEEN_REVEALS_KEY) ?? '[]')
+    if (Array.isArray(stored)) seenReveals.value = stored.filter((key): key is string => typeof key === 'string')
+  }
+  catch {
+    // Storage blocked or corrupted: every reveal plays
+  }
+  revealStorageReady.value = true
+})
+
+// A reveal that has not been seen starts by itself; the Top 3 only after the bands
+watch([revealStorageReady, nextPendingPhase, stagePhase], ([ready, phase, open]) => {
+  if (ready && phase && !open) stagePhase.value = phase
+}, { immediate: true })
+
+// The runway left the reveal (closed, or another one took the stage): leave the stage
+watch(() => weekRunway.value?.status, (status) => {
+  if (status !== 'reveal') stagePhase.value = null
+})
 
 async function revealTopThree(): Promise<void> {
   if (!weekRunway.value) return
@@ -431,6 +480,13 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
     <!-- Outside the faded content: teleported so it does not inherit the page's opacity -->
     <Teleport to="body">
       <RunwayIntro v-if="introOpen" :src="introVideoSrc" @close="closeIntro" />
+      <RevealStage
+        v-if="stagePhase && stageItems.length"
+        :key="`${weekRunway?.id}-${stagePhase}`"
+        :kind="stagePhase"
+        :items="stageItems"
+        @close="closeRevealStage"
+      />
       <RunwayVotingSummary
         v-if="summaryOpen && votingSummary && weekRunway && primaryAction(weekRunway)"
         :week-number="weekRunway.week_number"
@@ -503,20 +559,17 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
         </p>
       </div>
 
-      <!-- Top 3 of the week. With a group category it only exists after the jury reveals it, and fades in while the band slides down -->
+      <!-- Top 3 of the week: it only exists after the jury reveals it, and is on the page once the full-screen reveal has played -->
       <TopThreeReveal
-        v-if="revealedTopThree.length"
+        v-if="revealedTopThree.length && queensRevealed"
         :key="weekRunway.id"
         class="week-hero__reveal"
-        :class="{ 'week-hero__reveal--after-band': hasGroupReveal }"
         :queens="revealedTopThree"
-        @done="topThreeRevealDone = true"
       />
 
       <!-- Winning band: revealed first, then it keeps the full width under the Top 3 -->
       <section
-        v-if="hasGroupReveal && revealBands.length"
-        ref="bandSection"
+        v-if="hasGroupReveal && revealBands.length && bandsRevealed"
         class="week-hero__band"
         :aria-labelledby="inBandStage ? undefined : 'band-winner-title'"
       >
@@ -527,29 +580,30 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
           :key="weekRunway.id"
           class="week-hero__band-reveal"
           :bands="revealBands"
-          :animate="inBandStage"
           :compact="!inBandStage"
-          @done="bandRevealDone = true"
         />
       </section>
 
       <!-- Only the jury moves on from the band to the Top 3 -->
       <template v-if="inBandStage">
-        <div v-if="participant?.role === 'jurado' && (bandRevealDone || !revealBands.length)" class="actions">
+        <div v-if="participant?.role === 'jurado' && bandsRevealed" class="actions">
           <button type="button" class="btn btn--primary" :disabled="revealingTopThree" @click="revealTopThree">
             {{ revealingTopThree ? 'Revelando…' : 'Revelar el Top 3 de la semana' }}
           </button>
         </div>
-        <p v-else-if="participant?.role !== 'jurado' && (bandRevealDone || !revealBands.length)" class="muted" role="status">
+        <p v-else-if="participant?.role !== 'jurado' && bandsRevealed" class="muted" role="status">
           El jurado revelará enseguida el Top 3 de la semana.
         </p>
       </template>
 
-      <!-- Once the reveal has finished, everyone can go and see the runway (as while voting) -->
-      <div v-if="weekRunway.status === 'reveal' && topThreeRevealDone" class="actions">
+      <!-- Once the reveal has finished, everyone can go and see the runway (as while voting), or watch the reveal again -->
+      <div v-if="weekRunway.status === 'reveal' && revealedTopThree.length && queensRevealed" class="actions">
         <NuxtLink :to="`/runways/${weekRunway.id}`" class="btn btn--primary">
           Ver la pasarela
         </NuxtLink>
+        <button v-if="hasRevealToReplay" type="button" class="btn btn--secondary" @click="replayReveal">
+          Ver la revelación de nuevo
+        </button>
       </div>
 
       <!-- Queens upload their own look while the week is in the Werk Room -->
@@ -850,27 +904,6 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
 
 .week-hero__band-reveal {
   justify-self: stretch;
-}
-
-// The Top 3 fades in while the band slides down (the band stays on top of it while it moves)
-.week-hero__reveal--after-band {
-  animation: reveal-fade-in 0.8s ease-out;
-}
-
-@keyframes reveal-fade-in {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .week-hero__reveal--after-band {
-    animation: none;
-  }
 }
 
 .week-hero__band-title {

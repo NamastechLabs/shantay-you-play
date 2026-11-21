@@ -5,6 +5,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Full-screen spotlight reveal for the winning band and the Top 3: blackout, spotlights, every contender lit one by one in random order with a random effect (fade, slide, zoom, curtain, flash...), the suspense line "La reina de la semana es…", and the winner growing from small to big with confetti and the heading "¡Felicidragues, {name}!", then second and third. It plays by itself for everyone on the page, once per device, is skippable, respects reduced motion, and a "Ver la revelación de nuevo" button replays it. Optional winner sound from `public/audio/winner.mp3` with a mute toggle; nothing is loaded if the file is missing. No database changes (DRG-12)
+
+### Changed
+
+- The homepage keeps the band and the Top 3 hidden until their reveal has played on the device, and shows them as static results afterwards; the podium layout no longer depends on JavaScript (DRG-12)
+
+### Removed
+
+- The roulette effect of the band and Top 3 reveals (DRG-12)
+
 ## [0.17.1] - 2026-11-22
 
 ### Changed

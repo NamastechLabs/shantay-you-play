@@ -32,7 +32,7 @@ export function useConfetti() {
     stop()
     const element = document.createElement('canvas')
     element.setAttribute('aria-hidden', 'true')
-    element.style.cssText = 'position:fixed;inset:0;z-index:10;width:100vw;height:100vh;pointer-events:none'
+    element.style.cssText = 'position:fixed;inset:0;z-index:200;width:100vw;height:100vh;pointer-events:none'
     document.body.append(element)
     canvas = element
 

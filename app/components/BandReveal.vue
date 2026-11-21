@@ -4,32 +4,16 @@ import type { RevealBand } from '~/composables/useRunwayResults'
 const props = withDefaults(defineProps<{
   /** The bands of the group category; `place` 1 = winner (both are 1 on a draw) */
   bands: RevealBand[]
-  /** Plays the reveal when the component mounts; without it the final state is shown at once */
-  animate?: boolean
   /**
    * Final layout after the Top 3 reveal: the losing band collapses and the winner(s) take the
-   * full width. Changing it while mounted is animated; it also stops a reveal still running.
+   * full width. Changing it while mounted is animated.
    */
   compact?: boolean
-}>(), { animate: true, compact: false })
+}>(), { compact: false })
 
-/** The reveal has finished (the jury's button appears after it) */
-const emit = defineEmits<{ done: [] }>()
-
-// Timeline of the reveal (ms from mount), same effect as the Top 3 reveal
-const ROULETTE_START_MS = 500 // 0.5-4s: the cards light up alternately, slowing down
-const ROULETTE_END_MS = 4000 // the winner is revealed
-const CONFETTI_AT_MS = 4400
-const DONE_AT_MS = 5500
-const TIE_REVEAL_MS = 500 // on a draw there is no roulette: both win at once
-const TIE_DONE_MS = 1800
-
-const { launch: launchConfetti } = useConfetti()
-
+// The reveal itself (blackout, spotlights, winner) is `RevealStage`; this is the result it leaves on the page
 const winners = computed(() => props.bands.filter(band => band.place === 1))
 const tie = computed(() => winners.value.length > 1)
-const resolved = ref(props.compact || !props.animate)
-const litId = ref<string | null>(null)
 
 // Compact with a single winner: its column takes everything, the other one collapses to nothing
 // (fr tracks interpolate, so the grid animates the growth)
@@ -37,64 +21,6 @@ const columns = computed(() => props.compact
   ? props.bands.map(band => (band.place === 1 ? '1fr' : '0fr')).join(' ')
   : props.bands.map(() => '1fr').join(' '))
 const solo = computed(() => props.compact && !tie.value)
-
-const timers: ReturnType<typeof setTimeout>[] = []
-
-function later(callback: () => void, ms: number): void {
-  timers.push(setTimeout(callback, ms))
-}
-
-function clearTimers(): void {
-  timers.forEach(clearTimeout)
-  timers.length = 0
-}
-
-// Lights the other card (never the same twice in a row), then schedules the next one a bit slower
-function spin(elapsed: number): void {
-  if (elapsed >= ROULETTE_END_MS - ROULETTE_START_MS) return
-  const others = props.bands.filter(band => band.id !== litId.value)
-  litId.value = others[Math.floor(Math.random() * others.length)]?.id ?? null
-  const wait = 80 + (elapsed / (ROULETTE_END_MS - ROULETTE_START_MS)) ** 2 * 420
-  later(() => spin(elapsed + wait), wait)
-}
-
-function reveal(): void {
-  litId.value = null
-  resolved.value = true
-}
-
-// The jury moved on while the roulette was still running (another screen): jump to the final state
-watch(() => props.compact, (compact) => {
-  if (!compact) return
-  clearTimers()
-  reveal()
-})
-
-onMounted(() => {
-  if (props.compact || !props.animate) return
-
-  if (props.bands.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    reveal()
-    emit('done')
-    return
-  }
-
-  if (tie.value) {
-    later(() => {
-      reveal()
-      launchConfetti()
-    }, TIE_REVEAL_MS)
-    later(() => emit('done'), TIE_DONE_MS)
-    return
-  }
-
-  later(() => spin(0), ROULETTE_START_MS)
-  later(reveal, ROULETTE_END_MS)
-  later(launchConfetti, CONFETTI_AT_MS)
-  later(() => emit('done'), DONE_AT_MS)
-})
-
-onBeforeUnmount(clearTimers)
 </script>
 
 <template>
@@ -110,18 +36,17 @@ onBeforeUnmount(clearTimers)
       :key="band.id"
       class="band-reveal__card"
       :class="{
-        'band-reveal__card--lit': litId === band.id,
-        'band-reveal__card--winner': resolved && band.place === 1,
-        'band-reveal__card--dim': resolved && band.place !== 1 && !compact,
+        'band-reveal__card--winner': band.place === 1,
+        'band-reveal__card--dim': band.place !== 1 && !compact,
         'band-reveal__card--gone': compact && band.place !== 1,
       }"
       :aria-hidden="compact && band.place !== 1 ? 'true' : undefined"
     >
       <img class="band-reveal__photo" :src="band.image_url" :alt="compact && band.place !== 1 ? '' : `Foto de la banda ${band.name}`">
-      <span v-if="resolved && band.place === 1" class="band-reveal__crown" aria-hidden="true">♛</span>
+      <span v-if="band.place === 1" class="band-reveal__crown" aria-hidden="true">♛</span>
       <figcaption class="band-reveal__caption">
         <span class="band-reveal__name">{{ band.name }}</span>
-        <span v-if="resolved && band.place === 1" class="band-reveal__label" role="status">
+        <span v-if="band.place === 1" class="band-reveal__label" role="status">
           {{ tie ? '¡Banda ganadora (empate)!' : '¡Banda ganadora!' }}
         </span>
       </figcaption>
@@ -165,13 +90,6 @@ $move-ms: 0.8s;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
   transition: border-color 0.1s ease-out, box-shadow 0.1s ease-out, opacity $move-ms ease-in-out, transform $move-ms cubic-bezier(0.34, 1.3, 0.64, 1);
-
-  // Roulette highlight
-  &--lit {
-    z-index: 1;
-    border-color: var(--color-highlight);
-    box-shadow: var(--shadow-raised), var(--glow-primary-strong);
-  }
 
   &--winner {
     z-index: 1;
