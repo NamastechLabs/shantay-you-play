@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-11-21
+
 ### Added
 
 - Animated voting summary: when a runway moves to voting, the homepage plays a full-screen, video-style summary (title, the bands first when there is a group category, every queen and a closing card that sends people to vote). It starts by itself if the page is open and a **Ver el resumen de la votación** button replays it later. Built with motion-v from live data, themed through the CSS tokens, skippable, and static under reduced motion. No database changes (DRG-23)
