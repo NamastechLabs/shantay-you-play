@@ -12,15 +12,21 @@ When a runway opens for voting (`runway` → `voting`), the home page plays a sh
 ## Scenes
 
 1. **Title** ("¡Abre la votación!").
-2. **Bands**, only when the runway has a group category: one scene per band with its photos (up to 4, landscape). Bands always come before the queens. Bands without photos are skipped.
-3. **Queens**: one scene per queen with the photos of her looks (up to 4) and her drag name. The category title is shown only when the week has more than one individual category. With more than 8 queens every scene is shorter.
+2. **Bands**, only when the runway has a group category: one scene per band with its **first photo** (landscape) and its name. Bands always come before the queens. Bands without photos are skipped.
+3. **Queens**: one scene per queen with the **first photo of her first look** and her drag name. The category title is shown only when the week has more than one individual category.
 4. **Closing card** ("¡Es hora de votar!") with the vote button (**Cambiar mi Top 3** if the person already voted), **Repetir el resumen** and **Cerrar**. It waits for the viewer.
+
+Only one photo per band and queen is shown on purpose: with several photos each one went by too fast, and all the looks are on the vote page and on the runway.
 
 Scenes are defined in the `scenes` computed (title, bands, queens, outro) with their duration in ms, so reordering or retiming them is a small change.
 
-### Photos: the carousel (phones)
+### Photos: time and random effects
 
-On phones (width up to 640px) the photos of a band or a queen are a **carousel**: they slide in one at a time from the right at full size (never cropped, its own proportions) and leave to the left as the next one arrives; the last one stays. A row of dots under the photos lights up the one on screen. Every scene starts its carousel from the first photo. **Every scene lasts the same, whatever its number of photos**: 5 s (4.2 s with more than 8 queens; `CAROUSEL_SCENE_MS`). The first photo arrives after 0.3 s, the last one stays for 1.3 s and the time in between is shared by the photos, so a queen with 1 photo shows it for the whole scene and one with 4 photos changes about every 0.9 s. On bigger screens the photos appear side by side, in a grid.
+- **Every band and queen scene lasts 5 s** (`PHOTO_SCENE_MS`), the same on phones and on bigger screens. The title card lasts 3.2 s.
+- The photo comes in (0.55 s), stays, and goes out (0.55 s). The **way in and the way out are drawn at random**, each from its own list (`IN_EFFECTS`, `OUT_EFFECTS`): it slides from or to the left or right, rises or falls (a bit tilted), zooms from or to a dot, spins, flips like a card, or comes from or goes past the camera. Adding an effect is adding a pose (what changes from the resting one) to a list.
+- The photo is one animation of four keyframes (out of place and invisible, in place, in place, out of place and invisible), so it is already gone when the next scene starts. The name stays hidden while the photo comes in, fades in right after the entrance ends (`NAME_FADE_IN_S`) and fades out with the photo.
+- The draw is made once per scene and kept until **Repetir el resumen**, which draws again; the screen refreshing meanwhile does not change the effect.
+- The photo keeps its own proportions (never cropped) in a box of fixed size, so the name does not move.
 
 ## Controls
 
