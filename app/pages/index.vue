@@ -249,6 +249,7 @@ const weekRunway = computed(() => pickWeekRunway(data.value?.runways ?? []))
 const otherOpenRunways = computed(() =>
   data.value?.runways.filter(runway => runway.id !== weekRunway.value?.id) ?? [],
 )
+const individualCategories = computed(() => weekRunway.value?.categories.filter(category => category.kind === 'individual') ?? [])
 const revealedTopThree = computed(() => (weekRunway.value?.status === 'reveal' ? data.value?.topThree ?? [] : []))
 
 // --- Staged reveal of a runway with a group category: first the winning band, then (when a judge says so) the Top 3
@@ -347,6 +348,13 @@ async function revealTopThree(): Promise<void> {
 // Werk Room: counts down to the runway's date
 const { remaining: countdownRemaining, units: countdownUnits } = useCountdown(
   () => (weekRunway.value?.status === 'werk_room' ? weekRunway.value.runway_date : null),
+)
+// "Las reinas se están preparando…" only makes sense close to the start: with more time left the countdown says it all.
+// The countdown is null until the client mounts, so the line is hidden on the server and shows up after mount when it applies.
+const PREPARING_MESSAGE_THRESHOLD_MS = 4 * 60 * 60 * 1000
+const hidePreparingStatus = computed(() =>
+  weekRunway.value?.status === 'werk_room'
+  && (countdownRemaining.value === null || countdownRemaining.value >= PREPARING_MESSAGE_THRESHOLD_MS),
 )
 // Whether the signed-in person already cast a ballot in the week's runway (voting only)
 const hasVotedThisWeek = computed(() => !!weekRunway.value && (data.value?.votedRunwayIds.includes(weekRunway.value.id) ?? false))
@@ -521,7 +529,7 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
       </h1>
       <span class="rule" aria-hidden="true" />
 
-      <p v-if="!mustPickSubcategory" class="week-hero__status">
+      <p v-if="!mustPickSubcategory && !hidePreparingStatus" class="week-hero__status">
         <!-- While voting, say whether this person already voted -->
         <span
           v-if="weekRunway.status === 'voting'"
@@ -668,15 +676,15 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
       />
 
       <!-- Sub-categories are picked in the Werk Room, in ranking order (individual categories only) -->
-      <template v-if="weekRunway.status === 'werk_room'">
+      <div v-if="weekRunway.status === 'werk_room' && individualCategories.length" class="week-hero__subcats" :class="{ 'week-hero__subcats--single': weekRunway.categories.length === 1 }">
         <CategorySubcategories
-          v-for="category in weekRunway.categories.filter(candidate => candidate.kind === 'individual')"
+          v-for="category in individualCategories"
           :key="category.id"
           :category="category"
           :show-title="weekRunway.categories.length > 1"
           @pending="onSubcategoryPending"
         />
-      </template>
+      </div>
     </section>
 
     <section v-else class="week-empty" aria-labelledby="week-empty-title">
@@ -886,6 +894,23 @@ function primaryAction(runway: OpenRunway): RunwayAction | null {
 .week-hero__vote-state {
   margin-right: var(--space-1);
   vertical-align: 0.1em;
+}
+
+// Sub-category pickers: one card per category, side by side on wide screens, stacked on phones
+.week-hero__subcats {
+  display: grid;
+  gap: var(--space-4);
+  justify-self: stretch;
+  align-items: start;
+
+  @media (min-width: 48rem) {
+    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  }
+
+  // Alone, the card keeps a readable width
+  &--single {
+    max-width: 40rem;
+  }
 }
 
 .week-hero__reveal {

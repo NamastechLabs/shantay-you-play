@@ -15,9 +15,16 @@ Status: **implemented** (DRG-13). Designs: Figma `drag-race-game`, frames "Homep
 - "La semana pasada" shows the winner's photo tall (3:4) with the place ribbon and the crown on phones (`PastRunwayCard` with `featured`).
 - Below 48rem the menu is split in two `AppDrawer` panels: the **user's avatar** (top right, or their initial) opens the **user menu** from the right (the user's name, "Mi perfil", "Mis looks", "Salir"; `userItems` in `AppNav.vue`) and the **burger button** (top left, next to the logo) opens the **app menu** from the left ("Panel del jurado" and "Participantes" for the jury, "Semanas pasadas", "Ayuda", "Novedades" and the theme picker; `appItems`). Links and "Salir" close the panel; Escape and a tap on the backdrop do too. From 48rem up one dropdown with the user's name holds both lists (separated), and the theme picker is in the top bar. The **top bar is pinned**
 
+## Several categories (DRG-26)
+
+- `RunwayCategories` shows one numbered card per category (number, title, collapsible intro): one column on phones, `auto-fit` columns of at least 18rem from 48rem up. With one category it is still just the intro text.
+- The sub-category pickers (`CategorySubcategories`, Werk Room, individual categories only) live in `.week-hero__subcats`, a grid with the same breakpoint; a single picker keeps a 40rem max width. With several categories each card shows "Subcategorías" as an eyebrow and the category title as its heading (screen readers hear "Subcategorías · title").
+
 ## Werk Room countdown
 
 While the week is in `werk_room`, the card counts down to the runway's `runway_date` (`useCountdown`, ticking once a second on the client only, so server and client markup match). It is shown as four flip-clock tiles (days, hours, minutes, seconds, two digits each, label underneath) in the theme's primary color. `splitCountdown` in `app/utils/runwayFormat.ts` returns the four units; all four are always shown, even when days or hours are `00`.
+
+The status line "Las reinas se están preparando en el Werk Room." is only shown when less than 4 hours remain (`PREPARING_MESSAGE_THRESHOLD_MS` in `index.vue`); before that the countdown speaks for itself. The remaining time is unknown until the client mounts, so the line is hidden on the server.
 
 At zero it shows "¡La pasarela está a punto de abrir!" until a jury member opens the runway (the realtime refresh then changes the card).
 
