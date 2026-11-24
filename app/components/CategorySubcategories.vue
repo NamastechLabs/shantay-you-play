@@ -62,8 +62,17 @@ const initial = (name: string): string => name.charAt(0).toUpperCase()
 
 <template>
   <section v-if="subcategories.length" :id="`subcategorias-${category.id}`" class="subcats card" :aria-labelledby="`subcats-${category.id}`">
+    <!-- Several categories: the category is the heading and "Subcategorías" the eyebrow, so the cards are easy to tell apart -->
+    <p v-if="showTitle" class="kicker" aria-hidden="true">
+      Subcategorías
+    </p>
     <h2 :id="`subcats-${category.id}`" class="subcats__title">
-      Subcategorías<template v-if="showTitle"> · {{ category.title }}</template>
+      <template v-if="showTitle">
+        <span class="sr-only">Subcategorías · </span>{{ category.title }}
+      </template>
+      <template v-else>
+        Subcategorías
+      </template>
     </h2>
 
     <!-- Status: the one thing a queen needs to know -->
@@ -163,8 +172,9 @@ const initial = (name: string): string => name.charAt(0).toUpperCase()
 
 <style scoped lang="scss">
 .subcats {
+  // The page sizes it (full width of its grid cell)
   width: 100%;
-  max-width: 40rem;
+  min-width: 0;
   // The page header is pinned on phones: leave room when jumping here from the shortcut
   scroll-margin-top: 5rem;
 }

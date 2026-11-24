@@ -18,6 +18,16 @@ export interface ReleaseNote {
  */
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.19.0',
+    date: '2026-11-24',
+    title: 'Una página de inicio más clara cuando hay varias categorías',
+    features: [
+      'Cuando la semana tiene varias categorías, aparecen como tarjetas numeradas: una debajo de otra en el móvil y lado a lado en pantallas anchas.',
+      'Las subcategorías de cada categoría también se muestran en tarjetas separadas, con el nombre de la categoría como título.',
+      'El aviso «Las reinas se están preparando en el Werk Room» solo aparece cuando faltan menos de 4 horas para la pasarela.',
+    ],
+  },
+  {
     version: '0.18.0',
     date: '2026-11-22',
     title: 'Una revelación a pantalla completa, con focos y suspense',

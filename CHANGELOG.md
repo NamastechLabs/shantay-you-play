@@ -5,6 +5,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-11-24
+
+### Changed
+
+- Homepage with several categories: the categories are numbered cards (side by side from 48rem up, stacked on phones) and the sub-category pickers sit in the same responsive grid with the category as heading. A single category looks as before. No database changes (DRG-26)
+- The Werk Room status line "Las reinas se están preparando en el Werk Room." is hidden until less than 4 hours remain before the runway opens (DRG-26)
+
 ## [0.18.0] - 2026-11-22
 
 ### Added
